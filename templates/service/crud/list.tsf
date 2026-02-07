@@ -1,0 +1,37 @@
+/** @fragment-contract
+ * @description List Entities
+ * @input {string} lowerEntity - camelCase model name
+ * @input {string} errorBlock - error handling block
+ * @globals {db, HookSystem, actor, params}
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const lowerEntity: string;
+declare const errorBlock: string;
+
+export default fragment/* ts */`
+try {
+    let { where, take, skip, orderBy, select } = params || {};
+    
+    // Allow hooks to modify the query parameters (e.g. for scoping)
+    // Pass actor context if available
+    const filteredParams = await HookSystem.filter('${lowerEntity}.beforeList', { where, take, skip, orderBy, select, actor });
+    where = filteredParams.where;
+    take = filteredParams.take;
+    skip = filteredParams.skip;
+    orderBy = filteredParams.orderBy;
+    select = filteredParams.select;
+    
+    const [data, total] = await db.$transaction([
+        db.${lowerEntity}.findMany({ where, take, skip, orderBy, select }),
+        db.${lowerEntity}.count({ where })
+    ]);
+    
+    const filteredData = await HookSystem.filter('${lowerEntity}.list', data);
+    
+    return { success: true, data: filteredData, total };
+} catch (error) {
+    ${errorBlock}
+}
+`;

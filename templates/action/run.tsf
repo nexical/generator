@@ -1,0 +1,12 @@
+/** @fragment-contract
+ * @description Default Run Action
+ * @input {string} outputType
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const outputType: string;
+
+export default fragment/* ts */`
+return { success: true, data: {} as unknown as ${outputType} };
+`;

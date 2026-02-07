@@ -1,0 +1,32 @@
+/** @fragment-contract
+ * @description Create Entity
+ * @input {string} lowerEntity
+ * @input {string} entityName
+ * @input {string} errorBlock
+ * @globals {db, HookSystem, Prisma, actor, data, select}
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const lowerEntity: string;
+declare const entityName: string;
+declare const errorBlock: string;
+
+export default fragment/* ts */`
+try {
+    // Pass actor context to hooks for security/authorship validation
+    const input = await HookSystem.filter('${lowerEntity}.beforeCreate', data, { actor });
+    
+    const newItem = await db.$transaction(async (tx) => {
+        const created = await tx.${lowerEntity}.create({ data: input as Prisma.${entityName}CreateInput, select });
+        await HookSystem.dispatch('${lowerEntity}.created', { id: created.id, actorId: actor?.id || 'system' });
+        return created;
+    });
+    
+    const filtered = await HookSystem.filter('${lowerEntity}.read', newItem, { actor });
+    
+    return { success: true, data: filtered };
+} catch (error) {
+    ${errorBlock}
+}
+`;

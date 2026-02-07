@@ -1,0 +1,35 @@
+/** @fragment-contract
+ * @description Update Entity
+ * @input {string} lowerEntity
+ * @input {string} entityName
+ * @input {string} errorBlock
+ * @globals {db, HookSystem, Prisma, actor, id, data, select}
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const lowerEntity: string;
+declare const entityName: string;
+declare const errorBlock: string;
+
+export default fragment/* ts */`
+try {
+    const input = await HookSystem.filter('${lowerEntity}.beforeUpdate', data, { actor, id });
+    
+    const updatedItem = await db.$transaction(async (tx) => {
+        const updated = await tx.${lowerEntity}.update({
+            where: { id },
+            data: input as Prisma.${entityName}UpdateInput,
+            select
+        });
+        await HookSystem.dispatch('${lowerEntity}.updated', { id, changes: Object.keys(input), actorId: actor?.id });
+        return updated;
+    });
+    
+    const filtered = await HookSystem.filter('${lowerEntity}.read', updatedItem, { actor });
+    
+    return { success: true, data: filtered };
+} catch (error) {
+    ${errorBlock}
+}
+`;

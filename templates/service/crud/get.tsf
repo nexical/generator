@@ -1,0 +1,24 @@
+/** @fragment-contract
+ * @description Get Entity
+ * @input {string} lowerEntity
+ * @input {string} errorBlock
+ * @globals {db, HookSystem}
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const lowerEntity: string;
+declare const errorBlock: string;
+
+export default fragment/* ts */`
+try {
+    const data = await db.${lowerEntity}.findUnique({ where: { id }, select });
+    if (!data) return { success: false, error: "${lowerEntity}.service.error.not_found" };
+    
+    const filtered = await HookSystem.filter('${lowerEntity}.read', data, { actor });
+    
+    return { success: true, data: filtered };
+} catch (error) {
+    ${errorBlock}
+}
+`;

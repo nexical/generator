@@ -1,0 +1,18 @@
+/** @fragment-contract
+ * @description Sample Card Component
+ * @input {string} title
+ * @globals {Card, CardHeader, CardContent}
+ */
+import { fragment } from '@nexical/generator';
+// Phantom Declarations
+declare const title: string;
+declare const Card: any;
+declare const CardHeader: any;
+declare const CardContent: any;
+
+export default fragment/* tsx */`
+  <Card>
+    <CardHeader>{title}</CardHeader>
+    <CardContent>Content goes here</CardContent>
+  </Card>
+`;

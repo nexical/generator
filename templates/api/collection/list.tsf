@@ -1,0 +1,61 @@
+/** @fragment-contract
+ * @description API Collection List Handler
+ * @input {string} filterFields
+ * @input {string} searchFields
+ * @input {string} listRole
+ * @input {string} selectObject
+ * @input {string} serviceName
+ * @input {string} entityName
+ * @input {string} lowerEntity
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const filterFields: unknown;
+declare const searchFields: unknown;
+declare const listRole: string;
+declare const selectObject: unknown;
+declare const serviceName: unknown;
+declare const entityName: string;
+declare const lowerEntity: string;
+declare const docs: unknown;
+
+// External Globals
+declare const defineApi: unknown;
+declare const parseQuery: unknown;
+declare const ApiGuard: unknown;
+declare const HookSystem: unknown;
+
+export default fragment/* ts */`
+defineApi(async (context) => {
+    const filterOptions = {
+        fields: {
+            ${filterFields}
+        },
+        searchFields: [${searchFields}]
+    } as const;
+
+    const { where, take, skip, orderBy } = parseQuery(new URL(context.request.url).searchParams, filterOptions);
+    
+    // Security Check
+    // Pass query params as input to role check
+    await ApiGuard.protect(context, '${listRole}', { ...context.params, where, take, skip, orderBy });
+
+    const select = ${selectObject};
+    
+    const actor = context.locals.actor;
+    const result = await ${serviceName}.list({ where, take, skip, orderBy, select }, actor);
+
+    if (!result.success) {
+        return new Response(JSON.stringify({ error: result.error }), { status: 500 });
+    }
+
+    const data = result.data || [];
+    const total = result.total || 0;
+
+    // Analytics Hook
+    await HookSystem.dispatch('${lowerEntity}.list.viewed', { count: data.length, actorId: actor?.id || 'anonymous' });
+
+    return { success: true, data, meta: { total } };
+}, ${docs})
+`;

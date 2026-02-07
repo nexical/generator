@@ -1,0 +1,17 @@
+/** @fragment-contract
+ * @description SDK Custom Method
+ * @input {string} verb
+ * @input {string} url
+ * @input {string} endpoint
+ */
+import { fragment } from '@nexical/generator';
+
+declare const verb: string;
+declare const url: string;
+declare const endpoint: string;
+
+declare const dataArg: string;
+
+export default fragment/* ts */`
+return this._request('${verb}', \`/${endpoint}${url}\`\${dataArg});
+`;

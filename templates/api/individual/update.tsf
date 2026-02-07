@@ -1,0 +1,53 @@
+/** @fragment-contract
+ * @description API Individual Update Handler
+ * @input {string} updateRole
+ * @input {string} zodSchema
+ * @input {string} selectObject
+ * @input {string} serviceName
+ * @input {string} entityName
+ * @input {string} docs
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const updateRole: string;
+declare const zodSchema: unknown;
+declare const selectObject: unknown;
+declare const serviceName: unknown;
+declare const entityName: string;
+declare const docs: unknown;
+
+// External Globals
+declare const defineApi: unknown;
+declare const ApiGuard: unknown;
+
+export default fragment/* ts */`
+defineApi(async (context) => {
+    const { id } = context.params;
+    const body = await context.request.json();
+    
+    // Security Check
+    await ApiGuard.protect(context, '${updateRole}', { ...context.params, ...body });
+
+    // Zod Validation
+    const schema = ${zodSchema};
+    
+    const validated = schema.parse(body);
+    const select = ${selectObject};
+    const actor = context.locals.actor;
+
+    const result = await ${serviceName}.update(id, validated, select, actor);
+
+    if (!result.success) {
+        if (
+            result.error?.code === 'NOT_FOUND' || 
+            (typeof result.error === 'string' && result.error.includes('not_found'))
+        ) {
+            return new Response(JSON.stringify({ error: result.error }), { status: 404 });
+        }
+        return new Response(JSON.stringify({ error: result.error }), { status: 400 });
+    }
+
+    return new Response(JSON.stringify({ success: true, data: result.data }), { status: 200 });
+}, ${docs})
+`;

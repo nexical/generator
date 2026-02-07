@@ -1,0 +1,25 @@
+/** @fragment-contract
+ * @description Middleware Lookup Logic
+ * @input {string} hashLogic
+ * @input {string} dbModel
+ * @input {string} keyField
+ * @input {string} tokenValueVar
+ * @input {string} includeClause
+ * @input {string} assignment
+ */
+import { fragment } from '@nexical/generator';
+
+declare const hashLogic: string;
+declare const dbModel: string;
+declare const keyField: string;
+declare const tokenValueVar: string;
+declare const includeClause: string;
+declare const assignment: string;
+
+export default fragment/* ts */`
+${hashLogic}
+const tokenEntity = await db.${dbModel}.findFirst({
+    where: { ${keyField}: ${tokenValueVar} }${includeClause}
+});
+${assignment}
+`;

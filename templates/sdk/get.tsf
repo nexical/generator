@@ -1,0 +1,11 @@
+/** @fragment-contract
+ * @description SDK Get Method
+ * @input {string} endpoint
+ */
+import { fragment } from '@nexical/generator';
+
+declare const endpoint: string;
+
+export default fragment/* ts */`
+return this._request('GET', \`/${endpoint}/\${id}\`);
+`;

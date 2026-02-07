@@ -1,0 +1,37 @@
+/** @fragment-contract
+ * @description Test Template for Update Operation
+ * @input {string} kebabEntity
+ * @input {string} camelEntity
+ * @input {string} actorStatement
+ * @input {string} setupSnippet
+ * @input {string} updatePayload
+ * @input {string} assertionBlock
+ */
+import { fragment } from '@nexical/generator';
+
+declare const kebabEntity: string;
+declare const camelEntity: string;
+declare const actorStatement: unknown;
+declare const setupSnippet: unknown;
+declare const updatePayload: unknown;
+declare const assertionBlock: unknown;
+
+export default fragment/* ts */`
+// PUT /api/${kebabEntity}/[id]
+describe('PUT /api/${kebabEntity}/[id]', () => {
+  it('should update ${camelEntity}', async () => {
+    ${actorStatement}
+            
+    ${setupSnippet}
+
+    const updatePayload = ${updatePayload};
+
+    const res = await client.put(\`/api/${kebabEntity}/\${target.id}\`, updatePayload);
+
+    expect(res.status).toBe(200);
+            
+    const updated = await Factory.prisma.${camelEntity}.findUnique({ where: { id: target.id } });
+    ${assertionBlock}
+  });
+});
+`;

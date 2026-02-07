@@ -1,0 +1,45 @@
+/** @fragment-contract
+ * @description API Collection Create Handler
+ * @input {string} createRole
+ * @input {string} zodSchema
+ * @input {string} selectObject
+ * @input {string} serviceName
+ * @input {string} entityName
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const createRole: string;
+declare const zodSchema: unknown;
+declare const selectObject: unknown;
+declare const serviceName: unknown;
+declare const entityName: string;
+declare const docs: unknown;
+
+// External Globals
+declare const defineApi: unknown;
+declare const ApiGuard: unknown;
+
+export default fragment/* ts */`
+defineApi(async (context) => {
+    const body = await context.request.json();
+    
+    // Security Check
+    await ApiGuard.protect(context, '${createRole}', { ...context.params, ...body });
+
+    // Zod Validation
+    const schema = ${zodSchema};
+    
+    const validated = schema.parse(body);
+    const select = ${selectObject};
+    const actor = context.locals.actor;
+
+    const result = await ${serviceName}.create(validated, select, actor);
+
+    if (!result.success) {
+        return new Response(JSON.stringify({ error: result.error }), { status: 400 });
+    }
+
+    return new Response(JSON.stringify({ success: true, data: result.data }), { status: 201 });
+}, ${docs})
+`;

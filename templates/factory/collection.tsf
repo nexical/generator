@@ -1,0 +1,11 @@
+/** @fragment-contract
+ * @description Factory Collection
+ * @input {string} entries
+ */
+import { fragment } from '@nexical/generator';
+
+declare const entries: string;
+
+export default fragment/* ts */`{
+    ${entries}
+}`;

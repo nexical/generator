@@ -1,0 +1,8 @@
+/** @fragment-contract
+ * @description Client Initialization Logic
+ */
+import { fragment } from '@nexical/generator';
+
+export default fragment/* ts */`
+console.info("[Client] Initializing module...");
+`;

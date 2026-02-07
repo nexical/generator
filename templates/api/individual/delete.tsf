@@ -1,0 +1,42 @@
+/** @fragment-contract
+ * @description API Individual Delete Handler
+ * @input {string} deleteRole
+ * @input {string} serviceName
+ * @input {string} entityName
+ * @input {string} docs
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const deleteRole: string;
+declare const serviceName: unknown;
+declare const entityName: string;
+declare const docs: unknown;
+
+// External Globals
+declare const defineApi: unknown;
+declare const ApiGuard: unknown;
+
+export default fragment/* ts */`
+defineApi(async (context) => {
+    const { id } = context.params;
+    
+    // Security Check
+    await ApiGuard.protect(context, '${deleteRole}', { ...context.params });
+
+    const actor = context.locals.actor;
+    const result = await ${serviceName}.delete(id, actor);
+
+    if (!result.success) {
+        if (
+            result.error?.code === 'NOT_FOUND' || 
+            (typeof result.error === 'string' && result.error.includes('not_found'))
+        ) {
+             return new Response(JSON.stringify({ error: result.error }), { status: 404 });
+        }
+        return new Response(JSON.stringify({ error: result.error }), { status: 500 });
+    }
+
+    return { success: true };
+}, ${docs})
+`;

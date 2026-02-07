@@ -1,0 +1,17 @@
+/** @fragment-contract
+ * @description Actor Global Map Declaration
+ * @input {string} mapEntries
+ */
+import { fragment } from '@nexical/generator';
+
+declare const mapEntries: string;
+
+export default fragment/* ts */`
+declare global {
+  namespace App {
+    interface ActorMap {
+      ${mapEntries}
+    }
+  }
+}
+`;

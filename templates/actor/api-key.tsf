@@ -1,0 +1,41 @@
+/** @fragment-contract
+ * @description Actor API Key Strategy
+ * @input {string} actorName
+ * @input {string} keyModelProp
+ * @input {string} ownerField
+ */
+import { fragment } from '@nexical/generator';
+
+declare const actorName: string;
+declare const keyModelProp: string;
+declare const ownerField: string;
+
+export default fragment/* ts */`async (client: ApiClient, params: Record<string, unknown> = {}) => {
+    let actor;
+    if (params.id) {
+        actor = await Factory.prisma.${actorName}.findUnique({ where: { id: params.id } });
+    }
+
+    if (!actor) {
+        actor = await Factory.create('${actorName}', params);
+    }
+
+    const randomHex = crypto.randomBytes(32).toString('hex');
+    const rawKey = \`ne_test_\${randomHex}\`;
+    
+    const hashedKey = crypto.createHash('sha256').update(rawKey).digest('hex');
+
+    await db.${keyModelProp}.create({
+        data: {
+            ${ownerField}: actor.id,
+            name: 'Test Key',
+            hashedKey: hashedKey,
+            prefix: 'ne_test_',
+            status: 'ACTIVE'
+        } as unknown as object
+    });
+
+    client.useToken(rawKey);
+
+    return actor;
+}`;

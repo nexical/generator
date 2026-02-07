@@ -1,0 +1,27 @@
+/** @fragment-contract
+ * @description Middleware Dynamic Bouncer Pattern
+ * @input {string} modelName
+ * @input {string} statusCheck
+ */
+import { fragment } from '@nexical/generator';
+
+declare const modelName: string;
+declare const statusCheck: string;
+
+export default fragment/* ts */`
+if (context.locals.actor && context.locals.actorType === '${modelName}') {
+    const actorCheck = await db.${modelName}.findUnique({
+        where: { id: context.locals.actor.id },
+        select: { status: true }
+    });
+
+    if (${statusCheck}) {
+        context.locals.actor = undefined;
+        return new Response(JSON.stringify({ error: "Session revoked" }), { 
+            status: 403,
+            headers: { "Content-Type": "application/json" }
+        });
+    }
+    return next();
+}
+`;

@@ -1,0 +1,15 @@
+/** @fragment-contract
+ * @description Delete Entity (Blocked)
+ * @input {string} lowerEntity
+ * @input {string} entityName
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const lowerEntity: string;
+declare const entityName: string;
+
+export default fragment/* ts */`
+return { success: false, error: "${lowerEntity}.service.error.unsafe_delete_blocked" };
+// TODO: This resource has unsafe relations. Use the generated Delete${entityName}Action for manual cleanup.
+`;

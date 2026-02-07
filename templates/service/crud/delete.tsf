@@ -1,0 +1,23 @@
+/** @fragment-contract
+ * @description Delete Entity
+ * @input {string} lowerEntity
+ * @input {string} errorBlock
+ * @globals {db, HookSystem, id}
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const lowerEntity: string;
+declare const errorBlock: string;
+
+export default fragment/* ts */`
+try {
+    await db.$transaction(async (tx) => {
+        await tx.${lowerEntity}.delete({ where: { id } });
+        await HookSystem.dispatch('${lowerEntity}.deleted', { id, actorId: actor?.id });
+    });
+    return { success: true };
+} catch (error) {
+    ${errorBlock}
+}
+`;

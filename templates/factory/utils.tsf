@@ -1,0 +1,9 @@
+/** @fragment-contract
+ * @description Hash Password Utility
+ */
+import { fragment } from '@nexical/generator';
+
+export default fragment/* ts */`
+const salt = bcrypt.genSaltSync(10);
+return bcrypt.hashSync(password, salt);
+`;

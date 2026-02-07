@@ -1,0 +1,19 @@
+/** @fragment-contract
+ * @description SDK List Method
+ * @input {string} endpoint
+ */
+import { fragment } from '@nexical/generator';
+
+declare const endpoint: string;
+
+export default fragment/* ts */`
+let orderBy = params?.orderBy;
+if (orderBy && typeof orderBy === 'object') {
+    const keys = Object.keys(orderBy);
+    if (keys.length > 0) {
+        orderBy = \`\${keys[0]}:\${orderBy[keys[0]]}\`;
+    }
+}
+const query = this.buildQuery({ ...params?.filters, search: params?.search, take: params?.take, skip: params?.skip, orderBy });
+return this._request('GET', \`/${endpoint}\${query}\`);
+`;

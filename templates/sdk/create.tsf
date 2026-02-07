@@ -1,0 +1,11 @@
+/** @fragment-contract
+ * @description SDK Create Method
+ * @input {string} endpoint
+ */
+import { fragment } from '@nexical/generator';
+
+declare const endpoint: string;
+
+export default fragment/* ts */`
+return this._request('POST', \`/${endpoint}\`, data);
+`;

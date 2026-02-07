@@ -1,0 +1,49 @@
+/** @fragment-contract
+ * @description Actor Bearer Strategy
+ * @input {string} actorName
+ * @input {string} prefix
+ * @input {string} tokenModelLocal
+ * @input {string} relationFieldStr
+ * @input {string} keyField
+ * @input {string} hashLogic
+ */
+import { fragment } from '@nexical/generator';
+
+declare const actorName: string;
+declare const prefix: string;
+declare const tokenModelLocal: string;
+declare const relationFieldStr: string;
+declare const keyField: string;
+declare const hashLogic: string;
+
+export default fragment/* ts */`async (client: ApiClient, params: Record<string, unknown> = {}) => {
+    let actor;
+    if (params.id) {
+        actor = await Factory.prisma.${actorName}.findUnique({ where: { id: params.id } });
+    } else if (params.email) {
+            actor = await Factory.prisma.${actorName}.findFirst({ where: { email: params.email } });
+    }
+
+    if (!actor) {
+            const factoryParams = { ...params };
+            if (params.strategy) delete factoryParams.strategy;
+            if (params.password) delete factoryParams.password;
+        actor = await Factory.create('${actorName}', factoryParams);
+    }
+
+    const rawKey = \`${prefix}\${Date.now()}\`;
+    let dbKey = rawKey;
+    
+    ${hashLogic}
+    
+    await Factory.create('${tokenModelLocal}', {
+        ${relationFieldStr}
+        name: 'Test Token',
+        ${keyField}: dbKey,
+        prefix: '${prefix}'
+    });
+
+    client.useToken(rawKey);
+    
+    return actor;
+}`;

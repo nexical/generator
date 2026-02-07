@@ -1,0 +1,13 @@
+/** @fragment-contract
+ * @description Permission Check Logic
+ * @input {string} actionName
+ */
+import { fragment } from '@nexical/generator';
+
+declare const actionName: string;
+
+export default fragment/* ts */`
+if (!context.locals?.actor && !context.user) {
+    throw new Error("Unauthorized: User must be logged in to access ${actionName}");
+}
+`;

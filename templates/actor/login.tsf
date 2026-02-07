@@ -1,0 +1,46 @@
+/** @fragment-contract
+ * @description Actor Login Strategy
+ * @input {string} secretField
+ * @input {string} modelName
+ * @input {string} actorName
+ * @input {string} idField
+ */
+import { fragment } from '@nexical/generator';
+
+declare const secretField: string;
+declare const modelName: string;
+declare const actorName: string;
+declare const idField: string;
+
+export default fragment/* ts */`async (client: ApiClient, params: Record<string, unknown> = {}) => {
+    const password = params.${secretField} || 'Password123!';
+
+    // 1. Get or Create ${modelName}
+    let actor;
+    if (params.id) {
+        actor = await Factory.prisma.${actorName}.findUnique({ where: { id: params.id } });
+    } else if (params.${idField}) {
+        actor = await Factory.prisma.${actorName}.findUnique({ where: { ${idField}: params.${idField} } });
+    }
+
+    if (!actor) {
+            const factoryParams = { ...params };
+            if (params.password) delete factoryParams.password; 
+            
+        actor = await Factory.create('${actorName}', {
+            ...factoryParams,
+        });
+    }
+
+    // 2. Authenticate
+    const res = await client.useSession().post('/api/login', {
+        email: actor.${idField},
+        password: password
+    });
+
+    if (res.status >= 400) {
+        throw new Error(\`${modelName} actor login failed with status \${res.status}: \${JSON.stringify(res.body)}\`);
+    }
+    
+    return actor;
+}`;

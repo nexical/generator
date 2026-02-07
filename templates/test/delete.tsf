@@ -1,0 +1,31 @@
+/** @fragment-contract
+ * @description Test Template for Delete Operation
+ * @input {string} kebabEntity
+ * @input {string} camelEntity
+ * @input {string} actorStatement
+ * @input {string} setupSnippet
+ */
+import { fragment } from '@nexical/generator';
+
+declare const kebabEntity: string;
+declare const camelEntity: string;
+declare const actorStatement: unknown;
+declare const setupSnippet: unknown;
+
+export default fragment/* ts */`
+// DELETE /api/${kebabEntity}/[id]
+describe('DELETE /api/${kebabEntity}/[id]', () => {
+  it('should delete ${camelEntity}', async () => {
+    ${actorStatement}
+            
+    ${setupSnippet}
+
+    const res = await client.delete(\`/api/${kebabEntity}/\${target.id}\`);
+
+    expect(res.status).toBe(200);
+
+    const check = await Factory.prisma.${camelEntity}.findUnique({ where: { id: target.id } });
+    expect(check).toBeNull();
+  });
+});
+`;

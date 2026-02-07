@@ -1,0 +1,79 @@
+# UI Module Configuration
+# This file defines the behavior of the UI Generator for this module.
+
+# UI Configuration Reference
+# This file controls how the Generator builds your UI components.
+
+# Feature Configuration
+type: feature
+order: 50
+
+# Forms Configuration
+# Map model fields to specific UI components.
+# If a model is NOT listed here, its form will NOT be generated.
+forms:
+  # Model Name
+  User:
+    # Field Name
+    password:
+      # Component Configuration
+      component:
+        name: PasswordInput
+        path: '@/components/ui/password-input'
+    # Default fields (text, number, date) are inferred automatically if not overridden.
+
+# Tables Configuration
+# Configure how data tables behave for each model.
+tables:
+  User:
+    # editMode: 'sheet' (Side Panel) or 'dialog' (Modal Center)
+    editMode: sheet
+
+# [Optional] Backend Module
+# If this UI module serves a specific API module (split architecture),
+# specify the name of that module here.
+# The generator will load models.yaml and api.yaml from that module.
+# If undefined, it defaults to the current module.
+backend: 'user-api'
+
+# [Optional] Component Prefixes
+# Standard prefix for generated components (e.g. "User" -> "UserTable")
+prefix: 'User'
+
+# PHYSICAL ENTRY POINTS (src/pages/)
+# Define the physical page routes that will be generated
+pages:
+  - path: '/users'
+    component: '@/components/users/UserDashboard'
+    guard: ['member']
+  - path: '/admin/users'
+    component: '@/components/admin/AdminUserDashboard'
+    guard: ['admin', 'super-user']
+
+# RUNTIME LAYOUT CONTAINERS (src/init.ts)
+# Define shells that will be registered in src/init.ts via ShellRegistry
+shells:
+  - name: Auth
+    matcher:
+      path: '/login' # or use array / complex logic supported by ShellRegistrymodule.
+  - name: 'UserManagementShell'
+    matcher:
+      path: '/admin/users/*'
+      isMobile: false
+
+# ZONAL PLUGS (src/registry/[zone]/)
+# Define components that will populate specific zones in shells
+registries:
+  nav-main:
+    - name: 'user-dashboard-link'
+      priority: 10
+      component: '@/components/nav/UserDashboardLink'
+      guard: ['member']
+      matcher:
+        path: '/users/*'
+    - name: 'admin-user-link'
+      priority: 20
+      component: '@/components/nav/AdminUserLink'
+      guard: ['admin']
+      matcher:
+        path: '/admin/*'

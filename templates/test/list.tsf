@@ -1,0 +1,80 @@
+/** @fragment-contract
+ * @description Test Template for List Operation
+ * @input {string} kebabEntity
+ * @input {string} camelEntity
+ * @input {string} role
+ * @input {string} actorStatement
+ * @input {string} actorStatementPagination
+ * @input {string} actorStatementNeg
+ * @input {string} cleanupClause
+ * @input {string} seedClause
+ * @input {string} paginationSeedClause
+ * @input {string} filterTests
+ * @input {string} baseDataConfig
+ */
+import { fragment } from '@nexical/generator';
+
+declare const kebabEntity: string;
+declare const camelEntity: string;
+declare const role: string;
+declare const actorStatement: unknown;
+declare const actorStatementPagination: unknown;
+declare const actorStatementNeg: unknown;
+declare const cleanupClause: unknown;
+declare const seedClause: unknown;
+declare const paginationSeedClause: unknown;
+declare const filterTests: unknown;
+declare const baseDataConfig: unknown;
+
+export default fragment/* ts */`
+// GET /api/${kebabEntity}
+describe('GET /api/${kebabEntity}', () => {
+  const baseData = ${baseDataConfig};
+
+  it('should allow ${role} to list ${camelEntity}s', async () => {
+    ${actorStatement}
+
+    // Cleanup first to ensure clean state
+    ${cleanupClause}
+
+    // Seed data
+    const _listSuffix = Date.now();
+    ${seedClause}
+
+    const res = await client.get('/api/${kebabEntity}');
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBeGreaterThanOrEqual(2);
+    expect(res.body.meta).toBeDefined();
+  });
+
+  it('should verify pagination metadata', async () => {
+    ${actorStatementPagination}
+
+    // Cleanup and seed specific count
+    ${cleanupClause}
+
+    const _suffix = Date.now();
+    const createdIds: string[] = [];
+    const totalTarget = 15;
+    
+    // Check current count
+    ${paginationSeedClause}
+
+    // Page 1
+    const res1 = await client.get('/api/${kebabEntity}?take=5&skip=0');
+    expect(res1.status).toBe(200);
+    expect(res1.body.data.length).toBe(5);
+    expect(res1.body.meta.total).toBe(15);
+
+    // Page 2
+    const res2 = await client.get('/api/${kebabEntity}?take=5&skip=5');
+    expect(res2.status).toBe(200);
+    expect(res2.body.data.length).toBe(5);
+    expect(res2.body.data[0].id).not.toBe(res1.body.data[0].id);
+  });
+
+  ${filterTests}
+});
+`;

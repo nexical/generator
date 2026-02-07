@@ -1,0 +1,24 @@
+/** @fragment-contract
+ * @description Middleware Auth Header Check
+ * @input {string} prefix
+ * @input {string} lookupLogic
+ * @input {string} name
+ */
+import { fragment } from '@nexical/generator';
+
+declare const prefix: string;
+declare const lookupLogic: string;
+declare const name: string;
+
+export default fragment/* ts */`
+if (authHeader?.startsWith("Bearer ${prefix}")) {
+    const token = authHeader.substring(7);
+    ${lookupLogic}
+        
+    if (entity) {
+        context.locals.actor = { ...entity, type: '${name}', role: '${role}' };
+        context.locals.actorType = '${name}';
+        return next();
+    }
+}
+`;

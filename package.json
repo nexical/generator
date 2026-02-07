@@ -1,0 +1,34 @@
+{
+  "name": "@nexical/generator",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Nexical Generator CLI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "arc": "dist/bin.js"
+  },
+  "scripts": {
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "build": "npm run clean && tsc -b tsconfig.build.json",
+    "dev": "tsc -w",
+    "test:unit": "vitest run -c vitest.unit.config.ts",
+    "test:unit:watch": "vitest -c vitest.unit.config.ts",
+    "test:unit:coverage": "vitest run -c vitest.unit.config.ts --coverage"
+  },
+  "dependencies": {
+    "@nexical/cli-core": "^0.1.12",
+    "glob": "^13.0.0",
+    "prettier": "3.8.1",
+    "xml2js": "^0.6.2",
+    "yaml": "^2.8.2",
+    "zod": "^3.22.4",
+    "commander": "^11.1.0",
+    "ts-morph": "^25.0.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3"
+  }
+}

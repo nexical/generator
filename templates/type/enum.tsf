@@ -1,0 +1,17 @@
+/** @fragment-contract
+ * @description Enum Definition (Const Object + Type)
+ * @input {string} enumName
+ * @input {string} members
+ */
+import { fragment } from '@nexical/generator';
+
+declare const enumName: string;
+declare const members: string;
+
+export default fragment/* ts */`
+export const ${enumName} = {
+${members}
+} as const;
+
+export type ${enumName} = (typeof ${enumName})[keyof typeof ${enumName}];
+`;

@@ -1,0 +1,12 @@
+/** @fragment-contract
+ * @description SDK Index Constructor Body
+ * @input {string} initStatements
+ */
+import { fragment } from '@nexical/generator';
+
+declare const initStatements: string;
+
+export default fragment/* ts */`
+super(client);
+${initStatements}
+`;

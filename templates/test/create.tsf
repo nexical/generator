@@ -1,0 +1,53 @@
+/** @fragment-contract
+ * @description Test Template for Create Operation
+ * @input {string} kebabEntity
+ * @input {string} camelEntity
+ * @input {string} role
+ * @input {string} actorStatement
+ * @input {string} dependencySetup
+ * @input {string} payloadConstruction
+ * @input {string} assertionBlock
+ * @input {string} negativeActorStatement
+ */
+import { fragment } from '@nexical/generator';
+
+declare const kebabEntity: string;
+declare const camelEntity: string;
+declare const role: string;
+declare const actorStatement: unknown;
+declare const dependencySetup: unknown;
+declare const payloadConstruction: unknown;
+declare const assertionBlock: unknown;
+declare const negativeActorStatement: unknown;
+
+export default fragment/* ts */`
+// POST /api/${kebabEntity}
+describe('POST /api/${kebabEntity}', () => {
+  it('should allow ${role} to create ${camelEntity}', async () => {
+    ${actorStatement}
+            
+    ${dependencySetup}
+    ${payloadConstruction}
+
+    const res = await client.post('/api/${kebabEntity}', payload);
+
+    expect(res.status).toBe(201);
+    expect(res.body.data).toBeDefined();
+    
+    ${assertionBlock}
+
+    const created = await Factory.prisma.${camelEntity}.findUnique({
+      where: { id: res.body.data.id }
+    });
+    expect(created).toBeDefined();
+  });
+
+  it('should forbid non-admin/unauthorized users', async () => {
+    ${negativeActorStatement}
+    ${dependencySetup}
+    ${payloadConstruction}
+    const res = await client.post('/api/${kebabEntity}', payload);
+    expect([401, 403, 404]).toContain(res.status);
+  });
+});
+`;

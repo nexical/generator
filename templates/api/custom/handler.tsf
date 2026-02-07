@@ -1,0 +1,63 @@
+/** @fragment-contract
+ * @description API Custom Route Handler
+ * @input {string} verb
+ * @input {string} bodyLoader
+ * @input {string} inputType
+ * @input {string} entityName
+ * @input {string} method
+ * @input {string} role
+ * @input {string} actionClassName
+ * @input {string} docs
+ */
+import { fragment } from '@nexical/generator';
+
+// Phantom Declarations
+declare const verb: string;
+declare const bodyLoader: unknown; // Injected
+declare const inputType: unknown;
+declare const entityName: string;
+declare const method: string;
+declare const lowerEntity: string;
+declare const role: string;
+declare const actionClassName: unknown;
+declare const docs: unknown;
+
+// External Globals
+declare const defineApi: unknown;
+declare const ApiGuard: unknown;
+declare const HookSystem: unknown;
+
+export default fragment/* ts */`
+defineApi(async (context) => {
+    // 1. Body Parsing (Input)
+    const body = ${bodyLoader} as ${inputType};
+    
+    const query = Object.fromEntries(new URL(context.request.url).searchParams);
+
+    // 2. Hook: Filter Input
+    const input: ${inputType} = await HookSystem.filter('${lowerEntity}.${method}.input', body);
+
+    // 3. Security Check
+    const combinedInput = { ...context.params, ...query, ...input };
+    await ApiGuard.protect(context, '${role}', combinedInput);
+
+    // Inject userId from context for protected routes
+    const user = context.locals.actor;
+    if (user && user.id) {
+        Object.assign(combinedInput, { userId: user.id });
+    }
+
+    // 4. Action Execution
+    const result = await ${actionClassName}.run(combinedInput, context);
+    
+    // 5. Hook: Filter Output
+    const filteredResult = await HookSystem.filter('${lowerEntity}.${method}.output', result);
+
+    // 6. Response
+    if (!filteredResult.success) {
+        return new Response(JSON.stringify({ error: filteredResult.error }), { status: 400 });
+    }
+
+    return { success: true, data: filteredResult.data };
+}, ${docs})
+`;

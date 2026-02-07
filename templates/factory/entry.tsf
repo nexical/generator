@@ -1,0 +1,15 @@
+/** @fragment-contract
+ * @description Factory Entry
+ * @input {string} modelCamelName
+ * @input {string} fields
+ */
+import { fragment } from '@nexical/generator';
+
+declare const modelCamelName: string;
+declare const fields: string;
+
+export default fragment/* ts */`${modelCamelName}: (index: number) => {
+    return {
+        ${fields}
+    };
+}`;
