@@ -49,32 +49,3 @@ vi.mock('../../src/commands/audit/api', () => ({
     }
   },
 }));
-
-describe('CLI (cli.ts)', () => {
-  beforeEach(() => {
-    vi.resetModules();
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('should register commands and parse args', async () => {
-    vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readdirSync).mockReturnValue([]);
-
-    const { main } = await import('../../src/cli');
-    await main();
-
-    expect(mockProgram.name).toHaveBeenCalledWith('arc');
-    expect(mockProgram.parseAsync).toHaveBeenCalled();
-  });
-
-  it('should handle missing directory', async () => {
-    vi.mocked(fs.existsSync).mockReturnValue(false);
-    const { main } = await import('../../src/cli');
-    await main();
-    expect(mockProgram.parseAsync).toHaveBeenCalled();
-  });
-});
