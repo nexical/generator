@@ -24,7 +24,7 @@ import { FactoryBuilder } from '../engine/builders/factory-builder.js';
 import { ActorBuilder } from '../engine/builders/actor-builder.js';
 import { ActorTypeBuilder } from '../engine/builders/actor-type-builder.js';
 import { type ModelDef, type CustomRoute } from '../engine/types.js';
-import { ModuleLocator } from '../lib/module-locator.js';
+import { ModuleLocator, type ModuleInfo } from '../lib/module-locator.js';
 import { type BaseBuilder } from '../engine/builders/base-builder.js';
 
 export async function auditApiModule(
@@ -44,9 +44,9 @@ export async function auditApiModule(
 
   let totalIssues: string[] = [];
 
-  for (const moduleName of modules) {
-    command.info(`Auditing module: ${moduleName} `);
-    const issues = await auditModule(command, moduleName, options.schema || false);
+  for (const moduleInfo of modules) {
+    command.info(`Auditing module: ${moduleInfo.name} `);
+    const issues = await auditModule(command, moduleInfo, options.schema || false);
     totalIssues = totalIssues.concat(issues);
   }
 
@@ -65,10 +65,10 @@ export async function auditApiModule(
 
 export async function auditModule(
   command: BaseCommand,
-  name: string,
+  moduleInfo: ModuleInfo,
   checkSchemaOnly: boolean,
 ): Promise<string[]> {
-  const moduleDir = path.join(process.cwd(), 'modules', name);
+  const { name, path: moduleDir } = moduleInfo;
   const modelsPath = path.join(moduleDir, 'models.yaml');
   const apiPath = path.join(moduleDir, 'api.yaml');
 
@@ -146,14 +146,21 @@ export async function auditModule(
     }
 
     // Extract Roles from ALL Modules (Cross-Module Scanning)
-    const modulesRoot = path.join(process.cwd(), 'modules');
-    if (fs.existsSync(modulesRoot)) {
-      const globalModules = fs.readdirSync(modulesRoot);
-      for (const mod of globalModules) {
-        const rolesDir = path.join(modulesRoot, mod, 'src', 'roles');
-        if (fs.existsSync(rolesDir)) {
-          const roleFiles = fs.readdirSync(rolesDir).filter((f: string) => f.endsWith('.ts'));
-          roleFiles.forEach((f: string) => validRoles.add(path.basename(f, '.ts')));
+    // We now scan potential module roots
+    const moduleRoots = [
+      path.join(process.cwd(), 'apps/backend/modules'),
+      path.join(process.cwd(), 'apps/frontend/modules'),
+    ];
+
+    for (const root of moduleRoots) {
+      if (fs.existsSync(root)) {
+        const globalModules = fs.readdirSync(root);
+        for (const mod of globalModules) {
+          const rolesDir = path.join(root, mod, 'src', 'roles');
+          if (fs.existsSync(rolesDir)) {
+            const roleFiles = fs.readdirSync(rolesDir).filter((f: string) => f.endsWith('.ts'));
+            roleFiles.forEach((f: string) => validRoles.add(path.basename(f, '.ts')));
+          }
         }
       }
     }

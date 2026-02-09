@@ -1,11 +1,12 @@
 import { BaseCommand } from '@nexical/cli-core';
 
 import fs from 'fs-extra';
-import path from 'path';
 import { UiModuleGenerator } from '../../engine/ui-module-generator.js';
+import { ModuleLocator } from '../../lib/module-locator.js';
 
 export default class GenUiCommand extends BaseCommand {
   static description = 'Generate UI module code from ui.yaml';
+  static usage = 'gen ui';
 
   static args = {
     args: [
@@ -25,8 +26,10 @@ export default class GenUiCommand extends BaseCommand {
       this.error('Module name is required');
     }
 
-    this.info(`\nGenerating UI code for module: ${name}`);
-    const moduleDir = path.join(process.cwd(), 'modules', name);
+    const moduleInfo = ModuleLocator.resolve(name);
+    const moduleDir = moduleInfo.path;
+
+    this.info(`\nGenerating UI code for module: ${moduleInfo.name} (${moduleDir})`);
 
     try {
       if (!fs.existsSync(moduleDir)) {

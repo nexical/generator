@@ -1,11 +1,12 @@
 /** @vitest-environment node */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import AuditApiCommand from '@nexical/generator/commands/audit/api';
-import { ModuleLocator } from '@nexical/generator/lib/module-locator';
-import { ModelParser } from '@nexical/generator/engine/model-parser';
+import AuditApiCommand from '../../../../src/commands/audit/api';
+import { ModuleLocator } from '../../../../src/lib/module-locator';
+import { ModelParser } from '../../../../src/engine/model-parser';
 import YAML from 'yaml';
 import fs from 'node:fs';
+import path from 'path';
 import { Project } from 'ts-morph';
 
 // Mock ora globally for this file
@@ -22,12 +23,12 @@ vi.mock('ora', () => {
 });
 
 // ... (imports)
-import * as AuditLib from '@nexical/generator/lib/audit-api';
+import * as AuditLib from '../../../../src/lib/audit-api';
 
 // ... (mocks)
 
-vi.mock('@nexical/generator/lib/audit-api', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@nexical/generator/lib/audit-api')>();
+vi.mock('../../../../src/lib/audit-api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../src/lib/audit-api')>();
   return {
     ...actual,
     auditApiModule: vi.fn(),
@@ -36,6 +37,11 @@ vi.mock('@nexical/generator/lib/audit-api', async (importOriginal) => {
 
 describe('AuditApiCommand', () => {
   let command: AuditApiCommand;
+  const mockModuleInfo = {
+    name: 'test-api',
+    path: path.join(process.cwd(), 'modules', 'test-api'), // Simulate path
+    app: 'backend' as const,
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,18 +58,11 @@ describe('AuditApiCommand', () => {
   });
 
   it('should handle found modules in run loop', async () => {
-    vi.spyOn(ModuleLocator, 'expand').mockResolvedValue(['test-api']);
+    vi.spyOn(ModuleLocator, 'expand').mockResolvedValue([mockModuleInfo]);
     const auditMock = AuditLib.auditApiModule as unknown as ReturnType<typeof vi.fn>;
     auditMock.mockResolvedValue(undefined);
 
-    await command.run({ name: 'test-api' }); // options object passed to run
-
-    // auditApiModule calls ModuleLocator internally, BUT we mocked auditApiModule!
-    // So ModuleLocator.expand is called INSIDE original auditApiModule.
-    // IF we mocked it, logic is replaced.
-    // Wait, auditApiModule is what COMMAND calls.
-    // If we mock it, command calls mock. Mock returns. ModuleLocator NOT called (unless mock calls it).
-    // So expect(expandSpy).toHaveBeenCalled() will FAIL if auditApiModule is fully mocked!
+    await command.run({ name: 'test-api' });
 
     expect(AuditLib.auditApiModule).toHaveBeenCalled();
   });
@@ -79,7 +78,7 @@ describe('AuditApiCommand', () => {
         if (String(p).includes('models.yaml')) return false;
         return true;
       });
-      const issues = await AuditLib.auditModule(command, 'test-api', false);
+      const issues = await AuditLib.auditModule(command, mockModuleInfo, false);
       expect(issues).toBeDefined();
       expect(issues.length).toBeGreaterThan(0);
       expect(issues[0]).toContain('models.yaml not found');
@@ -93,7 +92,7 @@ describe('AuditApiCommand', () => {
         return '';
       });
 
-      const issues = await AuditLib.auditModule(command, 'test-api', false);
+      const issues = await AuditLib.auditModule(command, mockModuleInfo, false);
       expect(issues[0]).toContain('Audit threw exception');
     });
 
@@ -147,7 +146,7 @@ describe('AuditApiCommand', () => {
         getFunctions: () => [],
       } as any);
 
-      const issues = await AuditLib.auditModule(command, 'test-api', false);
+      const issues = await AuditLib.auditModule(command, mockModuleInfo, false);
       expect(issues).toBeDefined();
       expect(addFileSpy).toHaveBeenCalled();
     });
@@ -171,7 +170,7 @@ describe('AuditApiCommand', () => {
         return {};
       });
 
-      const issues: string[] = await AuditLib.auditModule(command, 'test-api', true);
+      const issues: string[] = await AuditLib.auditModule(command, mockModuleInfo, true);
 
       expect(issues.some((i) => i.includes('unknown type'))).toBe(true);
       expect(issues.some((i) => i.includes('unknown role'))).toBe(true);
@@ -219,7 +218,7 @@ describe('AuditApiCommand', () => {
         getFunctions: () => [],
       } as any);
 
-      const issues = await AuditLib.auditModule(command, 'test-api', false);
+      const issues = await AuditLib.auditModule(command, mockModuleInfo, false);
       expect(issues).toBeDefined();
     });
   });

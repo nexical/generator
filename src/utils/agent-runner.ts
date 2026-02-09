@@ -1,7 +1,17 @@
 import { execSync } from 'node:child_process';
 import { logger } from '@nexical/cli-core';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
-const PROMPT_CMD = 'npx prompt';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// In dev, we use tsx on the .ts file. In prod, we use node on the .js file.
+// For now, let's assume we can always use tsx or just node if it's already compiled.
+// Actually, using the absolute path to the local script is the key.
+const PROMPT_SCRIPT = path.join(__dirname, 'prompt.ts');
+const PROMPT_CMD = `npx tsx "${PROMPT_SCRIPT}"`;
+
 // Use the same models as reskill for consistency
 const MODELS = 'gemini-3-flash-preview,gemini-3-pro-preview';
 

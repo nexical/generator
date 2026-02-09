@@ -3,15 +3,17 @@ import { BaseCommand } from '@nexical/cli-core';
 import path from 'path';
 import fs from 'fs-extra';
 import { AgentRunner } from '../../utils/agent-runner.js';
+import { ModuleLocator } from '../../lib/module-locator.js';
 
 export class SpecInitCommand extends BaseCommand {
+  static usage = 'spec init';
   static description = 'Interactively generate a specification for a new module';
 
   static args = {
     args: [
       {
         name: 'name',
-        description: 'The name of the new module (e.g., "payment-api")',
+        description: 'The name of the new module (e.g., "payment-api" or "backend:payment-api")',
         required: true,
       },
     ],
@@ -26,11 +28,12 @@ export class SpecInitCommand extends BaseCommand {
       return;
     }
 
-    const modulePath = path.join(process.cwd(), 'modules', name);
+    const moduleInfo = ModuleLocator.resolve(name);
+    const modulePath = moduleInfo.path;
     const specFile = path.join(modulePath, 'SPECIFICATION.md');
 
     if (await fs.pathExists(modulePath)) {
-      this.warn(`Module "${name}" already exists. You might want to use "spec:update" instead.`);
+      this.warn(`Module "${moduleInfo.name}" already exists. You might want to use "spec:update" instead.`);
       // prompt to continue? For now, we proceed but warn.
     } else {
       this.info(`Creating module directory: ${modulePath}`);
@@ -38,7 +41,7 @@ export class SpecInitCommand extends BaseCommand {
     }
 
     if (!(await fs.pathExists(specFile))) {
-      await fs.writeFile(specFile, `# Module Specification: ${name}\n\n(Draft)`);
+      await fs.writeFile(specFile, `# Module Specification: ${moduleInfo.name}\n\n(Draft)`);
     }
 
     this.success(`\nStarting interactive specification session for "${name}"...\n`);

@@ -1,23 +1,27 @@
 /** @vitest-environment node */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import GenApiCommand from '@nexical/generator/commands/gen/api';
-import { ModuleLocator } from '@nexical/generator/lib/module-locator';
-import { ApiModuleGenerator } from '@nexical/generator/engine/api-module-generator';
+import GenApiCommand from '../../../src/commands/gen/api';
+import { ModuleLocator } from '../../../src/lib/module-locator';
+import { ApiModuleGenerator } from '../../../src/engine/api-module-generator';
 import fs from 'fs-extra';
+import path from 'path';
 
-vi.mock('@nexical/generator/lib/module-locator', () => ({
+vi.mock('../../../src/lib/module-locator', () => ({
   ModuleLocator: {
     expand: vi.fn(),
+    resolve: vi.fn(),
   },
 }));
-vi.mock('@nexical/generator/engine/api-module-generator', () => ({
+
+vi.mock('../../../src/engine/api-module-generator', () => ({
   ApiModuleGenerator: vi.fn().mockImplementation(function () {
     return {
       run: vi.fn().mockResolvedValue(undefined),
     };
   }),
 }));
+
 vi.mock('fs-extra');
 vi.mock('glob', () => ({
   glob: {
@@ -34,7 +38,9 @@ describe('GenApiCommand', () => {
   });
 
   it('should generate code for found modules', async () => {
-    vi.mocked(ModuleLocator.expand).mockResolvedValue(['test-api']);
+    vi.mocked(ModuleLocator.expand).mockResolvedValue([
+      { name: 'test-api', path: '/path/to/test-api', app: 'backend' },
+    ]);
     vi.mocked(fs.existsSync).mockReturnValue(true);
 
     await command.run({ name: 'test-api' });
@@ -43,7 +49,12 @@ describe('GenApiCommand', () => {
   });
 
   it('should scaffold a new module if it does not exist', async () => {
-    vi.mocked(ModuleLocator.expand).mockResolvedValue(['new-api']);
+    vi.mocked(ModuleLocator.expand).mockResolvedValue([]);
+    vi.mocked(ModuleLocator.resolve).mockReturnValue({
+      name: 'new-api',
+      path: '/path/to/new-api',
+      app: 'backend',
+    });
     vi.mocked(fs.existsSync).mockReturnValue(false);
 
     await command.run({ name: 'new-api' });
@@ -52,7 +63,9 @@ describe('GenApiCommand', () => {
   });
 
   it('should handle generation errors by re-throwing', async () => {
-    vi.mocked(ModuleLocator.expand).mockResolvedValue(['test-api']);
+    vi.mocked(ModuleLocator.expand).mockResolvedValue([
+      { name: 'test-api', path: '/path/to/test-api', app: 'backend' },
+    ]);
     vi.mocked(fs.existsSync).mockReturnValue(true);
 
     vi.mocked(ApiModuleGenerator).mockImplementationOnce(function () {

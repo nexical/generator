@@ -7,12 +7,12 @@ import path from 'path';
 
 export async function generateApiModule(command: BaseCommand, name?: string) {
   const pattern = name || '*-api';
-  const modules = await ModuleLocator.expand(pattern);
+  let modules = await ModuleLocator.expand(pattern);
 
   // specific check: if no modules found but the name is NOT a glob,
   // implies the user matched nothing but might want to create a NEW module.
   if (modules.length === 0 && !glob.hasMagic(pattern)) {
-    modules.push(pattern);
+    modules.push(ModuleLocator.resolve(pattern));
   }
 
   if (modules.length === 0) {
@@ -22,14 +22,14 @@ export async function generateApiModule(command: BaseCommand, name?: string) {
 
   command.info(`Found ${modules.length} module(s) to generate.`);
 
-  for (const moduleName of modules) {
-    await generateForModule(command, moduleName);
+  for (const moduleInfo of modules) {
+    await generateForModule(command, moduleInfo);
   }
 }
 
-async function generateForModule(command: BaseCommand, name: string) {
-  command.info(`\nGenerating code for module: ${name}`);
-  const moduleDir = path.join(process.cwd(), 'modules', name);
+async function generateForModule(command: BaseCommand, moduleInfo: { name: string; path: string }) {
+  const { name, path: moduleDir } = moduleInfo;
+  command.info(`\nGenerating code for module: ${name} (${moduleDir})`);
 
   try {
     // 0. Ensure Module Directory & Project Files

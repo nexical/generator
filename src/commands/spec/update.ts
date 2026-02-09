@@ -3,15 +3,17 @@ import { BaseCommand } from '@nexical/cli-core';
 import path from 'path';
 import fs from 'fs-extra';
 import { AgentRunner } from '../../utils/agent-runner.js';
+import { ModuleLocator } from '../../lib/module-locator.js';
 
 export class SpecUpdateCommand extends BaseCommand {
+  static usage = 'spec update';
   static description = 'Update or reverse-engineer a specification for an existing module';
 
   static args = {
     args: [
       {
         name: 'name',
-        description: 'The name of the module to update (e.g., "payment-api")',
+        description: 'The name of the module to update (e.g., "payment-api" or "*-api")',
         required: true,
       },
     ],
@@ -33,13 +35,19 @@ export class SpecUpdateCommand extends BaseCommand {
       return;
     }
 
-    const modulePath = path.join(process.cwd(), 'modules', name);
+    const modules = await ModuleLocator.expand(name);
 
-    if (!(await fs.pathExists(modulePath))) {
-      this.error(`Module "${name}" not found at ${modulePath}.`);
+    if (modules.length === 0) {
+      this.error(`No modules found matching "${name}".`);
       return;
     }
 
+    if (modules.length > 1) {
+      this.warn(`Found ${modules.length} modules matching "${name}". Updating the first one: ${modules[0].name}`);
+    }
+
+    const moduleInfo = modules[0];
+    const modulePath = moduleInfo.path;
     const specFile = path.join(modulePath, 'SPECIFICATION.md');
 
     if (!(await fs.pathExists(specFile))) {

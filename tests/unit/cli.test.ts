@@ -35,14 +35,14 @@ vi.mock('fs', () => ({
 }));
 
 // Mock dynamic commands
-vi.mock('@nexical/generator/commands/gen/api', () => ({
+vi.mock('../../src/commands/gen/api', () => ({
   GenApiCommand: class {
     getCommand() {
       return { name: 'gen' };
     }
   },
 }));
-vi.mock('@nexical/generator/commands/audit/api', () => ({
+vi.mock('../../src/commands/audit/api', () => ({
   AuditApiCommand: class {
     getCommand() {
       return { name: 'audit' };
@@ -64,7 +64,7 @@ describe('CLI (cli.ts)', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readdirSync).mockReturnValue([]);
 
-    const { main } = await import('@nexical/generator/cli');
+    const { main } = await import('../../src/cli');
     await main();
 
     expect(mockProgram.name).toHaveBeenCalledWith('arc');
@@ -73,7 +73,7 @@ describe('CLI (cli.ts)', () => {
 
   it('should handle missing directory', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
-    const { main } = await import('@nexical/generator/cli');
+    const { main } = await import('../../src/cli');
     await main();
     expect(mockProgram.parseAsync).toHaveBeenCalled();
   });

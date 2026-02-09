@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import YAML from 'yaml';
 import { z } from 'zod';
-import { ModuleLocator } from '../../lib/module-locator.js';
+import { ModuleLocator, type ModuleInfo } from '../../lib/module-locator.js';
 
 // Zod schema for agents.yaml validation
 const AgentConfigSchema = z.object({
@@ -26,6 +26,7 @@ interface ValidationResult {
 }
 
 export default class AuditAgentCommand extends BaseCommand {
+  static usage = 'audit agent';
   static description = 'Audit agent definitions in agents.yaml';
 
   static args = {
@@ -61,8 +62,8 @@ export default class AuditAgentCommand extends BaseCommand {
 
     const results: ValidationResult[] = [];
 
-    for (const moduleName of modules) {
-      const result = await this.auditModule(moduleName, options);
+    for (const moduleInfo of modules) {
+      const result = await this.auditModule(moduleInfo, options);
       if (result) results.push(result);
     }
 
@@ -71,10 +72,10 @@ export default class AuditAgentCommand extends BaseCommand {
   }
 
   private async auditModule(
-    moduleName: string,
+    moduleInfo: ModuleInfo,
     options: { schema?: boolean; verbose?: boolean },
   ): Promise<ValidationResult | null> {
-    const moduleDir = path.join(process.cwd(), 'modules', moduleName);
+    const { name: moduleName, path: moduleDir } = moduleInfo;
     const agentsYamlPath = path.join(moduleDir, 'agents.yaml');
 
     // Check if agents.yaml exists
