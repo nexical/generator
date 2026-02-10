@@ -356,7 +356,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
                   name: 'check',
                   isAsync: true,
                   parameters: [
-                    { name: 'context', type: 'any' }, // using any for now or Import types
+                    { name: 'context', type: 'unknown' }, // using unknown for now or Import types
                     { name: 'permission', type: 'string' },
                   ],
                   returnType: 'Promise<boolean>',

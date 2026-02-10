@@ -1,4 +1,4 @@
-import { SourceFile, InterfaceDeclaration, ModuleDeclaration } from 'ts-morph';
+import { SourceFile, InterfaceDeclaration, ModuleDeclaration, CodeBlockWriter } from 'ts-morph';
 import { BasePrimitive } from '../core/base-primitive.js';
 import { type InterfaceConfig } from '../../types.js';
 import { type ValidationResult } from '../contracts.js';
@@ -20,7 +20,7 @@ export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, Inte
         isReadonly: p.readonly,
       })),
       leadingTrivia: this.config.comments
-        ? (writer) => {
+        ? (writer: CodeBlockWriter) => {
             this.config.comments?.forEach((c) => writer.writeLine(c));
           }
         : undefined,
@@ -70,6 +70,20 @@ export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, Inte
         this.config.extends.forEach((e) => node.addExtends(e)); // Add new
       }
     }
+
+    // Comments / Trivia
+    // Always reconcile trivia for generated nodes to remove stale comments (like eslint-disable)
+    // If config.comments is undefined, we clear it (or set to empty)
+    const newTrivia = this.config.comments
+      ? (writer: CodeBlockWriter) => {
+          this.config.comments?.forEach((c) => writer.writeLine(c));
+        }
+      : ''; // Clear trivia if no comments
+
+    // Optimized check could go here, but set is usually safe if it handles diffing internally,
+    // or we just accept the rewrite.
+    // writer must be typed as any or specific WriterFunction, but simpler to use string[] or WriterFunction
+    node.set({ leadingTrivia: newTrivia });
   }
 
   validate(node: InterfaceDeclaration): ValidationResult {
