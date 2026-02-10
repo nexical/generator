@@ -75,7 +75,7 @@ export class FormBuilder extends UiBaseBuilder {
         },
         {
           moduleSpecifier: 'react-hook-form',
-          namedImports: ['useForm'],
+          namedImports: ['useForm', 'Controller'],
         },
         {
           moduleSpecifier: '@hookform/resolvers/zod',
@@ -104,6 +104,14 @@ export class FormBuilder extends UiBaseBuilder {
           moduleSpecifier: '@/lib/ui/nav-context',
           namedImports: ['useNavData'],
         },
+        {
+          moduleSpecifier: '@/components/ui/select',
+          namedImports: ['Select', 'SelectContent', 'SelectItem', 'SelectTrigger', 'SelectValue'],
+        },
+        {
+          moduleSpecifier: '@/components/ui/password-input',
+          namedImports: ['PasswordInput'],
+        },
       ];
 
       // Add custom imports
@@ -128,7 +136,11 @@ export class FormBuilder extends UiBaseBuilder {
     formConfig: Record<string, FormFieldConfig>,
   ): FunctionConfig {
     const modelName = toPascalCase(model.name);
-    const zodSchema = ZodHelper.generateSchema(model, allModels);
+    const zodSchema = ZodHelper.generateSchema(
+      model,
+      allModels,
+      formConfig ? Object.keys(formConfig) : undefined,
+    );
 
     // Register generic button keys
     const keys = {
@@ -191,6 +203,7 @@ export class FormBuilder extends UiBaseBuilder {
         register,
         handleSubmit,
         reset,
+        control,
         formState: { errors, isSubmitting },
     } = useForm<FormData>({
         resolver: zodResolver(schema),
@@ -289,7 +302,7 @@ export class FormBuilder extends UiBaseBuilder {
           (!f.private || (formConfig && formConfig[name])) &&
           f.type !== 'Json' &&
           !f.isRelation &&
-          !['id', 'createdAt', 'updatedAt'].includes(name),
+          !['id', 'createdAt', 'updatedAt', 'passwordUpdatedAt', 'emailVerified'].includes(name),
       )
       .map(([name, f]) => {
         // Register field label
@@ -306,6 +319,7 @@ export class FormBuilder extends UiBaseBuilder {
           return {
             kind: 'jsx',
             tagName: 'div',
+            attributes: [{ name: 'className', value: 'form-group space-y-group' }],
             children: [
               {
                 kind: 'jsx',
@@ -327,19 +341,71 @@ export class FormBuilder extends UiBaseBuilder {
                     selfClosing: true,
                     attributes: [
                       { name: 'id', value: name },
-                      {
-                        name: 'error',
-                        value: {
-                          kind: 'expression',
-                          expression: `errors.${name}?.message as string`,
-                        },
-                      },
                       // Spread register props correctly
                       { name: `{...register('${name}')}` },
                       // Allow props injection if needed, but for now assumption is standard interface
                     ],
                   },
                 ],
+              },
+              {
+                kind: 'expression',
+                expression: `errors.${name} && <p className="feedback-error-text mt-2">{errors.${name}?.message as string}</p>`,
+              },
+            ],
+          };
+        }
+
+        // Handle Enum Fields with Select
+        if (f.isEnum && f.enumValues) {
+          return {
+            kind: 'jsx',
+            tagName: 'div',
+            attributes: [{ name: 'className', value: 'form-group space-y-group' }],
+            children: [
+              {
+                kind: 'jsx',
+                tagName: 'label',
+                attributes: [
+                  { name: 'htmlFor', value: name },
+                  { name: 'className', value: 'input-label' },
+                ],
+                children: [{ kind: 'expression', expression: `t('${key}')` }],
+              },
+              {
+                kind: 'jsx',
+                tagName: 'div',
+                attributes: [{ name: 'className', value: 'mt-1' }],
+                children: [
+                  {
+                    kind: 'jsx',
+                    tagName: 'Controller',
+                    attributes: [
+                      { name: 'name', value: name },
+                      { name: 'control', value: { kind: 'expression', expression: 'control' } },
+                      {
+                        name: 'render',
+                        value: {
+                          kind: 'expression',
+                          expression: `({ field }) => (
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder={t('${key}')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                ${f.enumValues.map((val) => `<SelectItem value="${val}">{${model.name.endsWith('ModuleTypes') ? model.name : 'UserModuleTypes'}.${toPascalCase(f.type)}.${val}}</SelectItem>`).join('\n                                ')}
+                              </SelectContent>
+                            </Select>
+                          )`,
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                kind: 'expression',
+                expression: `errors.${name} && <p className="feedback-error-text mt-2">{errors.${name}?.message as string}</p>`,
               },
             ],
           };

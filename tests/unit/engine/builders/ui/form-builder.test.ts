@@ -52,5 +52,52 @@ models:
     expect(text).toContain('type="checkbox"'); // for active (Boolean)
     expect(text).toContain('useCreateUser');
     expect(text).toContain('useUpdateUser');
+
+    // Verify Exclusions
+    expect(text).not.toContain('passwordUpdatedAt');
+    expect(text).not.toContain('emailVerified');
+
+    // Verify Enum Handling (Select)
+    // We didn't add an Enum in the mock above, let's update the mock to include one
+  });
+
+  it('should generate Select components for Enum fields', async () => {
+    // Mock ui.yaml and models
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      if (String(path).endsWith('ui.yaml'))
+        return 'backend: "user-api"\ntables:\n  User: {}\nforms:\n  User: {}';
+      if (String(path).endsWith('models.yaml')) {
+        return `
+enums:
+  UserRole:
+    values:
+      - ADMIN
+      - USER
+models:
+  User:
+    api: true
+    fields:
+      id: { type: String }
+      role: { type: UserRole }
+`;
+      }
+      return '';
+    });
+
+    const builder = new FormBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
+    await builder.build(project, undefined);
+
+    const sourceFile = project
+      .getSourceFiles()
+      .find((f) => f.getFilePath().endsWith('UserForm.tsx'));
+    expect(sourceFile).toBeDefined();
+
+    const text = sourceFile?.getFullText();
+    expect(text).toContain('import { Select');
+    expect(text).toContain('<Controller');
+    expect(text).toContain('name="role"');
+    expect(text).toContain('<Select');
+    expect(text).toContain('<SelectItem value="ADMIN">');
   });
 });
