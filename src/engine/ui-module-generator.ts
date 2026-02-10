@@ -18,11 +18,11 @@ export class UiModuleGenerator extends ModuleGenerator {
     const initialFiles = new Set(this.project.getSourceFiles().map((f) => f.getFilePath()));
 
     // Run Builders
-    await new FormBuilder(this.moduleName, config).build(this.project, undefined);
-    await new TableBuilder(this.moduleName, config).build(this.project, undefined);
+    await new FormBuilder(this.moduleName, config, this.modulePath).build(this.project, undefined);
+    await new TableBuilder(this.moduleName, config, this.modulePath).build(this.project, undefined);
 
     // Run I18n Builder last to capture all registered keys
-    await new I18nBuilder(this.moduleName).build(this.project);
+    await new I18nBuilder(this.moduleName, this.modulePath).build(this.project);
 
     // Run Middleware Builder (Virtual User Actor for Session)
     const virtualUserModel: ModelDef = {

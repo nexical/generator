@@ -21,8 +21,9 @@ export class FormBuilder extends UiBaseBuilder {
   constructor(
     protected moduleName: string,
     protected config: ModuleConfig,
+    protected modulePath: string,
   ) {
-    super(moduleName, config);
+    super(moduleName, config, modulePath);
   }
 
   async build(project: Project, sourceFile: SourceFile | undefined): Promise<void> {
@@ -44,13 +45,7 @@ export class FormBuilder extends UiBaseBuilder {
       if (!model.api) continue;
 
       const componentName = `${toPascalCase(model.name)}Form`;
-      const fileName = path.join(
-        process.cwd(),
-        'modules',
-        this.moduleName,
-        'src/components',
-        `${componentName}.tsx`,
-      );
+      const fileName = path.join(this.modulePath, 'src/components', `${componentName}.tsx`);
 
       const file = project.createSourceFile(fileName, '', { overwrite: true });
 
@@ -91,7 +86,7 @@ export class FormBuilder extends UiBaseBuilder {
           namedImports: ['z'],
         },
         {
-          moduleSpecifier: `@/hooks/use-${toKebabCase(model.name)}`,
+          moduleSpecifier: `../hooks/use-${toKebabCase(model.name)}`,
           namedImports: [
             `useCreate${toPascalCase(model.name)}`,
             `useUpdate${toPascalCase(model.name)}`,
@@ -100,6 +95,14 @@ export class FormBuilder extends UiBaseBuilder {
         {
           moduleSpecifier: '@/lib/api',
           namedImports: [this.getModuleTypeName()],
+        },
+        {
+          moduleSpecifier: '../lib/permissions',
+          namedImports: ['Permission'],
+        },
+        {
+          moduleSpecifier: '@/lib/ui/nav-context',
+          namedImports: ['useNavData'],
         },
       ];
 
@@ -152,7 +155,12 @@ export class FormBuilder extends UiBaseBuilder {
       {
         kind: 'variable',
         declarationKind: 'const',
-        declarations: [{ name: '{ user }', initializer: 'useAuth()' }],
+        declarations: [
+          { name: '{ context }', initializer: 'useNavData()' },
+          { name: 'user', initializer: 'context?.user' },
+          { name: 'SiteRole', initializer: `${this.getModuleTypeName()}.SiteRole` },
+          { name: 'UserStatus', initializer: `${this.getModuleTypeName()}.UserStatus` },
+        ],
       },
       {
         kind: 'variable',
@@ -220,7 +228,7 @@ export class FormBuilder extends UiBaseBuilder {
       tagName: 'button',
       attributes: [
         { name: 'type', value: 'submit' },
-        { name: 'disabled', value: '{isSubmitting}' },
+        { name: 'disabled', value: { kind: 'expression', expression: 'isSubmitting' } },
         {
           name: 'className',
           value: 'btn-primary btn-dims-default w-full sm:w-auto',
@@ -247,7 +255,7 @@ export class FormBuilder extends UiBaseBuilder {
         kind: 'jsx',
         tagName: 'form',
         attributes: [
-          { name: 'onSubmit', value: '{handleSubmit(onSubmit)}' },
+          { name: 'onSubmit', value: { kind: 'expression', expression: 'handleSubmit(onSubmit)' } },
           { name: 'className', value: 'space-y-4 form-container' },
         ],
         children: [...fieldElements, conditionalButton],
