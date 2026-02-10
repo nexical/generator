@@ -222,9 +222,13 @@ export class FormBuilder extends UiBaseBuilder {
       {
         raw: `const onSubmit = (data: FormData) => {
         if (isEdit && id) {
-            updateMutation.mutate({ id, data }, { onSuccess });
+            updateMutation.mutate({ id, data: data as unknown as ${this.getModuleTypeName()}.Update${toPascalCase(
+              model.name,
+            )}DTO }, { onSuccess });
         } else {
-            createMutation.mutate(data, { onSuccess });
+            createMutation.mutate(data as unknown as ${this.getModuleTypeName()}.Create${toPascalCase(
+              model.name,
+            )}DTO, { onSuccess });
         }
     };`,
         getNodes: () => [],
