@@ -31,7 +31,7 @@ models:
       return '';
     });
 
-    const builder = new UiTestBuilder('test-ui', { name: 'test-ui' });
+    const builder = new UiTestBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const files = project.getSourceFiles();

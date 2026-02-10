@@ -30,7 +30,7 @@ registries:
       matcher: {}
 `);
 
-    const builder = new GuardBuilder('test-ui', { name: 'test-ui' });
+    const builder = new GuardBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     // Should generate generic RoleGuard
@@ -48,7 +48,7 @@ pages: []
 registries: {}
 `);
 
-    const builder = new GuardBuilder('test-ui', { name: 'test-ui' });
+    const builder = new GuardBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project.getSourceFile('src/components/guards/RoleGuard.tsx');
@@ -69,7 +69,7 @@ pages:
     guard: ['super-user']
 `);
 
-    const builder = new GuardBuilder('test-ui', { name: 'test-ui' });
+    const builder = new GuardBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project.getSourceFile('src/components/guards/SuperUserGuard.tsx');
@@ -100,7 +100,7 @@ registries:
       matcher: {}
 `);
 
-    const builder = new GuardBuilder('test-ui', { name: 'test-ui' });
+    const builder = new GuardBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     // Should only generate one AdminGuard despite multiple usages
@@ -116,7 +116,7 @@ pages: []
 registries: {}
 `);
 
-    const builder = new GuardBuilder('test-ui', { name: 'test-ui' });
+    const builder = new GuardBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     // Should still generate generic RoleGuard

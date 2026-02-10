@@ -25,7 +25,7 @@ shells:
       isMobile: false
 `);
 
-    const builder = new ShellBuilder('test-ui', { name: 'test-ui' });
+    const builder = new ShellBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project.getSourceFile('src/init.ts');
@@ -48,7 +48,7 @@ shells:
       path: '/users/*'
 `);
 
-    const builder = new ShellBuilder('test-ui', { name: 'test-ui' });
+    const builder = new ShellBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project.getSourceFile('src/init.ts');
@@ -75,7 +75,7 @@ shells:
       path: '/new-path/*'
 `);
 
-    const builder = new ShellBuilder('test-ui', { name: 'test-ui' });
+    const builder = new ShellBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, initFile);
 
     const text = initFile.getFullText();
@@ -87,7 +87,7 @@ shells:
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue('shells: []');
 
-    const builder = new ShellBuilder('test-ui', { name: 'test-ui' });
+    const builder = new ShellBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project.getSourceFile('src/init.ts');

@@ -27,7 +27,7 @@ registries:
         path: '/users/*'
 `);
 
-    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' });
+    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project.getSourceFile('src/registry/nav-main/10-user-link.tsx');
@@ -51,7 +51,7 @@ registries:
         path: '/admin/*'
 `);
 
-    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' });
+    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project.getSourceFile('src/registry/nav-main/20-admin-link.tsx');
@@ -76,7 +76,7 @@ registries:
         path: '/dashboard/*'
 `);
 
-    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' });
+    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project.getSourceFile('src/registry/nav-main/5-dashboard-link.tsx');
@@ -105,7 +105,7 @@ registries:
       matcher: {}
 `);
 
-    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' });
+    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     expect(project.getSourceFile('src/registry/nav-main/10-main-link.tsx')).toBeDefined();
@@ -116,7 +116,7 @@ registries:
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue('registries: {}');
 
-    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' });
+    const builder = new RegistryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const files = project.getSourceFiles();

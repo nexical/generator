@@ -35,7 +35,7 @@ models:
       return '';
     });
 
-    const builder = new FormBuilder('test-ui', { name: 'test-ui' });
+    const builder = new FormBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project
