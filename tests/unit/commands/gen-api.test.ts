@@ -5,7 +5,6 @@ import GenApiCommand from '../../../src/commands/gen/api';
 import { ModuleLocator } from '../../../src/lib/module-locator';
 import { ApiModuleGenerator } from '../../../src/engine/api-module-generator';
 import fs from 'fs-extra';
-import path from 'path';
 
 vi.mock('../../../src/lib/module-locator', () => ({
   ModuleLocator: {

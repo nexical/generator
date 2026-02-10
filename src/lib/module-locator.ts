@@ -34,7 +34,7 @@ export class ModuleLocator {
     const roots = [
       { type: 'backend', path: path.join(process.cwd(), 'apps/backend/modules') },
       { type: 'frontend', path: path.join(process.cwd(), 'apps/frontend/modules') },
-    ];
+    ] as const;
 
     // Filter roots based on prefix
     const activeRoots = roots.filter((r) => {
@@ -54,7 +54,7 @@ export class ModuleLocator {
           results.push({
             name: searchPattern,
             path: directPath,
-            app: root.type as any,
+            app: root.type,
           });
         }
         continue;
@@ -68,7 +68,7 @@ export class ModuleLocator {
           results.push({
             name: match.replace(/\/$/, ''),
             path: fullPath,
-            app: root.type as any,
+            app: root.type,
           });
         }
       }
@@ -101,13 +101,12 @@ export class ModuleLocator {
       }
     }
 
-    const rootPath =
-      prefix === 'frontend' ? 'apps/frontend/modules' : 'apps/backend/modules';
+    const rootPath = prefix === 'frontend' ? 'apps/frontend/modules' : 'apps/backend/modules';
 
     return {
       name,
       path: path.join(process.cwd(), rootPath, name),
-      app: prefix as any,
+      app: prefix as ModuleInfo['app'],
     };
   }
 }

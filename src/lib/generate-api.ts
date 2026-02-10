@@ -7,7 +7,7 @@ import path from 'path';
 
 export async function generateApiModule(command: BaseCommand, name?: string) {
   const pattern = name || '*-api';
-  let modules = await ModuleLocator.expand(pattern);
+  const modules = await ModuleLocator.expand(pattern);
 
   // specific check: if no modules found but the name is NOT a glob,
   // implies the user matched nothing but might want to create a NEW module.

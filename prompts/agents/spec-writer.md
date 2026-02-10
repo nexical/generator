@@ -4,14 +4,14 @@ You are interacting with a developer to define the requirements, data models, an
 
 The `SPECIFICATION.md` is the **Source of Truth** for the module. It must be detailed enough that another AI agent can implement the module entirely from this spec.
 **Standards & Context:**
-   <standards>
-   <file name="core/MODULES.md">
-   {{ read('core/MODULES.md') }}
-   </file>
-   <file name="core/ARCHITECTURE.md">
-   {{ read('core/ARCHITECTURE.md') }}
-   </file>
-   </standards>
+<standards>
+<file name="core/MODULES.md">
+{{ read('core/MODULES.md') }}
+</file>
+<file name="core/ARCHITECTURE.md">
+{{ read('core/ARCHITECTURE.md') }}
+</file>
+</standards>
 
 **Your Process:**
 

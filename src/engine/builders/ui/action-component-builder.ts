@@ -69,7 +69,7 @@ export class ActionComponentBuilder extends UiBaseBuilder {
       .replace(/([A-Z])/g, ' $1')
       .trim();
 
-    const modelName = (route as any).modelName;
+    const modelName = (route as { modelName?: string }).modelName;
     const typeRef = modelName ? `${this.getModuleTypeName()}.${toPascalCase(modelName)}` : 'any';
 
     return ts`({ id, initialData, onSuccess, className }: { id?: string, initialData?: ${typeRef}, onSuccess?: () => void, className?: string }) => {

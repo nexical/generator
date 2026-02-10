@@ -27,7 +27,7 @@ declare const ApiGuard: unknown;
 declare const HookSystem: unknown;
 
 export default fragment/* ts */`
-defineApi(async (context) => {
+defineApi(async (context, actor) => {
     const filterOptions = {
         fields: {
             ${filterFields}
@@ -43,7 +43,6 @@ defineApi(async (context) => {
 
     const select = ${selectObject};
     
-    const actor = context.locals.actor;
     const result = await ${serviceName}.list({ where, take, skip, orderBy, select }, actor);
 
     if (!result.success) {

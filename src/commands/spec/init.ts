@@ -33,7 +33,9 @@ export class SpecInitCommand extends BaseCommand {
     const specFile = path.join(modulePath, 'SPECIFICATION.md');
 
     if (await fs.pathExists(modulePath)) {
-      this.warn(`Module "${moduleInfo.name}" already exists. You might want to use "spec:update" instead.`);
+      this.warn(
+        `Module "${moduleInfo.name}" already exists. You might want to use "spec:update" instead.`,
+      );
       // prompt to continue? For now, we proceed but warn.
     } else {
       this.info(`Creating module directory: ${modulePath}`);

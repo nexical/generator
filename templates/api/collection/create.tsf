@@ -21,7 +21,7 @@ declare const defineApi: unknown;
 declare const ApiGuard: unknown;
 
 export default fragment/* ts */`
-defineApi(async (context) => {
+defineApi(async (context, actor) => {
     const body = await context.request.json();
     
     // Security Check
@@ -32,7 +32,6 @@ defineApi(async (context) => {
     
     const validated = schema.parse(body);
     const select = ${selectObject};
-    const actor = context.locals.actor;
 
     const result = await ${serviceName}.create(validated, select, actor);
 

@@ -20,14 +20,13 @@ declare const defineApi: unknown;
 declare const ApiGuard: unknown;
 
 export default fragment/* ts */`
-defineApi(async (context) => {
+defineApi(async (context, actor) => {
     const { id } = context.params;
     
     // Security Check
     await ApiGuard.protect(context, '${getRole}', { ...context.params });
 
     const select = ${selectObject};
-    const actor = context.locals.actor;
 
     const result = await ${serviceName}.get(id, select, actor);
 

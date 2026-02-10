@@ -38,7 +38,7 @@ describe('ModuleLocator', () => {
     expect(result[0]).toEqual({
       name: 'test-api',
       path: path.join('/test-project', 'apps/backend/modules/test-api'),
-      app: 'backend'
+      app: 'backend',
     });
   });
 

@@ -28,28 +28,28 @@ declare const ApiGuard: unknown;
 declare const HookSystem: unknown;
 
 export default fragment/* ts */`
-defineApi(async (context) => {
+export default fragment/* ts */`
+defineApi(async (context, actor) => {
     // 1. Body Parsing (Input)
-    const body = ${bodyLoader} as ${inputType};
-    
+    const body = ${ bodyLoader } as ${ inputType };
+
     const query = Object.fromEntries(new URL(context.request.url).searchParams);
 
     // 2. Hook: Filter Input
-    const input: ${inputType} = await HookSystem.filter('${lowerEntity}.${method}.input', body);
+    const input: ${ inputType } = await HookSystem.filter('${lowerEntity}.${method}.input', body);
 
     // 3. Security Check
     const combinedInput = { ...context.params, ...query, ...input };
     await ApiGuard.protect(context, '${role}', combinedInput);
 
     // Inject userId from context for protected routes
-    const user = context.locals.actor;
-    if (user && user.id) {
-        Object.assign(combinedInput, { userId: user.id });
+    if (actor && actor.id) {
+        Object.assign(combinedInput, { userId: actor.id });
     }
 
     // 4. Action Execution
-    const result = await ${actionClassName}.run(combinedInput, context);
-    
+    const result = await ${ actionClassName }.run(combinedInput, context);
+
     // 5. Hook: Filter Output
     const filteredResult = await HookSystem.filter('${lowerEntity}.${method}.output', result);
 
@@ -59,5 +59,6 @@ defineApi(async (context) => {
     }
 
     return { success: true, data: filteredResult.data };
-}, ${docs})
-`;
+}, ${ docs })
+    `
+;

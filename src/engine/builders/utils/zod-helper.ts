@@ -34,7 +34,7 @@ export class ZodHelper {
               validator += 'boolean()';
               break;
             case 'DateTime':
-              validator += 'string().datetime()'; // or date() if using z.date() but serialized is string usually
+              validator += 'coerce.date()';
               break;
             case 'Json':
               validator += 'unknown()';

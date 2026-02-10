@@ -43,7 +43,9 @@ export class SpecUpdateCommand extends BaseCommand {
     }
 
     if (modules.length > 1) {
-      this.warn(`Found ${modules.length} modules matching "${name}". Updating the first one: ${modules[0].name}`);
+      this.warn(
+        `Found ${modules.length} modules matching "${name}". Updating the first one: ${modules[0].name}`,
+      );
     }
 
     const moduleInfo = modules[0];

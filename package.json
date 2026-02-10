@@ -1,17 +1,28 @@
 {
   "name": "@nexical/generator",
   "version": "0.1.0",
-  "type": "module",
   "description": "Nexical Generator CLI",
+  "type": "module",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "build": "npm run clean && tsc -b tsconfig.build.json",
     "dev": "tsc -w",
     "test:unit": "vitest run -c vitest.unit.config.ts",
     "test:unit:watch": "vitest -c vitest.unit.config.ts",
-    "test:unit:coverage": "vitest run -c vitest.unit.config.ts --coverage"
+    "test:unit:coverage": "vitest run -c vitest.unit.config.ts --coverage",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "**/*": [
+      "prettier --write --ignore-unknown"
+    ],
+    "**/*.{js,jsx,ts,tsx,astro}": [
+      "eslint --fix"
+    ]
   },
   "dependencies": {
     "@nexical/cli-core": "^0.1.12",
@@ -31,6 +42,19 @@
     "@types/minimist": "^1.2.5",
     "@types/nunjucks": "^3.2.6",
     "typescript": "^5.3.3",
-    "tsx": "^4.7.0"
-  }
+    "tsx": "^4.7.0",
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-astro": "^1.5.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.54.0"
+  },
+  "types": "dist/index.d.ts"
 }
