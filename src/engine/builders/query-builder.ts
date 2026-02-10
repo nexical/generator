@@ -40,7 +40,7 @@ export class QueryBuilder extends UiBaseBuilder {
           },
           {
             moduleSpecifier: '@/lib/api', // Assumes global api client
-            namedImports: ['api'],
+            namedImports: ['api', this.getModuleTypeName()],
           },
         ],
         functions: [
@@ -75,7 +75,7 @@ export class QueryBuilder extends UiBaseBuilder {
           },
           {
             moduleSpecifier: '@/lib/api',
-            namedImports: ['api'],
+            namedImports: ['api', this.getModuleTypeName()],
           },
         ],
         variables: [
@@ -111,7 +111,11 @@ export class QueryBuilder extends UiBaseBuilder {
       isExported: true,
       statements: [
         ts`const queryClient = useQueryClient();`,
-        ts`return useMutation({ mutationFn: (data: unknown) => api.${toCamelCase(model.name)}.create(data), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['${toKebabCase(model.name)}'] }) });`,
+        ts`return useMutation({ mutationFn: (data: ${this.getModuleTypeName()}.Create${modelName}DTO) => api.${toCamelCase(
+          model.name,
+        )}.create(data), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['${toKebabCase(
+          model.name,
+        )}'] }) });`,
       ],
     };
   }
@@ -123,7 +127,11 @@ export class QueryBuilder extends UiBaseBuilder {
       isExported: true,
       statements: [
         ts`const queryClient = useQueryClient();`,
-        ts`return useMutation({ mutationFn: ({ id, data }: { id: string, data: unknown }) => api.${toCamelCase(model.name)}.update(id, data), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['${toKebabCase(model.name)}'] }) });`,
+        ts`return useMutation({ mutationFn: ({ id, data }: { id: string, data: ${this.getModuleTypeName()}.Update${modelName}DTO }) => api.${toCamelCase(
+          model.name,
+        )}.update(id, data), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['${toKebabCase(
+          model.name,
+        )}'] }) });`,
       ],
     };
   }

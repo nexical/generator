@@ -31,6 +31,10 @@ export class AuthBuilder extends UiBaseBuilder {
           moduleSpecifier: 'react',
           namedImports: ['useContext', 'createContext'],
         },
+        {
+          moduleSpecifier: '@/lib/api',
+          namedImports: ['UserModuleTypes'],
+        },
       ],
       // We'll define Context here for simplicity scaffold
       variables: [
@@ -38,7 +42,7 @@ export class AuthBuilder extends UiBaseBuilder {
           name: 'AuthContext',
           isExported: true,
           declarationKind: 'const',
-          initializer: `createContext<{ user: any, isLoading: boolean, login: (data: any) => void, logout: () => void } | null>(null)`,
+          initializer: `createContext<{ user: UserModuleTypes.User | null, isLoading: boolean, login: (data: any) => void, logout: () => void } | null>(null)`,
         },
         {
           name: 'useAuth',
@@ -79,7 +83,7 @@ export class AuthBuilder extends UiBaseBuilder {
         },
         {
           moduleSpecifier: '@/lib/api', // Assume API Client
-          namedImports: ['api'],
+          namedImports: ['api', 'UserModuleTypes'],
         },
       ],
       variables: [
@@ -88,7 +92,7 @@ export class AuthBuilder extends UiBaseBuilder {
           isExported: true,
           declarationKind: 'const',
           initializer: `({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<UserModuleTypes.User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Mock session check

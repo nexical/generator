@@ -60,12 +60,8 @@ export class TableBuilder extends UiBaseBuilder {
           ],
         },
         {
-          moduleSpecifier: `@modules/${this.uiConfig.backend || this.moduleName}/permissions`,
-          namedImports: ['Permission'],
-        },
-        {
-          moduleSpecifier: '@/hooks/use-auth',
-          namedImports: ['useAuth'],
+          moduleSpecifier: '@/lib/api',
+          namedImports: [this.getModuleTypeName()],
         },
         {
           moduleSpecifier: '@tanstack/react-table',
@@ -97,10 +93,6 @@ export class TableBuilder extends UiBaseBuilder {
             'DropdownMenuSeparator',
             'DropdownMenuTrigger',
           ],
-        },
-        {
-          moduleSpecifier: `@modules/${this.uiConfig.backend || this.moduleName}/src/sdk`,
-          namedImports: [`type ${toPascalCase(model.name)}`],
         },
         {
           moduleSpecifier: '@/components/ui/confirm-form-deletion',
@@ -219,7 +211,7 @@ export class TableBuilder extends UiBaseBuilder {
         declarations: [
           {
             name: '[editingItem, setEditingItem]',
-            initializer: `useState<${modelName} | null>(null)`,
+            initializer: `useState<${this.getModuleTypeName()}.${modelName} | null>(null)`,
           },
         ],
       },
@@ -229,7 +221,7 @@ export class TableBuilder extends UiBaseBuilder {
         declarations: [
           {
             name: '[deletingItem, setDeletingItem]',
-            initializer: `useState<${modelName} | null>(null)`,
+            initializer: `useState<${this.getModuleTypeName()}.${modelName} | null>(null)`,
           },
         ],
       },
@@ -304,7 +296,7 @@ export class TableBuilder extends UiBaseBuilder {
       declarations: [
         {
           name: 'columns',
-          type: `ColumnDef<${modelName}>[]`,
+          type: `ColumnDef<${this.getModuleTypeName()}.${modelName}>[]`,
           initializer: columnsDefinition,
         },
       ],

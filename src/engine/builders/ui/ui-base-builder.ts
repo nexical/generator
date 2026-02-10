@@ -14,6 +14,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { ModelParser } from '../../model-parser.js';
+import { toPascalCase } from '../../../utils/string.js';
 
 export interface UiConfig {
   backend?: string;
@@ -99,5 +100,14 @@ export abstract class UiBaseBuilder extends BaseBuilder {
     } catch {
       return [];
     }
+  }
+
+  protected getModuleTypeName(): string {
+    const targetModule = this.uiConfig.backend || this.moduleName;
+    if (!targetModule) return 'GlobalModuleTypes';
+    const cleanName = targetModule.endsWith('-api')
+      ? targetModule.replace(/-api$/, '')
+      : targetModule;
+    return `${toPascalCase(cleanName)}ModuleTypes`;
   }
 }

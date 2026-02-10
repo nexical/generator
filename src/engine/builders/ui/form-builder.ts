@@ -98,12 +98,8 @@ export class FormBuilder extends UiBaseBuilder {
           ],
         },
         {
-          moduleSpecifier: `@modules/${this.uiConfig.backend || this.moduleName}/permissions`,
-          namedImports: ['Permission'],
-        },
-        {
-          moduleSpecifier: '@/hooks/use-auth',
-          namedImports: ['useAuth'],
+          moduleSpecifier: '@/lib/api',
+          namedImports: [this.getModuleTypeName()],
         },
       ];
 
@@ -264,7 +260,9 @@ export class FormBuilder extends UiBaseBuilder {
       parameters: [
         {
           name: '{ id, initialData, onSuccess }',
-          type: '{ id?: string, initialData?: any, onSuccess?: () => void }',
+          type: `{ id?: string, initialData?: ${this.getModuleTypeName()}.${toPascalCase(
+            model.name,
+          )}, onSuccess?: () => void }`,
         },
       ],
       statements,

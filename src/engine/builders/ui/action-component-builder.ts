@@ -44,6 +44,10 @@ export class ActionComponentBuilder extends UiBaseBuilder {
             moduleSpecifier: `@/hooks/${hookFile}`,
             namedImports: [hookName],
           },
+          {
+            moduleSpecifier: '@/lib/api',
+            namedImports: [this.getModuleTypeName()],
+          },
         ],
         variables: [
           {
@@ -65,7 +69,10 @@ export class ActionComponentBuilder extends UiBaseBuilder {
       .replace(/([A-Z])/g, ' $1')
       .trim();
 
-    return ts`({ id, initialData, onSuccess, className }: { id?: string, initialData?: unknown, onSuccess?: () => void, className?: string }) => {
+    const modelName = (route as any).modelName;
+    const typeRef = modelName ? `${this.getModuleTypeName()}.${toPascalCase(modelName)}` : 'any';
+
+    return ts`({ id, initialData, onSuccess, className }: { id?: string, initialData?: ${typeRef}, onSuccess?: () => void, className?: string }) => {
     const mutation = ${hookName}();
     
     const onClick = () => {
