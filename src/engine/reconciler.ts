@@ -41,16 +41,23 @@ export class Reconciler {
     try {
       // 0. Handle Header
       if (definition.header && 'insertStatements' in sourceFile) {
-        const headerTrimmed = definition.header.trim();
-        const sourceText = (sourceFile as SourceFile).getFullText();
+        const targetHeader = definition.header.trim();
+        const sourceFileNode = sourceFile as SourceFile;
+        const sourceText = sourceFileNode.getFullText();
 
-        // Only insert if the file doesn't already start with the header
-        if (!sourceText.trimStart().startsWith(headerTrimmed)) {
-          const header = definition.header.endsWith('\n')
-            ? definition.header
-            : `${definition.header}\n`;
-          (sourceFile as StatementedNode).insertStatements(0, header);
+        // If the header exists anywhere, remove it to ensure we can "hoist" it to the top
+        if (sourceText.includes(targetHeader)) {
+          // Normalize existing text by removing all occurrences of the target header
+          // and cleaning up leading whitespace to prevent weird gaps at the top
+          const updatedText = sourceText.split(targetHeader).join('').trimStart();
+          sourceFileNode.replaceWithText(updatedText);
         }
+
+        // Always insert at the very top (index 0)
+        const header = definition.header.endsWith('\n')
+          ? definition.header
+          : `${definition.header}\n`;
+        (sourceFile as StatementedNode).insertStatements(0, header);
       }
 
       // 1. Handle Imports (Only strictly valid on SourceFile, but let's check or just allow primitive to handle it)
