@@ -16,8 +16,9 @@ export class TableBuilder extends UiBaseBuilder {
   constructor(
     protected moduleName: string,
     protected config: ModuleConfig,
+    protected modulePath: string,
   ) {
-    super(moduleName, config);
+    super(moduleName, config, modulePath);
   }
 
   async build(project: Project, sourceFile: SourceFile | undefined): Promise<void> {
@@ -29,13 +30,7 @@ export class TableBuilder extends UiBaseBuilder {
       if (!model.api) continue;
 
       const componentName = `${toPascalCase(model.name)}Table`;
-      const fileName = path.join(
-        process.cwd(),
-        'modules',
-        this.moduleName,
-        'src/components',
-        `${componentName}.tsx`,
-      );
+      const fileName = path.join(this.modulePath, 'src/components', `${componentName}.tsx`);
 
       const file = project.createSourceFile(fileName, '', { overwrite: true });
 
@@ -53,7 +48,7 @@ export class TableBuilder extends UiBaseBuilder {
           namedImports: ['useTranslation'],
         },
         {
-          moduleSpecifier: `@/hooks/use-${toKebabCase(model.name)}`,
+          moduleSpecifier: `../hooks/use-${toKebabCase(model.name)}`,
           namedImports: [
             `use${toPascalCase(model.name)}Query`,
             `useDelete${toPascalCase(model.name)}`,
@@ -102,6 +97,14 @@ export class TableBuilder extends UiBaseBuilder {
         {
           moduleSpecifier: `./${toPascalCase(model.name)}Form`,
           namedImports: [`${toPascalCase(model.name)}Form`],
+        },
+        {
+          moduleSpecifier: '../lib/permissions',
+          namedImports: ['Permission'],
+        },
+        {
+          moduleSpecifier: '@/lib/ui/nav-context',
+          namedImports: ['useNavData'],
         },
       ];
 
@@ -188,7 +191,10 @@ export class TableBuilder extends UiBaseBuilder {
       {
         kind: 'variable',
         declarationKind: 'const',
-        declarations: [{ name: '{ user }', initializer: 'useAuth()' }],
+        declarations: [
+          { name: '{ context }', initializer: 'useNavData()' },
+          { name: 'user', initializer: 'context?.user' },
+        ],
       },
       {
         kind: 'variable',
@@ -374,7 +380,7 @@ export class TableBuilder extends UiBaseBuilder {
                   expression: '(open) => !open && setDeletingItem(null)',
                 },
               },
-              { name: 'resourceName', value: `'${modelName}'` },
+              { name: 'resourceName', value: modelName },
               {
                 name: 'resourceIdentifier',
                 value: { kind: 'expression', expression: 'deletingItem?.id || ""' },

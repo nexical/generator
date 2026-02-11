@@ -1,18 +1,22 @@
 import { type ModelDef } from '../../types.js';
 
 export class ZodHelper {
-  static generateSchema(model: ModelDef, allModels: ModelDef[]): string {
+  static generateSchema(model: ModelDef, allModels: ModelDef[], includeFields?: string[]): string {
     const fields = Object.entries(model.fields)
       .filter(([name, f]) => {
         const typeName = f.type.replace('[]', '');
         const isModel = allModels.some((m) => m.name === typeName);
         const isIdWithDefault =
           name === 'id' && f.attributes?.some((a) => a.startsWith('@default'));
+
+        const isExplicitlyIncluded = includeFields && includeFields.includes(name);
+
         return (
-          (!['id', 'createdAt', 'updatedAt'].includes(name) ||
-            (name === 'id' && !isIdWithDefault)) &&
-          f.api !== false &&
-          !f.private &&
+          (isExplicitlyIncluded ||
+            ((!['id', 'createdAt', 'updatedAt'].includes(name) ||
+              (name === 'id' && !isIdWithDefault)) &&
+              f.api !== false &&
+              !f.private)) &&
           !f.isRelation &&
           !isModel
         );
@@ -46,11 +50,12 @@ export class ZodHelper {
         if (f.isList) {
           validator = `z.array(${validator})`;
         }
+        // Add specific validations if needed (e.g. email)
+        if (name === 'email') validator += '.email()';
+
         if (!f.isRequired || f.isRelation || f.attributes?.some((a) => a.startsWith('@default'))) {
           validator += '.optional()';
         }
-        // Add specific validations if needed (e.g. email)
-        if (name === 'email') validator += '.email()';
 
         return `${name}: ${validator}`;
       });

@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { ModelParser } from '../../model-parser.js';
 import { toPascalCase } from '../../../utils/string.js';
+import { ModuleLocator } from '../../../lib/module-locator.js';
 
 export interface UiConfig {
   backend?: string;
@@ -32,6 +33,7 @@ export abstract class UiBaseBuilder extends BaseBuilder {
   constructor(
     protected moduleName: string,
     protected config: ModuleConfig,
+    protected modulePath: string,
   ) {
     super();
   }
@@ -44,11 +46,11 @@ export abstract class UiBaseBuilder extends BaseBuilder {
   }
 
   protected loadUiConfig() {
-    if (!this.moduleName) {
-      console.warn('[UiBaseBuilder] moduleName is undefined, skipping UI config load');
+    if (!this.modulePath) {
+      console.warn('[UiBaseBuilder] modulePath is undefined, skipping UI config load');
       return;
     }
-    const configPath = join(process.cwd(), 'modules', this.moduleName, 'ui.yaml');
+    const configPath = join(this.modulePath, 'ui.yaml');
     if (existsSync(configPath)) {
       try {
         const content = readFileSync(configPath, 'utf8');
@@ -61,7 +63,8 @@ export abstract class UiBaseBuilder extends BaseBuilder {
 
   protected resolveModels(): ModelDef[] {
     const targetModule = this.uiConfig.backend || this.moduleName;
-    const modelsPath = join(process.cwd(), 'modules', targetModule, 'models.yaml');
+    const backendModule = ModuleLocator.resolve(targetModule);
+    const modelsPath = join(backendModule.path, 'models.yaml');
 
     if (!existsSync(modelsPath)) {
       return [];
@@ -77,7 +80,8 @@ export abstract class UiBaseBuilder extends BaseBuilder {
 
   protected resolveRoutes(): unknown[] {
     const targetModule = this.uiConfig.backend || this.moduleName;
-    const apiPath = join(process.cwd(), 'modules', targetModule, 'api.yaml');
+    const backendModule = ModuleLocator.resolve(targetModule);
+    const apiPath = join(backendModule.path, 'api.yaml');
 
     if (!existsSync(apiPath)) {
       return [];

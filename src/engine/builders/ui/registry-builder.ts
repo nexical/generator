@@ -8,8 +8,9 @@ export class RegistryBuilder extends UiBaseBuilder {
   constructor(
     protected moduleName: string,
     protected config: ModuleConfig,
+    protected modulePath: string,
   ) {
-    super(moduleName, config);
+    super(moduleName, config, modulePath);
   }
 
   async build(project: Project, sourceFile: SourceFile | undefined): Promise<void> {

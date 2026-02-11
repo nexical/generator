@@ -21,8 +21,9 @@ export class FormBuilder extends UiBaseBuilder {
   constructor(
     protected moduleName: string,
     protected config: ModuleConfig,
+    protected modulePath: string,
   ) {
-    super(moduleName, config);
+    super(moduleName, config, modulePath);
   }
 
   async build(project: Project, sourceFile: SourceFile | undefined): Promise<void> {
@@ -44,13 +45,7 @@ export class FormBuilder extends UiBaseBuilder {
       if (!model.api) continue;
 
       const componentName = `${toPascalCase(model.name)}Form`;
-      const fileName = path.join(
-        process.cwd(),
-        'modules',
-        this.moduleName,
-        'src/components',
-        `${componentName}.tsx`,
-      );
+      const fileName = path.join(this.modulePath, 'src/components', `${componentName}.tsx`);
 
       const file = project.createSourceFile(fileName, '', { overwrite: true });
 
@@ -80,7 +75,7 @@ export class FormBuilder extends UiBaseBuilder {
         },
         {
           moduleSpecifier: 'react-hook-form',
-          namedImports: ['useForm'],
+          namedImports: ['useForm', 'Controller'],
         },
         {
           moduleSpecifier: '@hookform/resolvers/zod',
@@ -91,7 +86,7 @@ export class FormBuilder extends UiBaseBuilder {
           namedImports: ['z'],
         },
         {
-          moduleSpecifier: `@/hooks/use-${toKebabCase(model.name)}`,
+          moduleSpecifier: `../hooks/use-${toKebabCase(model.name)}`,
           namedImports: [
             `useCreate${toPascalCase(model.name)}`,
             `useUpdate${toPascalCase(model.name)}`,
@@ -100,6 +95,22 @@ export class FormBuilder extends UiBaseBuilder {
         {
           moduleSpecifier: '@/lib/api',
           namedImports: [this.getModuleTypeName()],
+        },
+        {
+          moduleSpecifier: '../lib/permissions',
+          namedImports: ['Permission'],
+        },
+        {
+          moduleSpecifier: '@/lib/ui/nav-context',
+          namedImports: ['useNavData'],
+        },
+        {
+          moduleSpecifier: '@/components/ui/select',
+          namedImports: ['Select', 'SelectContent', 'SelectItem', 'SelectTrigger', 'SelectValue'],
+        },
+        {
+          moduleSpecifier: '@/components/ui/password-input',
+          namedImports: ['PasswordInput'],
         },
       ];
 
@@ -125,7 +136,11 @@ export class FormBuilder extends UiBaseBuilder {
     formConfig: Record<string, FormFieldConfig>,
   ): FunctionConfig {
     const modelName = toPascalCase(model.name);
-    const zodSchema = ZodHelper.generateSchema(model, allModels);
+    const zodSchema = ZodHelper.generateSchema(
+      model,
+      allModels,
+      formConfig ? Object.keys(formConfig) : undefined,
+    );
 
     // Register generic button keys
     const keys = {
@@ -152,7 +167,12 @@ export class FormBuilder extends UiBaseBuilder {
       {
         kind: 'variable',
         declarationKind: 'const',
-        declarations: [{ name: '{ user }', initializer: 'useAuth()' }],
+        declarations: [
+          { name: '{ context }', initializer: 'useNavData()' },
+          { name: 'user', initializer: 'context?.user' },
+          { name: 'SiteRole', initializer: `${this.getModuleTypeName()}.SiteRole` },
+          { name: 'UserStatus', initializer: `${this.getModuleTypeName()}.UserStatus` },
+        ],
       },
       {
         kind: 'variable',
@@ -202,9 +222,13 @@ export class FormBuilder extends UiBaseBuilder {
       {
         raw: `const onSubmit = (data: FormData) => {
         if (isEdit && id) {
-            updateMutation.mutate({ id, data }, { onSuccess });
+            updateMutation.mutate({ id, data: data as unknown as ${this.getModuleTypeName()}.Update${toPascalCase(
+              model.name,
+            )}DTO }, { onSuccess });
         } else {
-            createMutation.mutate(data, { onSuccess });
+            createMutation.mutate(data as unknown as ${this.getModuleTypeName()}.Create${toPascalCase(
+              model.name,
+            )}DTO, { onSuccess });
         }
     };`,
         getNodes: () => [],
@@ -220,7 +244,7 @@ export class FormBuilder extends UiBaseBuilder {
       tagName: 'button',
       attributes: [
         { name: 'type', value: 'submit' },
-        { name: 'disabled', value: '{isSubmitting}' },
+        { name: 'disabled', value: { kind: 'expression', expression: 'isSubmitting' } },
         {
           name: 'className',
           value: 'btn-primary btn-dims-default w-full sm:w-auto',
@@ -247,7 +271,7 @@ export class FormBuilder extends UiBaseBuilder {
         kind: 'jsx',
         tagName: 'form',
         attributes: [
-          { name: 'onSubmit', value: '{handleSubmit(onSubmit)}' },
+          { name: 'onSubmit', value: { kind: 'expression', expression: 'handleSubmit(onSubmit)' } },
           { name: 'className', value: 'space-y-4 form-container' },
         ],
         children: [...fieldElements, conditionalButton],
@@ -282,7 +306,7 @@ export class FormBuilder extends UiBaseBuilder {
           (!f.private || (formConfig && formConfig[name])) &&
           f.type !== 'Json' &&
           !f.isRelation &&
-          !['id', 'createdAt', 'updatedAt'].includes(name),
+          !['id', 'createdAt', 'updatedAt', 'passwordUpdatedAt', 'emailVerified'].includes(name),
       )
       .map(([name, f]) => {
         // Register field label
@@ -299,6 +323,7 @@ export class FormBuilder extends UiBaseBuilder {
           return {
             kind: 'jsx',
             tagName: 'div',
+            attributes: [{ name: 'className', value: 'form-group space-y-group' }],
             children: [
               {
                 kind: 'jsx',
@@ -320,19 +345,71 @@ export class FormBuilder extends UiBaseBuilder {
                     selfClosing: true,
                     attributes: [
                       { name: 'id', value: name },
-                      {
-                        name: 'error',
-                        value: {
-                          kind: 'expression',
-                          expression: `errors.${name}?.message as string`,
-                        },
-                      },
                       // Spread register props correctly
                       { name: `{...register('${name}')}` },
                       // Allow props injection if needed, but for now assumption is standard interface
                     ],
                   },
                 ],
+              },
+              {
+                kind: 'expression',
+                expression: `errors.${name} && <p className="feedback-error-text mt-2">{errors.${name}?.message as string}</p>`,
+              },
+            ],
+          };
+        }
+
+        // Handle Enum Fields with Select
+        if (f.isEnum && f.enumValues) {
+          return {
+            kind: 'jsx',
+            tagName: 'div',
+            attributes: [{ name: 'className', value: 'form-group space-y-group' }],
+            children: [
+              {
+                kind: 'jsx',
+                tagName: 'label',
+                attributes: [
+                  { name: 'htmlFor', value: name },
+                  { name: 'className', value: 'input-label' },
+                ],
+                children: [{ kind: 'expression', expression: `t('${key}')` }],
+              },
+              {
+                kind: 'jsx',
+                tagName: 'div',
+                attributes: [{ name: 'className', value: 'mt-1' }],
+                children: [
+                  {
+                    kind: 'jsx',
+                    tagName: 'Controller',
+                    attributes: [
+                      { name: 'name', value: name },
+                      { name: 'control', value: { kind: 'expression', expression: 'control' } },
+                      {
+                        name: 'render',
+                        value: {
+                          kind: 'expression',
+                          expression: `({ field }) => (
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder={t('${key}')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                ${f.enumValues.map((val) => `<SelectItem value="${val}">{${model.name.endsWith('ModuleTypes') ? model.name : 'UserModuleTypes'}.${toPascalCase(f.type)}.${val}}</SelectItem>`).join('\n                                ')}
+                              </SelectContent>
+                            </Select>
+                          )`,
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                kind: 'expression',
+                expression: `errors.${name} && <p className="feedback-error-text mt-2">{errors.${name}?.message as string}</p>`,
               },
             ],
           };

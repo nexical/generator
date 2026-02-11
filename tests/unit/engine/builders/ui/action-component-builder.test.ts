@@ -32,7 +32,7 @@ User:
       return '';
     });
 
-    const builder = new ActionComponentBuilder('test-ui', { name: 'test-ui' });
+    const builder = new ActionComponentBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const files = project.getSourceFiles();

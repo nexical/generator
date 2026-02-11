@@ -33,7 +33,7 @@ models:
       return '';
     });
 
-    const builder = new TableBuilder('test-ui', { name: 'test-ui' });
+    const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
 
     const sourceFile = project
