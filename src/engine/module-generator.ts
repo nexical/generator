@@ -114,13 +114,21 @@ export abstract class ModuleGenerator {
       );
 
       if (inSet) {
+        // console.log(`[Reconciler DEBUG] Saving file: ${filePath}`);
+        // console.log(`[Reconciler DEBUG] First 100 chars: ${file.getFullText().substring(0, 100)}`);
         logger.debug(`[ModuleGenerator] [SAVE] ${filePath}`);
 
         // Get the text from ts-morph
         const content = file.getFullText();
 
         // Format the content
-        const formatted = await Formatter.format(content, filePath);
+        let formatted = await Formatter.format(content, filePath);
+
+        // FINAL SAFETY: Ensure header is at the very top (after formatter potentially moved it)
+        if (formatted.includes('// GENERATED CODE - DO NOT MODIFY')) {
+          const { Reconciler } = await import('./reconciler.js');
+          formatted = Reconciler.hoistHeader(formatted, '// GENERATED CODE - DO NOT MODIFY');
+        }
 
         // Create directory if it doesn't exist
         const dir = path.dirname(filePath);

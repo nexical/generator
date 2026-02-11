@@ -77,7 +77,7 @@ export class SdkIndexBuilder extends BaseBuilder {
     ];
 
     return {
-      header: '// GENERATED CODE - DO NOT MODIFY BY HAND',
+      header: '// GENERATED CODE - DO NOT MODIFY',
       imports,
       classes: [sdkClass],
       exports,

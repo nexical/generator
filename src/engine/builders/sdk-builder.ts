@@ -205,7 +205,7 @@ export class SdkBuilder extends BaseBuilder {
     }
 
     return {
-      header: '// GENERATED CODE - DO NOT MODIFY BY HAND',
+      header: '// GENERATED CODE - DO NOT MODIFY',
       imports: imports,
       classes: [sdkClass],
     };
