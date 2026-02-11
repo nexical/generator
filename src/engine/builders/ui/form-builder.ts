@@ -75,7 +75,7 @@ export class FormBuilder extends UiBaseBuilder {
         },
         {
           moduleSpecifier: 'react-hook-form',
-          namedImports: ['useForm', 'Controller'],
+          namedImports: ['useForm', 'Controller', 'type Resolver'],
         },
         {
           moduleSpecifier: '@hookform/resolvers/zod',
@@ -169,9 +169,10 @@ export class FormBuilder extends UiBaseBuilder {
         declarationKind: 'const',
         declarations: [
           { name: '{ context }', initializer: 'useNavData()' },
-          { name: 'user', initializer: 'context?.user' },
-          { name: 'SiteRole', initializer: `${this.getModuleTypeName()}.SiteRole` },
-          { name: 'UserStatus', initializer: `${this.getModuleTypeName()}.UserStatus` },
+          {
+            name: 'user',
+            initializer: `context?.user as ${this.getModuleTypeName()}.User | undefined`,
+          },
         ],
       },
       {
@@ -191,7 +192,20 @@ export class FormBuilder extends UiBaseBuilder {
       {
         kind: 'variable',
         declarationKind: 'const',
-        declarations: [{ name: 'schema', initializer: zodSchema }],
+        declarations: [
+          {
+            name: 'schema',
+            initializer: zodSchema
+              .replace(
+                /nativeEnum\(SiteRole\)/g,
+                `nativeEnum(${this.getModuleTypeName()}.SiteRole)`,
+              )
+              .replace(
+                /nativeEnum\(UserStatus\)/g,
+                `nativeEnum(${this.getModuleTypeName()}.UserStatus)`,
+              ),
+          },
+        ],
       },
       {
         raw: 'type FormData = z.infer<typeof schema>;',
@@ -206,15 +220,15 @@ export class FormBuilder extends UiBaseBuilder {
         control,
         formState: { errors, isSubmitting },
     } = useForm<FormData>({
-        resolver: zodResolver(schema),
-        defaultValues: initialData || {},
+        resolver: zodResolver(schema) as unknown as Resolver<FormData>,
+        defaultValues: (initialData as unknown as FormData) || {},
     });`,
         getNodes: () => [],
       },
       {
         raw: `useEffect(() => {
         if (initialData) {
-            reset(initialData);
+            reset(initialData as unknown as FormData);
         }
     }, [initialData, reset]);`,
         getNodes: () => [],
@@ -392,7 +406,7 @@ export class FormBuilder extends UiBaseBuilder {
                         value: {
                           kind: 'expression',
                           expression: `({ field }) => (
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder={t('${key}')} />
                               </SelectTrigger>

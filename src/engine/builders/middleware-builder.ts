@@ -138,7 +138,7 @@ export class MiddlewareBuilder extends BaseBuilder {
         { name: 'next', type: 'MiddlewareNext' },
       ],
       statements: [
-        ts`const publicRoutes = [${this.routes
+        ts`const publicRoutes: string[] = [${this.routes
           .filter((r) => r.role === 'anonymous')
           .map((r) => `"/${r.path.replace(/^\//, '')}"`)
           .join(', ')}];`,

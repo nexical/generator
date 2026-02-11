@@ -13,7 +13,9 @@ export class ZodHelper {
 
         return (
           (isExplicitlyIncluded ||
-            ((!['id', 'createdAt', 'updatedAt'].includes(name) ||
+            ((!['id', 'createdAt', 'updatedAt', 'passwordUpdatedAt', 'emailVerified'].includes(
+              name,
+            ) ||
               (name === 'id' && !isIdWithDefault)) &&
               f.api !== false &&
               !f.private)) &&
@@ -23,7 +25,9 @@ export class ZodHelper {
       })
       .map(([name, f]) => {
         let validator = 'z.';
-        if (f.isEnum) {
+        if (f.isEnum && f.enumValues) {
+          validator += `enum([${f.enumValues.map((v) => `'${v}'`).join(', ')}])`;
+        } else if (f.isEnum) {
           validator += `nativeEnum(${f.type})`;
         } else {
           switch (f.type) {
@@ -38,7 +42,8 @@ export class ZodHelper {
               validator += 'boolean()';
               break;
             case 'DateTime':
-              validator += 'coerce.date()';
+              validator +=
+                'union([z.instanceof(Date), z.string(), z.number()]).pipe(z.coerce.date())';
               break;
             case 'Json':
               validator += 'unknown()';
@@ -54,7 +59,7 @@ export class ZodHelper {
         if (name === 'email') validator += '.email()';
 
         if (!f.isRequired || f.isRelation || f.attributes?.some((a) => a.startsWith('@default'))) {
-          validator += '.optional()';
+          validator += '.optional().nullable()';
         }
 
         return `${name}: ${validator}`;

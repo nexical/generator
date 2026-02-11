@@ -90,8 +90,8 @@ export class TableBuilder extends UiBaseBuilder {
           ],
         },
         {
-          moduleSpecifier: '@/components/ui/confirm-form-deletion',
-          namedImports: ['ConfirmFormDeletion'],
+          moduleSpecifier: '@/components/confirm-deletion-dialog',
+          namedImports: ['ConfirmDeletionDialog'],
         },
         // Import Form for Editing
         {
@@ -193,7 +193,10 @@ export class TableBuilder extends UiBaseBuilder {
         declarationKind: 'const',
         declarations: [
           { name: '{ context }', initializer: 'useNavData()' },
-          { name: 'user', initializer: 'context?.user' },
+          {
+            name: 'user',
+            initializer: `context?.user as ${this.getModuleTypeName()}.User | undefined`,
+          },
         ],
       },
       {
@@ -369,10 +372,10 @@ export class TableBuilder extends UiBaseBuilder {
           // Delete Confirmation Dialog
           {
             kind: 'jsx',
-            tagName: 'ConfirmFormDeletion',
+            tagName: 'ConfirmDeletionDialog',
             selfClosing: true,
             attributes: [
-              { name: 'isOpen', value: { kind: 'expression', expression: '!!deletingItem' } },
+              { name: 'open', value: { kind: 'expression', expression: '!!deletingItem' } },
               {
                 name: 'onOpenChange',
                 value: {
@@ -380,17 +383,17 @@ export class TableBuilder extends UiBaseBuilder {
                   expression: '(open) => !open && setDeletingItem(null)',
                 },
               },
-              { name: 'resourceName', value: modelName },
               {
-                name: 'resourceIdentifier',
+                name: 'itemName',
                 value: { kind: 'expression', expression: 'deletingItem?.id || ""' },
               },
+              { name: 'itemType', value: modelName },
               {
                 name: 'onConfirm',
                 value: {
                   kind: 'expression',
                   expression:
-                    '() => { if (deletingItem) deleteMutation.mutate(deletingItem.id); setDeletingItem(null); }',
+                    'async () => { if (deletingItem) await deleteMutation.mutate(deletingItem.id); }',
                 },
               },
             ],
