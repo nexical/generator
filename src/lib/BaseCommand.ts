@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { CustomHelp } from '../lib/help.js';
+import { CustomHelp } from './help.js';
 import chalk from 'chalk';
 import { logger } from '../utils/logger.js';
 
