@@ -79,15 +79,10 @@ export class AgentBuilder extends BaseBuilder {
 
     if (isJob) {
       // Combine all @nexical/agent imports into one to avoid reconciler issues
+      // Only import ProcessorConfig and AgentJob as they're actually used
       imports.push({
         moduleSpecifier: '@nexical/agent',
-        namedImports: [
-          baseClass,
-          'type ProcessorConfig',
-          'type AgentJob',
-          'type AgentContext',
-          'type AgentResult',
-        ],
+        namedImports: [baseClass, 'type ProcessorConfig', 'type AgentJob'],
       });
       imports.push({
         moduleSpecifier: 'zod',
@@ -142,7 +137,7 @@ export class AgentBuilder extends BaseBuilder {
       });
       props.push({
         name: 'schema',
-        type: 'any', // Keep as any here if ZodSchema is complex to type in generator
+        type: 'z.ZodObject<z.ZodRawShape>',
         initializer: `z.object({
 ${Object.entries(agent.payload || {})
   .map(([name, type]) => `    ${name}: z.${type}(),`)
@@ -167,7 +162,10 @@ ${Object.entries(agent.payload || {})
           isAsync: true,
           parameters: [{ name: 'job', type: 'AgentJob<unknown>' }],
           statements: [
-            ts`const { ${Object.keys(agent.payload || {}).join(', ')} } = job.payload;`,
+            // Prefix unused variables with _ to satisfy linter
+            ts`const { ${Object.keys(agent.payload || {})
+              .map((k) => `${k}: _${k}`)
+              .join(', ')} } = job.payload;`,
             ts`console.info(\`[${agent.name}] Processing job \${job.id}\`);`,
             ts`// TODO: Implement processing logic`,
           ],
