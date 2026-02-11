@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { BaseCommand } from '@nexical/generator/commands/base';
+import { BaseCommand } from '../../../src/lib/BaseCommand.js';
 
 class TestCommand extends BaseCommand {
   constructor() {
