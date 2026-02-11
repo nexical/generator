@@ -8,7 +8,7 @@ import {
   type ConstructorConfig,
 } from '../types.js';
 import { Reconciler } from '../reconciler.js';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { toPascalCase } from '../../utils/string.js';
@@ -37,15 +37,19 @@ export class AgentBuilder extends BaseBuilder {
 
   async build(project: Project, sourceFile: SourceFile | undefined): Promise<void> {
     this.loadAgentsConfig();
+    console.info(
+      `[AgentBuilder] Loaded ${this.agentsConfig.agents.length} agents for ${this.moduleName}`,
+    );
     if (this.agentsConfig.agents.length === 0) return;
 
     for (const agent of this.agentsConfig.agents) {
-      this.generateAgentFile(project, agent);
+      console.info(`[AgentBuilder] Generating agent: ${agent.name}`);
+      await this.generateAgentFile(project, agent);
     }
   }
 
   private loadAgentsConfig() {
-    const configPath = join(process.cwd(), 'modules', this.moduleName, 'agents.yaml');
+    const configPath = join(process.cwd(), 'apps/backend/modules', this.moduleName, 'agents.yaml');
     if (existsSync(configPath)) {
       try {
         const content = readFileSync(configPath, 'utf8');
@@ -56,27 +60,43 @@ export class AgentBuilder extends BaseBuilder {
     }
   }
 
-  private generateAgentFile(project: Project, agent: AgentTemplateConfig) {
+  private async generateAgentFile(project: Project, agent: AgentTemplateConfig) {
     const fileName = `src/agent/${toPascalCase(agent.name)}.ts`;
-    const file = project.createSourceFile(fileName, '', { overwrite: true });
+    const absolutePath = join(process.cwd(), 'apps/backend/modules', this.moduleName, fileName);
+
+    // Ensure directory exists
+    const dir = join(process.cwd(), 'apps/backend/modules', this.moduleName, 'src/agent');
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+
+    const file = project.createSourceFile(absolutePath, '', { overwrite: true });
 
     const isJob = agent.type === 'job';
     const baseClass = isJob ? 'JobProcessor' : 'PersistentAgent';
-    const importPath = isJob
-      ? '@nexical/agent/src/core/processor.js'
-      : '@nexical/agent/src/core/persistent.js';
 
-    const imports = [
-      {
-        moduleSpecifier: importPath,
-        namedImports: isJob ? [baseClass, 'ProcessorConfig', 'AgentJob'] : [baseClass],
-      },
-    ];
+    const imports: { moduleSpecifier: string; namedImports: string[]; isTypeOnly?: boolean }[] = [];
 
     if (isJob) {
+      // Combine all @nexical/agent imports into one to avoid reconciler issues
+      imports.push({
+        moduleSpecifier: '@nexical/agent',
+        namedImports: [
+          baseClass,
+          'type ProcessorConfig',
+          'type AgentJob',
+          'type AgentContext',
+          'type AgentResult',
+        ],
+      });
       imports.push({
         moduleSpecifier: 'zod',
         namedImports: ['z'],
+      });
+    } else {
+      imports.push({
+        moduleSpecifier: '@nexical/agent',
+        namedImports: [baseClass],
       });
     }
 
@@ -96,6 +116,19 @@ export class AgentBuilder extends BaseBuilder {
     };
 
     Reconciler.reconcile(file, definition);
+
+    // Save the file directly
+    const content = file.getFullText();
+    const { Formatter } = await import('../../utils/formatter.js');
+    let formatted = await Formatter.format(content, absolutePath);
+
+    // Ensure header is at the top
+    if (formatted.includes('// GENERATED CODE - DO NOT MODIFY')) {
+      formatted = Reconciler.hoistHeader(formatted, '// GENERATED CODE - DO NOT MODIFY');
+    }
+
+    writeFileSync(absolutePath, formatted);
+    console.info(`[AgentBuilder] Saved agent file: ${absolutePath}`);
   }
 
   private generateProperties(agent: AgentTemplateConfig): PropertyConfig[] {
