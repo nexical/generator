@@ -19,7 +19,8 @@ export class TemplateLoader {
     // Supports optional /* ts */ or /* tsx */ comment
     // const regex = /export\s+default\s+fragment(?:\/\*\s*(ts|tsx)?\s*\*\/\s*)?`([\s\S]*)`;?\s*$/;
     // Updated regex to explicitly capture tag if present
-    const regex = /export\s+default\s+fragment(?:\/\*\s*(ts|tsx)\s*\*\/\s*)?`([\s\S]*)`;?\s*$/;
+    const regex =
+      /export\s+default\s+fragment\s*(?:\/\*\s*(ts|tsx)\s*\*\/\s*)?`([\s\S]*)`\s*;?\s*$/;
 
     const match = fileContent.match(regex);
     if (!match) {
