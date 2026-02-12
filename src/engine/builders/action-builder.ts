@@ -121,6 +121,15 @@ export class ActionBuilder extends BaseBuilder {
       });
     }
 
+    const hasApiActor = sourceText.includes('ApiActor');
+    if (hasApiActor) {
+      imports.push({
+        moduleSpecifier: '@/lib/api/api-docs',
+        namedImports: ['ApiActor'],
+        isTypeOnly: true,
+      });
+    }
+
     const hasZod = sourceText.includes('z.');
     if (hasZod) {
       imports.push({
