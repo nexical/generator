@@ -20,6 +20,15 @@ export class ApiBuilder extends BaseBuilder {
     super();
   }
 
+  private get moduleTypesNamespace(): string {
+    return (
+      this.moduleName
+        .split('-')
+        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+        .join('') + 'ModuleTypes'
+    );
+  }
+
   protected getSchema(node?: NodeContainer): FileDefinition {
     if (this.type === 'collection') {
       return this.getCollectionSchema();
@@ -58,7 +67,7 @@ export class ApiBuilder extends BaseBuilder {
       .map(([name, f]) => {
         let validator = 'z.';
         if (f.isEnum) {
-          validator += `nativeEnum(${f.type})`;
+          validator += `nativeEnum(${this.moduleTypesNamespace}.${f.type})`;
         } else {
           switch (f.type) {
             case 'Int':
@@ -348,8 +357,9 @@ export class ApiBuilder extends BaseBuilder {
 
     if (usedEnums.length > 0) {
       imports.push({
-        moduleSpecifier: `@modules/${this.moduleName}/src/sdk/index`,
-        namedImports: usedEnums,
+        moduleSpecifier: '@/lib/api',
+        namedImports: [this.moduleTypesNamespace],
+        isTypeOnly: true,
       });
     }
 
@@ -504,8 +514,9 @@ export class ApiBuilder extends BaseBuilder {
 
     if (usedEnums.length > 0) {
       imports.push({
-        moduleSpecifier: `@modules/${this.moduleName}/src/sdk/index`,
-        namedImports: usedEnums,
+        moduleSpecifier: '@/lib/api',
+        namedImports: [this.moduleTypesNamespace],
+        isTypeOnly: true,
       });
     }
 
@@ -600,17 +611,27 @@ export class ApiBuilder extends BaseBuilder {
         imports.push({ moduleSpecifier: actionImport, namedImports: [actionClassName] });
       }
 
-      const inputType = input || 'unknown';
       let requestBodySchema = '{ type: "object" }';
 
       // Resolve schemas for DTOs
+      const pascalModule = this.moduleName
+        .split('-')
+        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+        .join('');
+      const moduleTypesNamespace = `${pascalModule}ModuleTypes`;
+
       if (input && input !== 'unknown' && (input.endsWith('DTO') || input.endsWith('Input'))) {
-        const sdkTypes = `@modules/${this.moduleName}/src/sdk/index`;
+        const sdkTypes = '@/lib/api';
         const existing = imports.find((i) => i.moduleSpecifier === sdkTypes);
         if (existing) {
-          if (!existing.namedImports?.includes(input)) existing.namedImports?.push(input);
+          if (!existing.namedImports?.includes(moduleTypesNamespace))
+            existing.namedImports?.push(moduleTypesNamespace);
         } else {
-          imports.push({ moduleSpecifier: sdkTypes, namedImports: [input], isTypeOnly: true });
+          imports.push({
+            moduleSpecifier: sdkTypes,
+            namedImports: [moduleTypesNamespace],
+            isTypeOnly: true,
+          });
         }
         requestBodySchema = this.generateJsonSchema(input);
       }
@@ -630,12 +651,17 @@ export class ApiBuilder extends BaseBuilder {
           }
         } else if (output.endsWith('DTO') || output.endsWith('Response')) {
           // Try generated schema for DTO
-          const sdkTypes = `@modules/${this.moduleName}/src/sdk/index`;
+          const sdkTypes = '@/lib/api';
           const existing = imports.find((i) => i.moduleSpecifier === sdkTypes);
           if (existing) {
-            if (!existing.namedImports?.includes(output)) existing.namedImports?.push(output);
+            if (!existing.namedImports?.includes(moduleTypesNamespace))
+              existing.namedImports?.push(moduleTypesNamespace);
           } else {
-            imports.push({ moduleSpecifier: sdkTypes, namedImports: [output], isTypeOnly: true });
+            imports.push({
+              moduleSpecifier: sdkTypes,
+              namedImports: [moduleTypesNamespace],
+              isTypeOnly: true,
+            });
           }
           responseSchema = this.generateJsonSchema(output);
         }
@@ -679,7 +705,7 @@ export class ApiBuilder extends BaseBuilder {
         initializer: TemplateLoader.load('api/custom/handler.tsf', {
           verb: verb,
           bodyLoader,
-          inputType,
+          inputType: input && input !== 'unknown' ? `${moduleTypesNamespace}.${input}` : 'unknown',
           entityName: this.model.name,
           lowerEntity: this.model.name.charAt(0).toLowerCase() + this.model.name.slice(1),
           method,

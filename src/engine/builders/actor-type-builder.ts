@@ -20,12 +20,19 @@ export class ActorTypeBuilder extends BaseBuilder {
     const imports: ImportConfig[] = [];
     const statements: StatementConfig[] = [];
 
+    const importsByModule: Record<string, string[]> = {};
+
     for (const model of actorModels) {
-      // Import the model type
+      const ms = './sdk/types.js';
+      if (!importsByModule[ms]) importsByModule[ms] = [];
+      importsByModule[ms].push(model.name);
+    }
+
+    for (const [ms, names] of Object.entries(importsByModule)) {
       imports.push({
-        moduleSpecifier: './sdk/types.js',
+        moduleSpecifier: ms,
         isTypeOnly: true,
-        namedImports: [model.name],
+        namedImports: [...new Set(names)],
       });
     }
 

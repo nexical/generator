@@ -1,7 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-// import { ZodSchemaGenerator } from '@nexical/generator/ast-builders/schema-gen'; // TODO: Locate this
 import { ApiBuilder } from '../../../../src/engine/builders/api-builder.js';
 import { type ModelDef } from '../../../../src/engine/types.js';
 
@@ -40,6 +39,29 @@ describe('ApiBuilder', () => {
     expect(text).toContain('UserService.create');
     expect(text).toContain('z.object({');
     expect(text).toContain('email: z.string()');
+  });
+
+  it('should generate namespaced enums in zod schema', () => {
+    const enumModel: ModelDef = {
+      ...model,
+      fields: {
+        ...model.fields,
+        status: {
+          type: 'Status',
+          isEnum: true,
+          isRequired: true,
+          isList: false,
+          attributes: [],
+          api: true,
+        },
+      },
+    };
+    const builder = new ApiBuilder(enumModel, [enumModel], 'user-api', 'collection');
+    builder.ensure(sourceFile);
+
+    const text = sourceFile.getFullText();
+    expect(text).toContain('status: z.nativeEnum(UserApiModuleTypes.Status)');
+    expect(text).toContain('import type { UserApiModuleTypes } from "@/lib/api"');
   });
 
   it('should generate individual schema (GET/PUT/DELETE)', () => {
@@ -128,7 +150,7 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('import type { UserStatsResponse } from "@modules/user-api/src/sdk"');
+    expect(text).toContain('import type { UserApiModuleTypes } from "@/lib/api"');
     // Verify GET routes have empty body with correct type (unknown default)
     expect(text).toContain('const body = {} as unknown;');
   });

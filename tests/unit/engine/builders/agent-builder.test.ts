@@ -35,7 +35,7 @@ agents:
     const builder = new AgentBuilder('test-api', { name: 'test-api' });
     await builder.build(project, undefined);
 
-    const scrapeFile = project.getSourceFile('src/agent/ScrapeProcessor.ts');
+    const scrapeFile = project.getSourceFile((f) => f.getFilePath().endsWith('ScrapeProcessor.ts'));
     expect(scrapeFile).toBeDefined();
     const scrapeText = scrapeFile?.getFullText();
     expect(scrapeText).toContain('export class ScrapeProcessor extends JobProcessor<unknown>');
@@ -43,7 +43,7 @@ agents:
     expect(scrapeText).toContain('constructor(config: ProcessorConfig)');
     expect(scrapeText).toContain('super(config);');
 
-    const monitorFile = project.getSourceFile('src/agent/MonitorAgent.ts');
+    const monitorFile = project.getSourceFile((f) => f.getFilePath().endsWith('MonitorAgent.ts'));
     expect(monitorFile).toBeDefined();
     const monitorText = monitorFile?.getFullText();
     expect(monitorText).toContain('export class MonitorAgent extends PersistentAgent');
