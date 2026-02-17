@@ -108,7 +108,9 @@ describe('TestBuilder Complex Scenarios', () => {
     const text = sourceFile.getText();
 
     // Should see actor injection
-    expect(text).toContain('assigneeId: (actor ? (actor as any).id : undefined)');
+    expect(text).toContain(
+      'assigneeId: (actor ? (actor as unknown as { id: string }).id : undefined)',
+    );
   });
 
   it('should handle list filtering unique injection', () => {

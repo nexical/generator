@@ -119,7 +119,9 @@ describe('Builders Sweeper', () => {
       const s2 = (b2 as any).getSchema().statements?.[0];
       const c2 = typeof s2 === 'string' ? s2 : (s2 as ParsedStatement)?.raw || '';
       // For CREATE, it generates: manager: (actor ? actor.id : undefined)
-      expect(c2).toContain('manager: (actor ? (actor as any).id : undefined)');
+      expect(c2).toContain(
+        'manager: (actor ? (actor as unknown as { id: string }).id : undefined)',
+      );
 
       // Case 3: userId
       const postModel: ModelDef = {
@@ -135,7 +137,7 @@ describe('Builders Sweeper', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const s3 = (b3 as any).getSchema().statements?.[0];
       const c3 = typeof s3 === 'string' ? s3 : (s3 as ParsedStatement)?.raw || '';
-      expect(c3).toContain('userId: (actor ? (actor as any).id : undefined)');
+      expect(c3).toContain('userId: (actor ? (actor as unknown as { id: string }).id : undefined)');
     });
 
     it('should find actor Foreign Key via regex', () => {
