@@ -6,11 +6,24 @@ import path from 'node:path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import fs from 'node:fs';
+
 // In dev, we use tsx on the .ts file. In prod, we use node on the .js file.
-// For now, let's assume we can always use tsx or just node if it's already compiled.
-// Actually, using the absolute path to the local script is the key.
-const PROMPT_SCRIPT = path.join(__dirname, 'prompt.ts');
-const PROMPT_CMD = `npx tsx "${PROMPT_SCRIPT}"`;
+let scriptPath = path.join(__dirname, 'prompt.ts');
+let command = `npx tsx`;
+
+if (!fs.existsSync(scriptPath)) {
+  // If .ts doesn't exist, try .js (production/built mode)
+  scriptPath = path.join(__dirname, 'prompt.js');
+  if (fs.existsSync(scriptPath)) {
+    command = 'node';
+  } else {
+    // Fallback or error, but let's stick to the original default if neither found (will fail later)
+    scriptPath = path.join(__dirname, 'prompt.ts');
+  }
+}
+
+const PROMPT_CMD = `${command} "${scriptPath}"`;
 
 // Use the same models as reskill for consistency
 const MODELS = 'gemini-3-flash-preview,gemini-3-pro-preview';
