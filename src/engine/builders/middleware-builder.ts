@@ -102,10 +102,9 @@ export class MiddlewareBuilder extends BaseBuilder {
     );
 
     // Session Hydration Logic
-    // Session Hydration - REMOVED per user request
     if (loginActorModel) {
-      // Only keeping this block if other logic needs loginActorModel, but strictly removing session check
-      sessionCheck = null;
+      // Session Hydration via Cloudflare/Astro Session
+      sessionCheck = TemplateLoader.load('middleware/session.tsf');
     }
 
     // Dynamic Bouncer Pattern

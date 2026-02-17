@@ -351,23 +351,6 @@ export class ApiModuleGenerator extends ModuleGenerator {
               isExported: true,
               isAbstract: true,
               properties: [],
-              methods: [
-                {
-                  name: 'check',
-                  isAsync: true,
-                  parameters: [
-                    { name: 'context', type: 'unknown' }, // using unknown for now or Import types
-                    { name: 'permission', type: 'string' },
-                  ],
-                  returnType: 'Promise<boolean>',
-                  statements: [
-                    {
-                      kind: 'return',
-                      expression: 'true', // Default or valid logic
-                    },
-                  ],
-                },
-              ],
             },
           ],
         });

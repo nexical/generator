@@ -4,7 +4,7 @@ import {
   PlatformDefinitionSchema,
   PrismaModelSchema,
   PlatformApiDefinitionSchema,
-} from '../../src/schema';
+} from '../../src/schemas/api-schema';
 
 describe('Schema Validation', () => {
   describe('PrismaModelSchema', () => {

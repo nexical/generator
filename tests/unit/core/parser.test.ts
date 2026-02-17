@@ -1,10 +1,10 @@
 /** @vitest-environment node */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PlatformParser } from '@nexical/generator/core/parser';
+import { PlatformParser } from '../../../src/core/parser';
 import fs from 'fs';
 import yaml from 'yaml';
-import { PlatformDefinitionSchema } from '@nexical/generator/schema';
+import { PlatformDefinitionSchema } from '../../../src/schemas/api-schema';
 
 vi.mock('fs', () => ({
   default: {
@@ -19,7 +19,7 @@ vi.mock('fs', () => ({
   statSync: vi.fn(),
 }));
 vi.mock('yaml');
-vi.mock('@nexical/generator/schema', () => ({
+vi.mock('../../../src/schemas/api-schema', () => ({
   PlatformDefinitionSchema: {
     safeParse: vi.fn(),
   },

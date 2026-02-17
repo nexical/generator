@@ -1,9 +1,9 @@
 /** @vitest-environment node */
 /* eslint-disable */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Reconciler } from '@nexical/generator/engine/reconciler';
+import { Reconciler } from '../../../src/engine/reconciler';
 import { Project } from 'ts-morph';
-import { ApiBuilder } from '@nexical/generator/engine/builders/api-builder';
+import { ApiBuilder } from '../../../src/engine/builders/api-builder';
 
 // Mocking some primitives to return validation issues
 describe('Final Branch Push - Reconciler Issues', () => {
@@ -60,7 +60,13 @@ describe('Final Branch Push - ApiBuilder Edge Cases', () => {
   it('should handle custom route with path parameters and DTOs', async () => {
     const mockModel = { name: 'User', api: true, db: true, fields: { id: { type: 'String' } } };
     const mockRoutes = [
-      { method: 'getProfile', path: 'profile/:username', verb: 'GET', output: 'ProfileDTO' },
+      {
+        method: 'getProfile',
+        path: 'profile/:username',
+        verb: 'GET',
+        input: 'ProfileDTO',
+        output: 'ProfileDTO',
+      },
     ];
 
     const project = new Project();

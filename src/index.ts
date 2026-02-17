@@ -1,4 +1,4 @@
-export * from './schema.js';
+export * from './schemas/api-schema.js';
 
 export * from './commands/audit/api.js';
 export * from './commands/gen/api.js';

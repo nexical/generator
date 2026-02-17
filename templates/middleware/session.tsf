@@ -1,0 +1,13 @@
+export default fragment/* ts */`
+  // Session Hydration
+  // Expects 'session' to be available on locals (configured via adapter)
+  const session = (context.locals as any).session;
+  if (session) {
+    const user = await session.get('user');
+    if (user) {
+      // Compatibility with Actor system
+      context.locals.actor = user;
+      context.locals.actorType = 'user';
+    }
+  }
+`;
