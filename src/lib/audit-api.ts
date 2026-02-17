@@ -8,7 +8,7 @@ import {
   PlatformApiDefinitionSchema,
   type PlatformDefinition,
   type PlatformModel,
-} from '../schema.js';
+} from '../schemas/api-schema.js';
 
 // Builders
 import { ModelParser } from '../engine/model-parser.js';

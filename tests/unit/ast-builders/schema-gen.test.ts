@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import ts from 'typescript';
-import { ZodSchemaGenerator } from '@nexical/generator/ast-builders/schema-gen';
-import { type PlatformDefinition } from '@nexical/generator/schema';
+import { ZodSchemaGenerator } from '../../../src/ast-builders/schema-gen';
+import { type PlatformDefinition } from '../../../src/schemas/api-schema';
 
 describe('ZodSchemaGenerator', () => {
   const printer = ts.createPrinter();

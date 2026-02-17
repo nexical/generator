@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import { type PlatformDefinition, type PlatformModel } from '../schema.js';
+import { type PlatformDefinition, type PlatformModel } from '../schemas/api-schema.js';
 
 const { factory } = ts;
 

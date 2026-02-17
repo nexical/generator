@@ -98,9 +98,11 @@ describe('ApiBuilder', () => {
       'import { ResetPasswordUserAction } from "@modules/user-api/src/actions/reset-password-user"',
     );
     // Verify strong typing restoration
-    expect(text).toContain('const body = await context.request.json() as ResetPasswordInput;');
     expect(text).toContain(
-      "const input: ResetPasswordInput = await HookSystem.filter('user.resetPassword.input', body);",
+      'const body = await context.request.json() as UserApiModuleTypes.ResetPasswordInput;',
+    );
+    expect(text).toContain(
+      "const input: UserApiModuleTypes.ResetPasswordInput = await HookSystem.filter('user.resetPassword.input', body);",
     );
   });
 
