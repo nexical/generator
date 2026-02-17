@@ -10,6 +10,7 @@ import nunjucks from 'nunjucks';
 import { spawn, execSync } from 'node:child_process';
 import minimist from 'minimist';
 import readline from 'node:readline';
+import { globSync } from 'glob';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,6 +141,49 @@ Examples:
     } catch (error) {
       console.error(`[Read] Error reading file: ${relativePath}`);
       return `[Error reading file ${relativePath}]`;
+    }
+  });
+
+  env.addGlobal('read_glob', (pattern: string) => {
+    try {
+      const files = globSync(pattern, { cwd: process.cwd(), absolute: true });
+      if (files.length === 0) return `[No files found for pattern: ${pattern}]`;
+
+      return files
+        .map((file) => {
+          try {
+            const content = readFileSync(file, 'utf-8');
+            const relPath = path.relative(process.cwd(), file);
+            return `<file name="${relPath}">\n${content}\n</file>`;
+          } catch (err) {
+            return `[Error reading file ${file}]`;
+          }
+        })
+        .join('\n');
+    } catch (error) {
+      console.error(`[ReadGlob] Error with pattern: ${pattern}`, error);
+      return `[Error processing glob: ${pattern}]`;
+    }
+  });
+
+  env.addGlobal('read_specs', (pattern: string) => {
+    // Wrapper for read_glob specifically for specs
+    return env.getGlobal('read_glob')(pattern);
+  });
+
+  env.addGlobal('compressed_map', (targetPath: string) => {
+    try {
+      console.log(`[Context] Generating compressed map for: ${targetPath}`);
+      // Use repomix to generate a map. We use xml style.
+      // We ignore common large directories and test files to keep it "compressed" in terms of relevance.
+      const output = execSync(
+        `npx -y repomix --stdout --quiet --style xml --include "${targetPath}/**/*" --ignore "**/node_modules,**/dist,**/*.spec.ts,**/*.test.ts,**/coverage,**/.git"`,
+        { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'inherit'] },
+      );
+      return `<COMPRESSED_MAP path="${targetPath}">\n${output}\n</COMPRESSED_MAP>`;
+    } catch (error) {
+      console.error(`[Context] Error running repomix on ${targetPath}`);
+      return `[Error generating map for ${targetPath}]`;
     }
   });
 

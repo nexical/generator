@@ -7,13 +7,15 @@ import { ModuleLocator } from '../../lib/module-locator.js';
 
 export class SpecUpdateCommand extends BaseCommand {
   static usage = 'spec update';
-  static description = 'Update or reverse-engineer a specification for an existing module';
+  static description =
+    'Update or reverse-engineer a specification for an existing module or the project';
 
   static args = {
     args: [
       {
         name: 'name',
-        description: 'The name of the module to update (e.g., "payment-api" or "*-api")',
+        description:
+          'The name of the module to update (e.g., "payment-api") or "project" for the root spec',
         required: true,
       },
     ],
@@ -32,6 +34,39 @@ export class SpecUpdateCommand extends BaseCommand {
 
     if (!name) {
       this.error('Please provide a module name.');
+      return;
+    }
+
+    if (name === 'project' || name === 'root' || name === '.') {
+      const specFile = path.join(process.cwd(), 'SPECIFICATION.md');
+
+      if (!(await fs.pathExists(specFile))) {
+        this.warn(`SPECIFICATION.md not found in project root. Creating a placeholder.`);
+        await fs.writeFile(
+          specFile,
+          `# Project Specification: ${path.basename(process.cwd())}\n\n(Draft generated from code)`,
+        );
+      }
+
+      this.success(`\nStarting project specification update (Interactive: ${interactive})...\n`);
+
+      const userInput = interactive
+        ? `I want to update the project specification based on the current codebase and my input. Please read the code and interview me.`
+        : `I want to update the project specification based on the current codebase. Please draft the specification.`;
+
+      try {
+        AgentRunner.run(
+          'ProjectSpecWriter',
+          'agents/project-spec-writer.md',
+          {
+            spec_file: specFile,
+            user_input: userInput,
+          },
+          interactive,
+        );
+      } catch {
+        process.exit(1);
+      }
       return;
     }
 
@@ -71,7 +106,7 @@ export class SpecUpdateCommand extends BaseCommand {
     try {
       AgentRunner.run(
         'SpecWriter',
-        'agents/spec-writer.md',
+        'agents/module-spec-writer.md',
         {
           module_root: modulePath,
           spec_file: specFile,

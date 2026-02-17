@@ -7,13 +7,14 @@ import { ModuleLocator } from '../../lib/module-locator.js';
 
 export class SpecInitCommand extends BaseCommand {
   static usage = 'spec init';
-  static description = 'Interactively generate a specification for a new module';
+  static description = 'Interactively generate a specification for a new module or the project';
 
   static args = {
     args: [
       {
         name: 'name',
-        description: 'The name of the new module (e.g., "payment-api" or "backend:payment-api")',
+        description:
+          'The name of the module to update (e.g., "payment-api") or "project" for the root spec',
         required: true,
       },
     ],
@@ -25,6 +26,39 @@ export class SpecInitCommand extends BaseCommand {
 
     if (!name) {
       this.error('Please provide a module name.');
+      return;
+    }
+
+    if (name === 'project' || name === 'root' || name === '.') {
+      const specFile = path.join(process.cwd(), 'SPECIFICATION.md');
+
+      if (await fs.pathExists(specFile)) {
+        this.warn(
+          `SPECIFICATION.md already exists in the project root. You might want to use "spec:update" instead.`,
+        );
+        // proceed anyway
+      } else {
+        await fs.writeFile(
+          specFile,
+          `# Project Specification: ${path.basename(process.cwd())}\n\n(Draft)`,
+        );
+      }
+
+      this.success(`\nStarting interactive project specification session...\n`);
+
+      try {
+        AgentRunner.run(
+          'ProjectSpecWriter',
+          'agents/project-spec-writer.md',
+          {
+            spec_file: specFile,
+            user_input: `I want to create a specification for this project. Please interview me.`,
+          },
+          true,
+        );
+      } catch {
+        process.exit(1);
+      }
       return;
     }
 
@@ -51,7 +85,7 @@ export class SpecInitCommand extends BaseCommand {
     try {
       AgentRunner.run(
         'SpecWriter',
-        'agents/spec-writer.md',
+        'agents/module-spec-writer.md',
         {
           module_root: modulePath,
           spec_file: specFile,
