@@ -178,7 +178,7 @@ Examples:
       // We ignore common large directories and test files to keep it "compressed" in terms of relevance.
       const output = execSync(
         `npx -y repomix --stdout --quiet --style xml --include "${targetPath}/**/*" --ignore "**/node_modules,**/dist,**/*.spec.ts,**/*.test.ts,**/coverage,**/.git"`,
-        { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'inherit'] },
+        { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 1024 * 1024 * 50 },
       );
       return `<COMPRESSED_MAP path="${targetPath}">\n${output}\n</COMPRESSED_MAP>`;
     } catch (error) {
@@ -254,12 +254,53 @@ Examples:
       const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
+        terminal: true,
       });
+
       return new Promise<string>((resolve) => {
-        console.log('\n(Type "exit" or "quit" to end the session)');
-        rl.question('> ', (ans) => {
-          rl.close();
-          resolve(ans);
+        console.log(
+          '\n(Type "exit" or "quit" to end. To submit, press Enter. For multi-line, end line with \\ or paste text)',
+        );
+        process.stdout.write('> ');
+
+        let lines: string[] = [];
+        let submitTimer: NodeJS.Timeout | null = null;
+        const PASTE_DELAY = 10; // ms to wait for next line (pasting is usually < 5ms)
+
+        rl.on('line', (line) => {
+          // If we are receiving lines rapidly, clear the timer
+          if (submitTimer) {
+            clearTimeout(submitTimer);
+            submitTimer = null;
+          }
+
+          const trimmed = line.trim();
+
+          // Handle exit check only on the very first line if it's the only content
+          if (lines.length === 0 && ['exit', 'quit'].includes(trimmed.toLowerCase())) {
+            rl.close();
+            resolve(trimmed);
+            return;
+          }
+
+          // Check for manual continuation with backslash
+          if (line.endsWith('\\')) {
+            lines.push(line.slice(0, -1)); // Remove the backslash
+            // Prompt for next line visual cue
+            process.stdout.write('... ');
+            return;
+          }
+
+          lines.push(line);
+
+          // Set a timer to submit.
+          // If the user is pasting, the next 'line' event will fire before this timer triggers,
+          // clearing this timer and appending the next line.
+          // If the user just hit Enter manually, this timer will fire and submit.
+          submitTimer = setTimeout(() => {
+            rl.close();
+            resolve(lines.join('\n'));
+          }, PASTE_DELAY);
         });
       });
     };
