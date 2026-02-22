@@ -1,80 +1,69 @@
 ---
-name: implement-ast-primitive
-description: "This skill defines the standard for creating and managing AST (Abstract Syntax Tree) nodes within the generator package. It enforces the 'AST Primitive Pattern' to ensure consistent, idempotent, and v..."
+name: generator-implement-ast-primitive
+description: 'Expert skill for implementing AST Primitives within the Nexical Generator Engine. Primitives are the foundational building blocks that wrap `ts-morph` AST manipulation logic into a standardized, recon...'
 ---
 
-# Skill: Implement AST Primitive
+# generator-implement-ast-primitive
 
-This skill defines the standard for creating and managing AST (Abstract Syntax Tree) nodes within the generator package. It enforces the "AST Primitive Pattern" to ensure consistent, idempotent, and verifiable code generation.
+Expert skill for implementing AST Primitives within the Nexical Generator Engine. Primitives are the foundational building blocks that wrap `ts-morph` AST manipulation logic into a standardized, reconcilable interface.
 
-## 1. Core Principles
+## Core Patterns
 
-### The AST Primitive Pattern
+### 1. Primitive Class Structure
 
-All AST manipulation logic must be encapsulated in a specific "Primitive" class that extends `BasePrimitive`.
+Every primitive must be a class that extends `BasePrimitive<TNode, TConfig>`. This ensures a consistent constructor and internal configuration management.
 
-- **Single Responsibility**: Each Primitive manages one specific type of AST node (e.g., `ClassPrimitive`, `InterfacePrimitive`).
-- **Composition**: Complex nodes (like a Class with Decorators) delegate child node management to their respective Primitives. Do not inline child logic.
+- **Location**: Primitives should be placed in `packages/generator/src/engine/primitives/nodes/` (for structural nodes) or appropriate sub-directories.
+- **Base Class**: `import { BasePrimitive } from '../core/base-primitive.js';`
 
-### Configuration-Driven Reconciliation
+### 2. AST Node Lifecycle
 
-Primitives are **idempotent**. They accept a `Config` object and ensure the AST node reflects that configuration.
+Primitives must implement four core lifecycle methods to manage the state of the AST:
 
-- **Find**: Locate the existing node.
-- **Create**: If missing, build it from the config.
-- **Update**: If present, compare the current state with the config and apply changes _only_ if they differ.
+- **`find(parent: Node): TNode | undefined`**: Locate the existing node within the parent.
+- **`create(parent: Node): TNode`**: Generate a new node if one does not exist.
+- **`update(node: TNode): void`**: Sync the existing node's state with the current configuration (Reconciliation).
+- **`validate(node: TNode): ValidationResult`**: Compare the actual AST node against the configuration and return an object with validity status and issues.
 
-### Explicit Validation
+### 3. Composition of Primitives
 
-Primitives must implement a `validate` method that returns a `ValidationResult`.
+Complex AST structures (like a Class with Decorators) should be built by composing primitives. A parent primitive delegates the handling of its children to their specific primitive classes.
 
-- **Non-Blocking**: Do not throw errors for validation failures. Return a list of issues.
-- **Comprehensive**: Check for all required properties and constraints.
+**Pattern**: `new ChildPrimitive(config).ensure(parentNode);`
 
-### ESM Relative Imports
+### 4. Validation Pattern
 
-**Strict Rule**: All internal imports within the generator package must use the `.js` extension.
-
-- **Correct**: `import { BasePrimitive } from '../core/base-primitive.js';`
-- **Incorrect**: `import { BasePrimitive } from '../core/base-primitive';`
-
-## 2. Implementation Structure
-
-A Primitive implementation consists of:
-
-1.  **The Primitive Class**: Extends `BasePrimitive<TNode, TConfig>`.
-2.  **The Configuration Interface**: Defines the shape of `TConfig`.
-3.  **The Template**: (Optional) A template file if the node is complex to build programmatically.
-
-## 3. Usage
+Validation must strictly return a `ValidationResult` object. This allows the generator to report drift between the desired state (config) and the actual state (code) without necessarily failing the process.
 
 ```typescript
-// Example Usage
-import { ClassPrimitive } from './nodes/class-primitive.js';
+import { ValidationResult } from '../contracts.js';
 
-const primitive = new ClassPrimitive(sourceFile);
-const config = {
-  name: 'MyService',
-  isExported: true,
-  decorators: [{ name: 'Injectable' }],
-};
-
-// 1. Validate configuration against current state or constraints
-const validation = primitive.validate(config);
-if (!validation.valid) {
-  console.error(validation.issues);
-  return;
+validate(node: TNode): ValidationResult {
+  const issues: string[] = [];
+  // ... check logic ...
+  return { valid: issues.length === 0, issues };
 }
-
-// 2. Ensure the node exists and matches config
-primitive.ensure(config);
 ```
 
-## 4. Method Signatures
+### 5. Type-Safe Configuration
 
-Every Primitive must implement:
+Every primitive must have a corresponding configuration interface defined in `packages/generator/src/engine/types.ts`. Avoid using `any` for configuration or node types.
 
-- `find(config: TConfig): TNode | undefined`
-- `create(config: TConfig): TNode`
-- `update(node: TNode, config: TConfig): void`
-- `validate(config: TConfig): ValidationResult`
+## Implementation Rules
+
+1. **Zero-Tolerance for `any`**: Always use specific `ts-morph` types (e.g., `ClassDeclaration`, `MethodDeclaration`) and concrete configuration interfaces.
+2. **Idempotency**: The `ensure` method (inherited from `BasePrimitive`) must be idempotent. Running it multiple times should result in the same AST state.
+3. **Surgical Updates**: In the `update` method, only modify the parts of the node that have drifted from the configuration. Avoid deleting and re-creating nodes if possible.
+4. **Explicit Extensions**: Use `.js` extensions for all relative imports to ensure ESM compatibility.
+
+## Directory Structure
+
+- **Core Logic**: `packages/generator/src/engine/primitives/core/base-primitive.ts`
+- **Contracts**: `packages/generator/src/engine/primitives/contracts.ts`
+- **Types**: `packages/generator/src/engine/types.ts`
+- **Node Primitives**: `packages/generator/src/engine/primitives/nodes/`
+
+## Verification Strategy
+
+- **Unit Tests**: Test each primitive in isolation by passing a mock parent node and verifying the resulting AST structure.
+- **Drift Detection**: Use the `validate` method to ensure that existing code is correctly identified as "valid" or "invalid" based on configuration changes.
