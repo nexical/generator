@@ -1,3 +1,8 @@
+---
+name: implement-builder
+description: 'This skill defines the standard for creating **Builders** within the `nexical-generator` package. Builders are responsible for generating structured code files (e.g., Actions, Services, Tests) while p...'
+---
+
 # Skill: Implement Generator Builder
 
 This skill defines the standard for creating **Builders** within the `nexical-generator` package. Builders are responsible for generating structured code files (e.g., Actions, Services, Tests) while preserving existing user logic.

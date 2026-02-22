@@ -1,3 +1,8 @@
+---
+name: generator-implement-ast-primitive
+description: 'Expert skill for implementing AST Primitives within the Nexical Generator Engine. Primitives are the foundational building blocks that wrap `ts-morph` AST manipulation logic into a standardized, recon...'
+---
+
 # generator-implement-ast-primitive
 
 Expert skill for implementing AST Primitives within the Nexical Generator Engine. Primitives are the foundational building blocks that wrap `ts-morph` AST manipulation logic into a standardized, reconcilable interface.

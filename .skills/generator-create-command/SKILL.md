@@ -1,3 +1,8 @@
+---
+name: generator-create-command
+description: 'This skill guides the creation of new CLI commands within the `@nexical/generator` package.'
+---
+
 # Generator Create Command
 
 This skill guides the creation of new CLI commands within the `@nexical/generator` package.

@@ -1,3 +1,8 @@
+---
+name: generator-implement-builder
+description: 'This skill defines the standard for implementing **Builders** within the `@nexical/generator` package. A Builder is a specialized class responsible for generating, updating, and maintaining source cod...'
+---
+
 # Skill: Implement Generator Builder
 
 ## Description

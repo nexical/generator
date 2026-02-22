@@ -1,3 +1,8 @@
+---
+name: implement-ast-primitive
+description: "This skill defines the standard for creating and managing AST (Abstract Syntax Tree) nodes within the generator package. It enforces the 'AST Primitive Pattern' to ensure consistent, idempotent, and v..."
+---
+
 # Skill: Implement AST Primitive
 
 This skill defines the standard for creating and managing AST (Abstract Syntax Tree) nodes within the generator package. It enforces the "AST Primitive Pattern" to ensure consistent, idempotent, and verifiable code generation.

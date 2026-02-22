@@ -1,3 +1,8 @@
+---
+name: generator-implement-reconciler
+description: "Expert guide for implementing and extending the Reconciler engine within the `@nexical/generator`. This skill focuses on the 'Primitive-Based Reconciliation' pattern, ensuring that TypeScript AST modi..."
+---
+
 # Skill: generator-implement-reconciler
 
 Expert guide for implementing and extending the Reconciler engine within the `@nexical/generator`. This skill focuses on the "Primitive-Based Reconciliation" pattern, ensuring that TypeScript AST modifications are deterministic, safe, and synchronized with declarative definitions.

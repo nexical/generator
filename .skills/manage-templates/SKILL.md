@@ -1,3 +1,8 @@
+---
+name: manage-templates
+description: 'This skill defines the standard for creating and maintaining **TypeScript Fragment (.tsf)** files used by the `nexical-generator`. These files contain the raw code templates that are injected into use...'
+---
+
 # Skill: Manage Generator Templates (.tsf)
 
 ## Description

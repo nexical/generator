@@ -1,3 +1,8 @@
+---
+name: implement-api-generator
+description: 'Guide for implementing and maintaining the API Generator engine using the Builder Pattern.'
+---
+
 # implement-api-generator
 
 Guide for implementing and maintaining the API Generator engine using the Builder Pattern.
