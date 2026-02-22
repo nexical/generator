@@ -9,7 +9,7 @@ This document details the architectural components, strict design principles, an
 ## 🏗️ Core Architectural Principles
 
 1. **Code-as-Data**: TypeScript source files are modeled as structured JSON (`FileDefinition`). We define the _desired state_, not the imperative steps to create it.
-2. **Idempotent Reconciliation**: Generating code is the process of computing the diff between the AST (Abstract Syntax Tree via `ts-morph`) and the `FileDefinition`, and applying only the necessary changes. Running generation twice must result in zero changes.
+2. **Configuration-Driven Reconciliation**: Generating code is the process of computing the diff between the AST (Abstract Syntax Tree via `ts-morph`) and the `FileDefinition`, and applying only the necessary changes. Running generation twice must result in zero changes. Updates must be idempotent.
 3. **Preservation of Manual Edits**: The generator strictly owns structural nodes it defines. It _does not_ overwrite internal method bodies or arbitrary file additions unless explicitly configured or marked for pruning.
 4. **Separation of Concerns**:
    - **Builders**: Understand the Domain (e.g., `models.yaml`, `api.yaml`) and output JSON Schemas (`FileDefinition`).
@@ -33,14 +33,18 @@ The source of truth for the "Code-as-Data" design. It defines the schemas that r
 
 Primitives are the lowest-level "Lego blocks" of the engine acting on individual AST nodes. They implement `BasePrimitive<TNode, TConfig>` (located in `src/engine/primitives/core/base-primitive.ts`) and follow a strict lifecycle:
 
-- **`find(parent)`**: Locates the specific node safely within a container.
-- **`create(parent)`**: Generates a new node if one does not exist.
-- **`update(node)`**: Synchronizes the existing node's state with the configuration.
-- **`validate(node)`**: Returns structural mismatches (`ValidationResult`) without modifying code (used by the `audit` command).
+- **`find(config)`**: Locates the specific node safely within a container based on the configuration.
+- **`create(config)`**: Generates a new node if one does not exist.
+- **`update(node, config)`**: Synchronizes the existing node's state with the configuration.
+- **`validate(config)`**: Returns structural mismatches (`ValidationResult`) without modifying code (used by the `audit` command). **Validation must be non-blocking and comprehensive.**
 
-The **`ensure(parent)`** method orchestrates this lifecycle, acting as the primary reconciliation entry point: it finds the node, and then either updates it or creates it.
+The **`ensure(config)`** method orchestrates this lifecycle, acting as the primary reconciliation entry point: it finds the node, and then either updates it or creates it.
 
-_Rule: Primitives must NEVER possess domain logic (e.g., "what should an API endpoint look like"). They strictly translate JSON to AST edits._
+**Critical Rules for Primitives:**
+
+- **Primitive Composition**: Complex nodes MUST delegate the management of child nodes (e.g., Decorators, JSDocs, Type Parameters) to their respective Primitives. **Do not inline logic for child nodes.**
+- **Single Responsibility**: Each Primitive manages exactly one AST node type.
+- **No Domain Logic**: Primitives strictly translate JSON to AST edits. They never contain business logic (e.g., "what an API endpoint looks like").
 
 ### 3. Builders (`src/engine/builders/`)
 
