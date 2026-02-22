@@ -13,8 +13,11 @@ This skill defines the standard for creating **Builders** within the `nexical-ge
 - **Declarative Schema**: Builders **MUST** implement `getSchema(node)` to define the file structure (imports, class, methods).
 - **Preservation**: Builders **MUST** use the `node` parameter in `getSchema` to inspect the existing AST and preserve manual changes (e.g., custom imports, method bodies).
 - **Templates**: Large default code blocks **MUST** be loaded from `.tsf` (TypeScript Fragment) templates using `TemplateLoader`, not hardcoded in the builder.
+- **Generated Headers**: Files fully managed by the generator **MUST** include a warning header defined in the `FileDefinition`.
 
 ## 2. Implementation Standards
+
+> **CRITICAL**: Do NOT manually instantiate Primitives or manipulate the AST imperatively (e.g., `node.addMethod`). Rely solely on the `Reconciler` processing your `FileDefinition`.
 
 ### 2.1 Class Structure
 
@@ -37,6 +40,7 @@ The `getSchema` method is the heart of the builder. It returns a `FileDefinition
 ```typescript
 protected getSchema(node?: NodeContainer): FileDefinition {
   return {
+    header: '// GENERATED CODE - DO NOT MODIFY',
     imports: this.buildImports(node),
     class: {
       name: this.className,

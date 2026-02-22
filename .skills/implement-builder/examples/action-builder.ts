@@ -25,6 +25,7 @@ export class ActionBuilder extends BaseBuilder {
 
   protected getSchema(node?: NodeContainer): FileDefinition {
     return {
+      header: '// GENERATED CODE - DO NOT MODIFY',
       imports: this.buildImports(node),
       class: {
         name: StringUtils.toPascalCase(this.config.actionName),

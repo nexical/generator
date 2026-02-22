@@ -23,6 +23,7 @@ export class FeatureBuilder extends BaseBuilder {
 
   protected getSchema(node?: NodeContainer): FileDefinition {
     return {
+      header: '// GENERATED CODE - DO NOT MODIFY',
       imports: this.buildImports(node),
       class: {
         name: this.config.name,
