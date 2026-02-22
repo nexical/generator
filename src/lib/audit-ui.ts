@@ -63,7 +63,7 @@ export async function auditModule(
     const result = UiConfigSchema.safeParse(parsed);
 
     if (!result.success) {
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         report(`Schema Error: ${err.path.join('.')} - ${err.message}`);
       });
       return issues; // Stop if schema is invalid

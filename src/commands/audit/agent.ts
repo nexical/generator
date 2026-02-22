@@ -102,7 +102,7 @@ export default class AuditAgentCommand extends BaseCommand {
       // Schema validation
       const schemaResult = AgentsYamlSchema.safeParse(parsed);
       if (!schemaResult.success) {
-        for (const error of schemaResult.error.errors) {
+        for (const error of schemaResult.error.issues) {
           result.errors.push(`Schema: ${error.path.join('.')} - ${error.message}`);
         }
         this.error(`${moduleName}: Schema validation failed`);

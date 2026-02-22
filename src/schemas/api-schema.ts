@@ -29,7 +29,7 @@ export const PrismaModelSchema = z.object({
   // NEW: Platform Generation Config
   features: PlatformModelFeaturesSchema.optional(),
   // Validation Overrides
-  role: z.union([z.string(), z.record(z.string())]).optional(),
+  role: z.union([z.string(), z.record(z.string(), z.string())]).optional(),
   default: z.boolean().optional(),
   api: z.boolean().optional(),
   db: z.boolean().optional(),
@@ -37,7 +37,7 @@ export const PrismaModelSchema = z.object({
   actor: z
     .object({
       strategy: z.enum(['login', 'api-key']),
-      fields: z.record(z.string()).optional(),
+      fields: z.record(z.string(), z.string()).optional(),
     })
     .optional(),
 });

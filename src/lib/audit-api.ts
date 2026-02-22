@@ -95,7 +95,7 @@ export async function auditModule(
     const modelResult = PlatformDefinitionSchema.safeParse(parsedModels);
     if (!modelResult.success) {
       report(`[Schema] models.yaml validation errors: `);
-      modelResult.error.errors.forEach((err) => {
+      modelResult.error.issues.forEach((err) => {
         report(`  Path: ${err.path.join('.')} - ${err.message} `);
       });
     }
@@ -109,7 +109,7 @@ export async function auditModule(
 
         if (!apiResult.success) {
           report(`[Schema] api.yaml validation errors: `);
-          apiResult.error.errors.forEach((err) => {
+          apiResult.error.issues.forEach((err) => {
             report(`  Path: ${err.path.join('.')} - ${err.message} `);
           });
         }
