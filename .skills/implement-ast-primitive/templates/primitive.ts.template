@@ -1,0 +1,47 @@
+import { BasePrimitive } from '../core/base-primitive.js';
+import type { ValidationResult } from '../contracts/validation.js';
+import type { __PrimitiveConfig__ } from './__kebab-name__.config.js';
+import type { __AstNodeType__ } from 'ts-morph';
+
+export class __PrimitiveName__Primitive extends BasePrimitive<__AstNodeType__, __PrimitiveConfig__> {
+  /**
+   * Locates the existing AST node based on the configuration.
+   */
+  find(config: __PrimitiveConfig__): __AstNodeType__ | undefined {
+    // TODO: Implement find logic
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Creates a new AST node based on the configuration.
+   */
+  create(config: __PrimitiveConfig__): __AstNodeType__ {
+    // TODO: Implement create logic
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * Updates an existing AST node to match the configuration.
+   * This method must be idempotent.
+   */
+  update(node: __AstNodeType__, config: __PrimitiveConfig__): void {
+    // TODO: Implement update logic (reconciliation)
+    // Example: if (node.getName() !== config.name) node.setName(config.name);
+  }
+
+  /**
+   * Validates the configuration against the AST structure.
+   * Returns a ValidationResult with a list of issues.
+   */
+  validate(config: __PrimitiveConfig__): ValidationResult {
+    const issues: string[] = [];
+    
+    // TODO: Implement validation logic
+    // if (!config.name) issues.push('Name is required');
+
+    return {
+      valid: issues.length === 0,
+      issues
+    };
+  }
+}

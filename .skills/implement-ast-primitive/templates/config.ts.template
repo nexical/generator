@@ -1,0 +1,22 @@
+/**
+ * Configuration interface for __PrimitiveName__Primitive.
+ * Defines the expected state of the AST node.
+ */
+export interface __PrimitiveName__Config {
+  /**
+   * The name of the node (if applicable).
+   */
+  name: string;
+  
+  /**
+   * Whether the node is exported.
+   */
+  isExported?: boolean;
+
+  /**
+   * Optional description for JSDocs.
+   */
+  description?: string;
+
+  // TODO: Add specific configuration properties
+}
