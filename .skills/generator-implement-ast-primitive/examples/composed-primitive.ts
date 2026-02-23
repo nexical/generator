@@ -1,4 +1,4 @@
-import { ClassDeclaration, Node } from 'ts-morph';
+import { ClassDeclaration, ClassDeclarationStructure, Node, SyntaxKind } from 'ts-morph';
 import { BasePrimitive } from '../core/base-primitive.js';
 import { ValidationResult } from '../contracts.js';
 import { DecoratorPrimitive } from './decorator-primitive.js';
@@ -14,11 +14,21 @@ export class ClassPrimitive extends BasePrimitive<ClassDeclaration, ClassConfig>
     return parent.asKind(SyntaxKind.SourceFile)?.getClass(this.config.name);
   }
 
+  /**
+   * Creates a new class using a structured definition.
+   */
   create(parent: Node): ClassDeclaration {
-    return parent.asKind(SyntaxKind.SourceFile)!.addClass({
+    return parent.asKind(SyntaxKind.SourceFile)!.addClass(this.toStructure());
+  }
+
+  /**
+   * Maps configuration to a ClassDeclarationStructure.
+   */
+  private toStructure(): ClassDeclarationStructure {
+    return {
       name: this.config.name,
-      isExported: true,
-    });
+      isExported: this.config.isExported ?? true,
+    };
   }
 
   update(node: ClassDeclaration): void {
@@ -36,19 +46,28 @@ export class ClassPrimitive extends BasePrimitive<ClassDeclaration, ClassConfig>
   override validate(node: ClassDeclaration): ValidationResult {
     const issues: string[] = [];
 
-    // Basic property check
+    // 1. Basic property check
     if (node.getName() !== this.config.name) {
       issues.push(`Class name drift: expected ${this.config.name}, found ${node.getName()}`);
     }
 
-    // Delegate validation to children if needed
+    if (node.isExported() !== (this.config.isExported ?? true)) {
+      issues.push(
+        `Export status drift: expected ${this.config.isExported ?? true}, found ${node.isExported()}`,
+      );
+    }
+
+    // 2. Recursive validation (Delegating to Child Primitives)
     if (this.config.decorators) {
       for (const decoConfig of this.config.decorators) {
         const decoNode = node.getDecorator(decoConfig.name);
         if (!decoNode) {
           issues.push(`Missing decorator: @${decoConfig.name}`);
         } else {
+          // Delegate validation to the Child Primitive
           const result = new DecoratorPrimitive(decoConfig).validate(decoNode);
+
+          // Aggregate child issues with context
           issues.push(...result.issues.map((i) => `Decorator @${decoConfig.name}: ${i}`));
         }
       }

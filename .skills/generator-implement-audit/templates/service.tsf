@@ -1,0 +1,36 @@
+import { BaseCommand } from './BaseCommand.js';
+import { {{feature}}Schema } from '../schemas/{{kebabFeature}}-schema.js';
+import { Reconciler } from '../engine/reconciler.js';
+import { {{feature}}Builder } from '../engine/builders/{{kebabFeature}}-builder.js';
+
+/**
+ * CLI-aware logic for auditing {{feature}}.
+ */
+export async function audit{{feature}}(command: BaseCommand, options: Record<string, unknown>) {
+  command.info('Starting {{feature}} audit...');
+
+  // 1. Load and Validate Configuration
+  const config = loadConfig('{{kebabFeature}}.yaml'); // Pseudocode for config loading
+  const validation = {{feature}}Schema.safeParse(config);
+  
+  if (!validation.success) {
+    command.error(`Configuration validation failed for {{feature}}: ${validation.error.message}`);
+    return;
+  }
+
+  // 2. Generate Expected State (FileDefinition)
+  const builder = new {{feature}}Builder(validation.data);
+  const definition = builder.getSchema();
+
+  // 3. Perform Non-Mutative Validation
+  const sourceFile = getSourceFile('{{targetFile}}.ts'); // Pseudocode for source file retrieval
+  const drift = Reconciler.validate(sourceFile, definition);
+
+  // 4. Report Findings
+  if (drift.length === 0) {
+    command.success('Audit complete: No drift detected.');
+  } else {
+    command.warn(`Audit complete: Found ${drift.length} discrepancies.`);
+    drift.forEach(d => command.info(`- [${d.type}] ${d.message}`));
+  }
+}

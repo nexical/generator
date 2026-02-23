@@ -1,0 +1,46 @@
+/**
+ * @description Blueprint for a UI Builder that overrides the default build() method.
+ * @context UiBaseBuilder
+ */
+
+/* PHANTOM_START */
+import { type Project, type SourceFile } from 'ts-morph';
+import { UiBaseBuilder } from './ui-base-builder.js';
+import { Reconciler } from '../../reconciler.js';
+import { type FileDefinition } from '../../types.js';
+
+class PhantomBuilder extends UiBaseBuilder {
+  public override async build(project: Project, sourceFile: SourceFile | undefined): Promise<void> {}
+}
+const className = 'ExampleBuilder';
+/* PHANTOM_END */
+
+export const fragment = `
+import { type Project, type SourceFile } from 'ts-morph';
+import { UiBaseBuilder } from './ui-base-builder.js';
+import { Reconciler } from '../../reconciler.js';
+import { type FileDefinition } from '../../types.js';
+
+export class \${className} extends UiBaseBuilder {
+  public override async build(project: Project, sourceFile: SourceFile | undefined): Promise<void> {
+    // 1. Resolve domain data
+    const models = this.resolveModels();
+    
+    for (const model of models) {
+      // 2. Prepare target file
+      const fileName = \`src/components/\${model.name}.tsx\`;
+      const file = project.createSourceFile(fileName, '', { overwrite: true });
+      
+      // 3. Define structure
+      const definition: FileDefinition = {
+        header: this.getHeader(),
+        imports: [], // TODO: Add imports
+        functions: [], // TODO: Add component
+      };
+
+      // 4. Reconcile
+      Reconciler.reconcile(file, definition);
+    }
+  }
+}
+`;

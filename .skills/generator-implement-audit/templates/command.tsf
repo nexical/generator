@@ -1,0 +1,17 @@
+import BaseCommand from '../../lib/BaseCommand.js';
+import { audit{{feature}} } from '../../lib/audit-{{kebabFeature}}.js';
+
+/**
+ * Command: arc audit {{feature}}
+ * 
+ * Audits {{feature}} for structural drift.
+ */
+export default class Audit{{feature}}Command extends BaseCommand {
+  static usage = 'audit {{kebabFeature}}';
+  static description = 'Audit {{feature}} for drift between configuration and source code.';
+  
+  async run(...args: unknown[]) {
+    const [options] = args as [Record<string, unknown>];
+    await audit{{feature}}(this, options);
+  }
+}
