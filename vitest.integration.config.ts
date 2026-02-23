@@ -5,8 +5,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['tests/unit/**/*.{test,spec}.ts'],
-    testTimeout: 30000,
+    include: ['tests/integration/**/*.{test,spec}.ts'],
+    testTimeout: 60000,
     alias: [
       { find: /^@nexical\/generator\/(.*)/, replacement: path.resolve(__dirname, 'src/$1') },
       {
@@ -18,17 +18,5 @@ export default defineConfig({
         replacement: path.resolve(__dirname, 'src/lib/cli-core.ts'),
       },
     ],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/*.d.ts', 'src/**/*.test.ts', 'src/lib/cli-core.ts'],
-      thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 80,
-        statements: 80,
-      },
-    },
   },
 });

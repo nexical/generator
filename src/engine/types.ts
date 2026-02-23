@@ -220,6 +220,7 @@ export interface ClassConfig {
   isExported?: boolean;
   isAbstract?: boolean;
   extends?: string;
+  isDefaultExport?: boolean;
   implements?: string[];
   decorators?: DecoratorConfig[];
   docs?: string[];

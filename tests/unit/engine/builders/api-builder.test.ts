@@ -203,4 +203,118 @@ describe('ApiBuilder', () => {
     expect(text).toContain('z.object({}).passthrough()');
     expect(text).toContain('const select = {}');
   });
+
+  it('should handle missing defaults on IDs, decimals, and private field redactions', () => {
+    const customModel: ModelDef = {
+      name: 'Transaction',
+      fields: {
+        id: { type: 'String', isRequired: true, isList: false, attributes: [], api: true }, // No @default
+        amount: { type: 'Decimal', isRequired: true, isList: false, attributes: [], api: true },
+        secret: {
+          type: 'String',
+          isRequired: true,
+          isList: false,
+          attributes: [],
+          api: true,
+          private: true,
+        },
+        user: {
+          type: 'User',
+          isRequired: true,
+          isList: false,
+          attributes: [],
+          api: true,
+          isRelation: true,
+          relationTo: 'User',
+        },
+        tags: {
+          type: 'Tag',
+          isRequired: false,
+          isList: true,
+          attributes: [],
+          api: true,
+          isRelation: true,
+          relationTo: 'Tag',
+        },
+      },
+      api: true,
+    };
+    const userModel: ModelDef = {
+      name: 'User',
+      fields: {
+        id: { type: 'String', isRequired: true, isList: false, attributes: [], api: true },
+        password: {
+          type: 'String',
+          isRequired: true,
+          isList: false,
+          attributes: [],
+          api: true,
+          private: true,
+        }, // private field triggers select logic
+      },
+      api: true,
+    };
+    const tagModel: ModelDef = {
+      name: 'Tag',
+      fields: {
+        id: { type: 'String', isRequired: true, isList: false, attributes: [], api: true },
+        name: { type: 'String', isRequired: true, isList: false, attributes: [], api: true }, // NO private fields
+      },
+      api: true,
+    };
+
+    // Testing get, update, delete for individual schema (hits update payload parsing logic for decimal/id)
+    const builder = new ApiBuilder(
+      customModel,
+      [customModel, userModel, tagModel],
+      'user-api',
+      'individual',
+    );
+    builder.ensure(sourceFile);
+
+    const text = sourceFile.getFullText();
+    expect(text).toContain('amount: z.number()'); // tests Decimal handling
+    expect(text).toContain('id: z.string()'); // ID without default becomes required
+    // Test relation and private redactions
+    expect(text).toContain('user: { select:');
+    expect(text).toContain('id: true');
+    expect(text).not.toContain('password: true');
+    // Test non-private relations (array tag relation limits take: 10, but true)
+    expect(text).toContain('tags: { take: 10 }');
+  });
+
+  it('should handle custom route array DTO endpoints and unknown return fallbacks', () => {
+    const routes = [
+      {
+        method: 'getReport',
+        path: '/report',
+        verb: 'POST' as const,
+        input: 'FilterDTO',
+        output: 'ReportResponse[]',
+        role: 'member',
+      },
+      {
+        method: 'triggerJob',
+        path: '/trigger',
+        verb: 'POST' as const,
+        input: 'unknown',
+        output: 'unknown',
+        role: 'member',
+      },
+      {
+        method: 'getUnknownModel',
+        path: '/unknown-model',
+        verb: 'GET' as const,
+        output: 'MissingModel', // model not in allModels
+        role: 'member',
+      },
+    ];
+    const builder = new ApiBuilder(model, [model], 'user-api', 'custom', routes);
+    builder.ensure(sourceFile);
+
+    const text = sourceFile.getFullText();
+
+    // Check DTO Array logic (falls back to object if no schema properties are defined)
+    expect(text).toContain('schema: { type: "object" }'); // Check input FilterDTO and ReportResponse fallback
+  });
 });

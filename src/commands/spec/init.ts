@@ -51,7 +51,7 @@ export class SpecInitCommand extends BaseCommand {
       this.success(`\nStarting interactive project specification session...\n`);
 
       try {
-        AgentRunner.run(
+        await AgentRunner.run(
           'ProjectSpecWriter',
           'agents/project-spec-writer.md',
           {
@@ -88,7 +88,7 @@ export class SpecInitCommand extends BaseCommand {
     this.success(`\nStarting interactive specification session for "${name}"...\n`);
 
     try {
-      AgentRunner.run(
+      await AgentRunner.run(
         'SpecWriter',
         'agents/module-spec-writer.md',
         {

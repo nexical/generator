@@ -34,8 +34,26 @@ export default fragment\`
 
   it('should load template and interpolate variables', () => {
     const result = TemplateLoader.load('test-unit/dummy.tsf', { myVar: '100' });
-    // Clean up formatting/whitespace might be needed if raw includes new lines?
-    // raw should be "  const x = 100;\n" roughly.
     expect(result.raw).toContain('const x = 100;');
+  });
+
+  it('should throw on invalid template format', () => {
+    const invalidFile = join(testDir, 'invalid.tsf');
+    writeFileSync(invalidFile, 'export const x = 1;');
+    expect(() => TemplateLoader.load('test-unit/invalid.tsf')).toThrow('Invalid template format');
+  });
+
+  it('should load TSX template with explicit tag', () => {
+    const tsxFile = join(testDir, 'comp.tsf');
+    writeFileSync(tsxFile, 'export default fragment /* tsx */ `<div />`;');
+    const result = TemplateLoader.load('test-unit/comp.tsf');
+    expect(result.raw).toContain('<div />');
+  });
+
+  it('should load TSX template by extension .txf', () => {
+    const txfFile = join(testDir, 'comp.txf');
+    writeFileSync(txfFile, 'export default fragment `<span />`;');
+    const result = TemplateLoader.load('test-unit/comp.txf');
+    expect(result.raw).toContain('<span />');
   });
 });

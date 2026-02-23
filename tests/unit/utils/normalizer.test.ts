@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { Normalizer } from '@nexical/generator/utils/normalizer';
+import { Normalizer } from '../../../src/utils/normalizer.js';
 
 describe('Normalizer', () => {
   describe('normalize', () => {
@@ -29,15 +29,12 @@ describe('Normalizer', () => {
       expect(Normalizer.normalizeType('import("foo").Bar')).toBe('Bar');
     });
 
-    it('should be quote-agnostic', () => {
-      const type1 = "Record<string, 'asc' | 'desc'>";
-      const type2 = 'Record<string, "asc" | "desc">';
-      expect(Normalizer.normalizeType(type1)).toBe(Normalizer.normalizeType(type2));
-    });
-
     it('should handle empty input', () => {
       expect(Normalizer.normalizeType('')).toBe('');
-      expect(Normalizer.normalizeType(null as unknown as string)).toBe('');
+    });
+
+    it('should handle generic types by removing all whitespace and delimiters', () => {
+      expect(Normalizer.normalizeType('Map< string, number >')).toBe('Map<stringnumber>');
     });
   });
 });

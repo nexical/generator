@@ -74,16 +74,10 @@ export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, Inte
     // Comments / Trivia
     // Always reconcile trivia for generated nodes to remove stale comments (like eslint-disable)
     // If config.comments is undefined, we clear it (or set to empty)
-    const newTrivia = this.config.comments
-      ? (writer: CodeBlockWriter) => {
-          this.config.comments?.forEach((c) => writer.writeLine(c));
-        }
-      : ''; // Clear trivia if no comments
-
-    // Optimized check could go here, but set is usually safe if it handles diffing internally,
-    // or we just accept the rewrite.
-    // writer must be typed as any or specific WriterFunction, but simpler to use string[] or WriterFunction
-    node.set({ leadingTrivia: newTrivia });
+    if (this.config.comments) {
+      const trivia = this.config.comments.map((c) => `// ${c}`).join('\n') + '\n';
+      node.set({ leadingTrivia: trivia });
+    }
   }
 
   validate(node: InterfaceDeclaration): ValidationResult {

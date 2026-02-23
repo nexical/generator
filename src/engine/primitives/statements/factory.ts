@@ -37,6 +37,10 @@ export function ts(strings: TemplateStringsArray, ...values: unknown[]): ParsedS
 
 export class StatementFactory {
   static generate(config: StatementConfig): string {
+    if (!config) {
+      return '';
+    }
+
     if (typeof config === 'string') {
       return config;
     }

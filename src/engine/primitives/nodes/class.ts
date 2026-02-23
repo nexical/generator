@@ -27,6 +27,13 @@ export class ClassPrimitive extends BasePrimitive<ClassDeclaration, ClassConfig>
       node.setIsExported(structure.isExported!);
     }
 
+    if (
+      this.config.isDefaultExport !== undefined &&
+      node.isDefaultExport() !== this.config.isDefaultExport
+    ) {
+      node.setIsDefaultExport(this.config.isDefaultExport);
+    }
+
     // Enforce Extends
     if (structure.extends && node.getExtends()?.getText() !== structure.extends) {
       node.setExtends(structure.extends as string);
@@ -70,6 +77,15 @@ export class ClassPrimitive extends BasePrimitive<ClassDeclaration, ClassConfig>
     if (structure.isExported !== undefined && node.isExported() !== structure.isExported) {
       issues.push(
         `Class '${this.config.name}' exported status mismatch. Expected: ${structure.isExported}, Found: ${node.isExported()}`,
+      );
+    }
+
+    if (
+      this.config.isDefaultExport !== undefined &&
+      node.isDefaultExport() !== this.config.isDefaultExport
+    ) {
+      issues.push(
+        `Class '${this.config.name}' default export mismatch. Expected: ${this.config.isDefaultExport}, Found: ${node.isDefaultExport()}`,
       );
     }
 
@@ -128,6 +144,7 @@ export class ClassPrimitive extends BasePrimitive<ClassDeclaration, ClassConfig>
     return {
       name: this.config.name,
       isExported: this.config.isExported,
+      isDefaultExport: this.config.isDefaultExport,
       extends: this.config.extends,
       implements: this.config.implements,
       decorators: this.config.decorators?.map((d) => ({ name: d.name, arguments: d.arguments })),

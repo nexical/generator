@@ -60,7 +60,7 @@ export class SpecUpdateCommand extends BaseCommand {
         : `I want to update the project specification based on the current codebase. Please draft the specification.`;
 
       try {
-        AgentRunner.run(
+        await AgentRunner.run(
           'ProjectSpecWriter',
           'agents/project-spec-writer.md',
           {
@@ -110,7 +110,7 @@ export class SpecUpdateCommand extends BaseCommand {
       : `I want to update the specification for "${name}" based on the current code. Please draft the specification.`;
 
     try {
-      AgentRunner.run(
+      await AgentRunner.run(
         'SpecWriter',
         'agents/module-spec-writer.md',
         {

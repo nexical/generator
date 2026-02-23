@@ -1,92 +1,144 @@
-/** @vitest-environment node */
-/* eslint-disable */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ModuleLocator } from '../../../src/lib/module-locator';
-import path from 'path';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 
 vi.mock('fs-extra');
-vi.mock('glob', () => ({
-  glob: Object.assign(vi.fn(), {
-    hasMagic: (p: string) => p.includes('*') || p.includes('?'),
-  }),
-}));
+vi.mock('glob', () => {
+  const mGlob = vi.fn();
+  (mGlob as unknown as { hasMagic: unknown }).hasMagic = vi.fn();
+  return { glob: mGlob };
+});
 
 describe('ModuleLocator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(process, 'cwd').mockReturnValue('/test-project');
   });
 
-  it('should find exact module if it exists as directory', async () => {
-    vi.mocked(fs.pathExists).mockResolvedValue(true as never);
-    vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-    const result = await ModuleLocator.expand('test-api');
-    // Since fs.pathExists returns true for all roots, it will find it in all roots
-    // We expect it to be found in backend, frontend, and legacy since we iterate all active roots
-    // But since the loop continues, it will add all of them.
-    // However, for exact match without glob, we check availability.
+  describe('expand', () => {
+    it('should expand direct module name', async () => {
+      vi.mocked(fs.pathExists).mockResolvedValue(true);
+      vi.mocked(fs.stat).mockResolvedValue({
+        isDirectory: () => true,
+      } as unknown as import('fs').Stats);
+      vi.mocked(glob.hasMagic).mockReturnValue(false);
 
-    // To make this test deterministic without changing implementation too much,
-    // let's mock fs.pathExists to only return true for one specific path or root.
-
-    // Instead of verifying exact output count which depends on mocked fs behavior for roots,
-    // let's verify that at least one correct result is returned.
-    expect(result).toHaveLength(2); // backend, frontend
-    expect(result[0]).toEqual({
-      name: 'test-api',
-      path: path.join('/test-project', 'apps/backend/modules/test-api'),
-      app: 'backend',
+      const results = await ModuleLocator.expand('my-api');
+      expect(results).toHaveLength(2); // One for backend, one for frontend if both mock true
+      expect(results[0].name).toBe('my-api');
     });
-  });
 
-  it('should filter by prefix', async () => {
-    vi.mocked(fs.pathExists).mockResolvedValue(true as never); // Roots exist
-    vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
+    it('should expand with prefixes', async () => {
+      vi.mocked(fs.pathExists).mockImplementation(async (p: unknown) =>
+        String(p).includes('backend'),
+      );
+      vi.mocked(fs.stat).mockResolvedValue({
+        isDirectory: () => true,
+      } as unknown as import('fs').Stats);
+      vi.mocked(glob.hasMagic).mockReturnValue(false);
 
-    const result = await ModuleLocator.expand('backend:test-api');
-    expect(result).toHaveLength(1);
-    expect(result[0].app).toBe('backend');
-    expect(result[0].path).toContain('apps/backend/modules');
-  });
+      const results = await ModuleLocator.expand('backend:my-api');
+      expect(results).toHaveLength(1);
+      expect(results[0].app).toBe('backend');
+    });
 
-  it('should use glob if pattern has magic characters', async () => {
-    // glob returns matches relative to cwd
-    vi.mocked(glob).mockResolvedValue(['mod1', 'mod2']);
-    vi.mocked(fs.pathExists).mockResolvedValue(true as never);
-    vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
+    it('should expand frontend prefix', async () => {
+      vi.mocked(fs.pathExists).mockImplementation(async (p: unknown) =>
+        String(p).includes('frontend'),
+      );
+      vi.mocked(fs.stat).mockResolvedValue({
+        isDirectory: () => true,
+      } as unknown as import('fs').Stats);
+      vi.mocked(glob.hasMagic).mockReturnValue(false);
 
-    const result = await ModuleLocator.expand('*-api');
-    // searched in 2 roots -> 2 * 2 matches = 4 results
-    expect(result).toHaveLength(4);
-    expect(result[0].name).toBe('mod1');
+      const results = await ModuleLocator.expand('frontend:my-ui');
+      expect(results).toHaveLength(1);
+      expect(results[0].app).toBe('frontend');
+    });
+
+    it('should handle unknown prefixes', async () => {
+      const results = await ModuleLocator.expand('unknown:my-api');
+      expect(results).toHaveLength(0);
+    });
+
+    it('should expand globs', async () => {
+      vi.mocked(fs.pathExists).mockResolvedValue(true);
+      vi.mocked(glob.hasMagic).mockReturnValue(true);
+      // @ts-expect-error - testing glob expansion
+      vi.mocked(glob).mockResolvedValue(['test-api'] as unknown as string[] & {
+        [Symbol.iterator](): IterableIterator<string>;
+      });
+      vi.mocked(fs.stat).mockResolvedValue({
+        isDirectory: () => true,
+      } as unknown as import('fs').Stats);
+
+      const results = await ModuleLocator.expand('*-api');
+      expect(results.length).toBeGreaterThan(0);
+      expect(results[0].name).toBe('test-api');
+    });
+
+    it('should skip non-existent roots', async () => {
+      vi.mocked(fs.pathExists).mockResolvedValue(false);
+      const results = await ModuleLocator.expand('my-api');
+      expect(results).toHaveLength(0);
+    });
+
+    it('should ignore direct match if not a directory', async () => {
+      vi.mocked(fs.pathExists).mockResolvedValue(true);
+      vi.mocked(fs.stat).mockResolvedValue({
+        isDirectory: () => false,
+      } as unknown as import('fs').Stats);
+      vi.mocked(glob.hasMagic).mockReturnValue(false);
+
+      const results = await ModuleLocator.expand('my-api');
+      expect(results).toHaveLength(0);
+    });
+
+    it('should ignore glob match if not a directory', async () => {
+      vi.mocked(fs.pathExists).mockResolvedValue(true);
+      vi.mocked(glob.hasMagic).mockReturnValue(true);
+      // @ts-expect-error - testing glob expansion
+      vi.mocked(glob).mockResolvedValue(['file.txt'] as unknown as string[] & {
+        [Symbol.iterator](): IterableIterator<string>;
+      });
+      vi.mocked(fs.stat).mockResolvedValue({
+        isDirectory: () => false,
+      } as unknown as import('fs').Stats);
+
+      const results = await ModuleLocator.expand('*-api');
+      expect(results).toHaveLength(0);
+    });
   });
 
   describe('resolve', () => {
-    it('should resolve -ui to frontend', () => {
-      const result = ModuleLocator.resolve('user-ui');
-      expect(result.app).toBe('frontend');
-      expect(result.path).toContain('apps/frontend/modules');
+    it('should resolve backend by default', () => {
+      vi.mocked(fs.pathExistsSync).mockReturnValue(true);
+      const info = ModuleLocator.resolve('my-module');
+      expect(info.app).toBe('backend');
+      expect(info.path).toContain('apps/backend/modules');
     });
 
-    it('should resolve -api to backend', () => {
-      const result = ModuleLocator.resolve('user-api');
-      expect(result.app).toBe('backend');
-      expect(result.path).toContain('apps/backend/modules');
+    it('should resolve frontend for -ui suffix', () => {
+      vi.mocked(fs.pathExistsSync).mockReturnValue(true);
+      const info = ModuleLocator.resolve('my-ui');
+      expect(info.app).toBe('frontend');
+      expect(info.path).toContain('apps/frontend/modules');
     });
 
-    it('should resolve -email to backend', () => {
-      const result = ModuleLocator.resolve('marketing-email');
-      expect(result.app).toBe('backend');
-      expect(result.path).toContain('apps/backend/modules');
+    it('should resolve with prefix', () => {
+      vi.mocked(fs.pathExistsSync).mockReturnValue(true);
+      const info = ModuleLocator.resolve('frontend:my-module');
+      expect(info.app).toBe('frontend');
     });
 
-    it('should respect explicit prefix', () => {
-      const result = ModuleLocator.resolve('frontend:any-name');
-      expect(result.app).toBe('frontend');
-      expect(result.path).toContain('apps/frontend/modules');
+    it('should resolve backend for -email suffix', () => {
+      vi.mocked(fs.pathExistsSync).mockReturnValue(true);
+      const info = ModuleLocator.resolve('my-email');
+      expect(info.app).toBe('backend');
     });
   });
 });

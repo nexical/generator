@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { createTestProject } from '@nexical/generator-tests/helpers/test-project';
 import { FunctionPrimitive } from '@nexical/generator/engine/primitives/nodes/function';
+import { ts } from '../../../../../src/engine/primitives/statements/factory.js';
 
 describe('FunctionPrimitive', () => {
   it('should create a new function', () => {
@@ -192,5 +193,20 @@ describe('FunctionPrimitive', () => {
     expect(result.valid).toBe(false);
     expect(result.issues.some((i) => i.includes('async modifier mismatch'))).toBe(true);
     expect(result.issues.some((i) => i.includes('return type mismatch'))).toBe(true);
+  });
+
+  it('should process ParsedStatement templates through ts tagged literals correctly', () => {
+    const testProject = createTestProject();
+    const sourceFile = testProject.createSourceFile('test-template.ts', 'function test() {}');
+
+    const primitive = new FunctionPrimitive({
+      name: 'test',
+      statements: [ts`const user = await db.user.create();`],
+    });
+
+    primitive.ensure(sourceFile);
+    expect(sourceFile.getFunction('test')!.getBodyText()).toContain(
+      'const user = await db.user.create();',
+    );
   });
 });

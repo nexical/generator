@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentRunner } from '../../../src/utils/agent-runner.js';
-import * as childProcess from 'node:child_process';
+import { PromptRunner } from '@nexical/ai';
 import { logger } from '@nexical/cli-core';
 
-vi.mock('node:child_process', () => ({
-  execSync: vi.fn(),
-  spawn: vi.fn(),
+vi.mock('@nexical/ai', () => ({
+  PromptRunner: {
+    run: vi.fn(),
+  },
 }));
 
 vi.mock('@nexical/cli-core', () => ({
@@ -20,7 +21,7 @@ describe('AgentRunner', () => {
     vi.clearAllMocks();
   });
 
-  it('should format arguments correctly including complex objects', () => {
+  it('should format arguments correctly including complex objects', async () => {
     const aiConfig = { provider: 'openrouter', commandTemplate: 'test' };
     const args = {
       spec_file: 'some/path.md',
@@ -28,32 +29,42 @@ describe('AgentRunner', () => {
       simple: 'string_val',
     };
 
-    AgentRunner.run('TestAgent', 'test/prompt.md', args);
+    vi.mocked(PromptRunner.run).mockResolvedValue(0);
+
+    await AgentRunner.run('TestAgent', 'test/prompt.md', args);
 
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('TestAgent working'));
 
-    // execSync should be called with serialized aiConfig and proper flags
-    expect(childProcess.execSync).toHaveBeenCalledWith(
-      expect.stringContaining('--spec_file "some/path.md"'),
-      expect.any(Object),
-    );
-    expect(childProcess.execSync).toHaveBeenCalledWith(
-      expect.stringContaining(`--aiConfig '${JSON.stringify(aiConfig)}'`),
-      expect.any(Object),
-    );
-    expect(childProcess.execSync).toHaveBeenCalledWith(
-      expect.stringContaining('--simple "string_val"'),
-      expect.any(Object),
+    expect(PromptRunner.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        promptName: 'test/prompt.md',
+        aiConfig,
+        args: expect.objectContaining({ simple: 'string_val', spec_file: 'some/path.md' }),
+      }),
     );
   });
 
-  it('should throw an error if execution fails', () => {
-    vi.mocked(childProcess.execSync).mockImplementationOnce(() => {
-      throw new Error('Command failed');
-    });
+  it('should throw an error if execution fails (exit code !== 0)', async () => {
+    vi.mocked(PromptRunner.run).mockResolvedValue(1);
 
-    expect(() => {
-      AgentRunner.run('TestAgent', 'test/prompt.md', {});
-    }).toThrow('Agent TestAgent failed execution: Command failed');
+    await expect(AgentRunner.run('TestAgent', 'test/prompt.md', {})).rejects.toThrow(
+      'Agent TestAgent failed execution: Execution failed with code 1',
+    );
+  });
+
+  it('should throw an error if PromptRunner throws', async () => {
+    vi.mocked(PromptRunner.run).mockRejectedValue(new Error('Command failed'));
+
+    await expect(AgentRunner.run('TestAgent', 'test/prompt.md', {})).rejects.toThrow(
+      'Agent TestAgent failed execution: Command failed',
+    );
+  });
+
+  it('should safely wrap thrown raw strings as errors', async () => {
+    vi.mocked(PromptRunner.run).mockRejectedValue('String Error');
+
+    await expect(AgentRunner.run('TestAgent', 'test/prompt.md', {})).rejects.toThrow(
+      'Agent TestAgent failed execution: String Error',
+    );
   });
 });

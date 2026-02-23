@@ -74,56 +74,59 @@ export class ModelParser {
     const enumNames = new Set(Object.keys(rawEnums));
     const modelNames = new Set(Object.keys(rawModels));
 
-    const models: ModelDef[] = Object.entries(rawModels).map(([name, config]) => {
-      console.info(`[ModelParser] Model: ${name}, keys: ${Object.keys(config).join(', ')}`);
-      const model: ModelDef = {
-        name,
-        api: config.api !== false,
-        db: config.db !== false,
-        default: config.default === true,
-        extended: config.extended === true,
-        actor: config.actor as ModelDef['actor'], // Cast to ModelDef['actor'] to avoid strict "strategy required" check against optional YAML
-        fields: {},
-        role: config.role,
-        test: config.test,
-        isExported: config.isExported !== false,
-      };
-
-      // Normalize fields
-      for (const fieldName in config.fields) {
-        const rawField = config.fields[fieldName];
-        const field: RawFieldConfig = typeof rawField === 'string' ? { type: rawField } : rawField;
-
-        const isEnum = enumNames.has(field.type);
-        const isRelation = modelNames.has(field.type);
-
-        model.fields[fieldName] = {
-          type: field.type,
-          isRequired: field.isRequired !== false,
-          isList: field.isList === true,
-          attributes: field.attributes || [],
-          api: field.api !== false,
-          private: field.private === true,
-          isEnum,
-          enumValues: isEnum
-            ? (() => {
-                const val = rawEnums[field.type] as unknown;
-                if (Array.isArray(val)) return val.map(String);
-                if (typeof val === 'object' && val !== null) {
-                  const v = val as { values?: unknown[] };
-                  if (Array.isArray(v.values)) return v.values.map(String);
-                  return Object.keys(val);
-                }
-                return [];
-              })()
-            : undefined,
-          isRelation,
-          relationTo: isRelation ? field.type : undefined,
+    const models: ModelDef[] = Object.entries(rawModels)
+      .filter(([name]) => !!name)
+      .map(([name, config]) => {
+        console.info(`[ModelParser] Model: ${name}, keys: ${Object.keys(config).join(', ')}`);
+        const model: ModelDef = {
+          name,
+          api: config.api !== false,
+          db: config.db !== false,
+          default: config.default === true,
+          extended: config.extended === true,
+          actor: config.actor as ModelDef['actor'], // Cast to ModelDef['actor'] to avoid strict "strategy required" check against optional YAML
+          fields: {},
+          role: config.role,
+          test: config.test,
+          isExported: config.isExported !== false,
         };
-      }
 
-      return model;
-    });
+        // Normalize fields
+        for (const fieldName in config.fields) {
+          const rawField = config.fields[fieldName];
+          const field: RawFieldConfig =
+            typeof rawField === 'string' ? { type: rawField } : rawField;
+
+          const isEnum = enumNames.has(field.type);
+          const isRelation = modelNames.has(field.type);
+
+          model.fields[fieldName] = {
+            type: field.type,
+            isRequired: field.isRequired !== false,
+            isList: field.isList === true,
+            attributes: field.attributes || [],
+            api: field.api !== false,
+            private: field.private === true,
+            isEnum,
+            enumValues: isEnum
+              ? (() => {
+                  const val = rawEnums[field.type] as unknown;
+                  if (Array.isArray(val)) return val.map(String);
+                  if (typeof val === 'object' && val !== null) {
+                    const v = val as { values?: unknown[] };
+                    if (Array.isArray(v.values)) return v.values.map(String);
+                    return Object.keys(val);
+                  }
+                  return [];
+                })()
+              : undefined,
+            isRelation,
+            relationTo: isRelation ? field.type : undefined,
+          };
+        }
+
+        return model;
+      });
 
     const config = parsed.config || {};
     return { models, enums, config };

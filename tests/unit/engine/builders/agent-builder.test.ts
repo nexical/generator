@@ -49,4 +49,58 @@ agents:
     expect(monitorText).toContain('export class MonitorAgent extends PersistentAgent');
     expect(monitorText).toContain('interval: number = 5000');
   });
+
+  it('should handle missing agents.yaml gracefully', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    const builder = new AgentBuilder('test-api', { name: 'test-api' });
+    await builder.build(project, undefined);
+
+    // Will not construct files
+    expect(project.getSourceFiles().length).toBe(0);
+  });
+
+  it('should catch readFileSync parsing errors gracefully', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockImplementation(() => {
+      throw new Error('Unreadable');
+    });
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const builder = new AgentBuilder('test-api', { name: 'test-api' });
+    await builder.build(project, undefined);
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to parse agents.yaml'));
+    warnSpy.mockRestore();
+  });
+
+  it('should handle missing payloads and intervals cleanly, and create directories', async () => {
+    // Return true for agents.yaml existing, but false for directory existence to hit mkdirSync
+    vi.mocked(fs.existsSync).mockImplementation((path) => {
+      if (String(path).endsWith('agents.yaml')) return true;
+      return false;
+    });
+    vi.mocked(fs.mkdirSync).mockImplementation(() => undefined);
+
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      if (String(path).endsWith('agents.yaml')) {
+        return `
+agents:
+  - name: "EmptyJob"
+    type: "job"
+  - name: "EmptyAgent"
+    type: "persistent"
+`;
+      }
+      return '';
+    });
+
+    const builder = new AgentBuilder('test-api', { name: 'test-api' });
+    await builder.build(project, undefined);
+
+    const jobFile = project.getSourceFile((f) => f.getFilePath().endsWith('EmptyJob.ts'));
+    expect(jobFile?.getText()).toContain('z.object(');
+
+    const agentFile = project.getSourceFile((f) => f.getFilePath().endsWith('EmptyAgent.ts'));
+    expect(agentFile?.getText()).toContain('interval: number = 60000');
+  });
 });
