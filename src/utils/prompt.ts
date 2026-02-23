@@ -2,15 +2,15 @@
 /* eslint-disable */
 
 import fs from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import nunjucks from 'nunjucks';
-import { execSync } from 'node:child_process';
 import minimist from 'minimist';
 import readline from 'node:readline';
 import { globSync } from 'glob';
+import { pack } from 'repomix';
 import { AiClientFactory } from '@nexical/ai';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -59,18 +59,76 @@ Examples:
     lstripBlocks: true,
   });
 
+  const asyncResolvers = new Map<string, Promise<string>>();
+  let resolverId = 0;
+
   env.addGlobal('context', (targetPath: string) => {
-    try {
-      console.log(`[Context] Analyzing codebase at: ${targetPath}`);
-      const output = execSync(
-        `npx -y repomix --stdout --quiet --style xml --include "${targetPath}/**/*" --ignore "**/node_modules,**/dist"`,
-        { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'inherit'] },
-      );
-      return `<CODEBASE_CONTEXT path="${targetPath}">\n${output}\n</CODEBASE_CONTEXT>`;
-    } catch (error) {
-      console.error(`[Context] Error running repomix on ${targetPath}`);
-      return `[Error generating context for ${targetPath}]`;
-    }
+    const id = `__NEXICAL_ASYNC_CONTEXT_${resolverId++}__`;
+    const promise = (async () => {
+      try {
+        if (!existsSync(targetPath)) {
+          return `[Path not found: ${targetPath}]`;
+        }
+
+        const stats = statSync(targetPath);
+        if (stats.isFile()) {
+          const content = await fs.readFile(targetPath, 'utf-8');
+          return `<CODEBASE_CONTEXT path="${targetPath}">\n${content}\n</CODEBASE_CONTEXT>`;
+        }
+
+        console.log(`[Context] Analyzing codebase at: ${targetPath}`);
+        const tempOutputFile = path.join(
+          os.tmpdir(),
+          `repomix-output-${Date.now()}-${Math.random().toString(36).substring(7)}.xml`,
+        );
+
+        await pack([targetPath], {
+          input: { maxFileSize: 1024 * 1024 * 10 },
+          output: {
+            filePath: tempOutputFile,
+            style: 'xml',
+            showLineNumbers: false,
+            fileSummary: false,
+            directoryStructure: false,
+            removeComments: false,
+            removeEmptyLines: false,
+            includeEmptyDirectories: false,
+            topFilesLength: 5,
+            parsableStyle: false,
+            files: true,
+            compress: false,
+            truncateBase64: true,
+            copyToClipboard: false,
+            includeDiffs: false,
+            includeLogs: false,
+            includeLogsCount: 0,
+            gitSortByChanges: false,
+            includeFullDirectoryStructure: false,
+          },
+          ignore: {
+            useGitignore: true,
+            useDotIgnore: true,
+            useDefaultPatterns: true,
+            customPatterns: ['**/node_modules', '**/dist'],
+          },
+          include: [],
+          security: { enableSecurityCheck: false },
+          tokenCount: { encoding: 'o200k_base' },
+          cwd: targetPath,
+        } as any);
+
+        const output = await fs.readFile(tempOutputFile, 'utf-8');
+        try {
+          await fs.unlink(tempOutputFile);
+        } catch {}
+        return `<CODEBASE_CONTEXT path="${targetPath}">\n${output}\n</CODEBASE_CONTEXT>`;
+      } catch (error) {
+        console.error(`[Context] Error generating context for ${targetPath}: ${error}`);
+        return `[Error generating context for ${targetPath}]`;
+      }
+    })();
+    asyncResolvers.set(id, promise);
+    return id;
   });
 
   env.addGlobal('read', (relativePath: string) => {
@@ -107,24 +165,73 @@ Examples:
   });
 
   env.addGlobal('read_specs', (pattern: string) => {
-    // Wrapper for read_glob specifically for specs
     return env.getGlobal('read_glob')(pattern);
   });
 
   env.addGlobal('compressed_map', (targetPath: string) => {
-    try {
-      console.log(`[Context] Generating compressed map for: ${targetPath}`);
-      // Use repomix to generate a map. We use xml style.
-      // We ignore common large directories and test files to keep it "compressed" in terms of relevance.
-      const output = execSync(
-        `npx -y repomix --stdout --quiet --style xml --include "${targetPath}/**/*" --ignore "**/node_modules,**/dist,**/*.spec.ts,**/*.test.ts,**/coverage,**/.git"`,
-        { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 1024 * 1024 * 50 },
-      );
-      return `<COMPRESSED_MAP path="${targetPath}">\n${output}\n</COMPRESSED_MAP>`;
-    } catch (error) {
-      console.error(`[Context] Error running repomix on ${targetPath}`);
-      return `[Error generating map for ${targetPath}]`;
-    }
+    const id = `__NEXICAL_ASYNC_COMPRESSED_MAP_${resolverId++}__`;
+    const promise = (async () => {
+      try {
+        console.log(`[Context] Generating compressed map for: ${targetPath}`);
+        const tempOutputFile = path.join(
+          os.tmpdir(),
+          `repomix-output-${Date.now()}-${Math.random().toString(36).substring(7)}.xml`,
+        );
+
+        await pack([targetPath], {
+          input: { maxFileSize: 1024 * 1024 * 50 },
+          output: {
+            filePath: tempOutputFile,
+            style: 'xml',
+            showLineNumbers: false,
+            fileSummary: false,
+            directoryStructure: false,
+            removeComments: false,
+            removeEmptyLines: false,
+            includeEmptyDirectories: false,
+            topFilesLength: 5,
+            parsableStyle: false,
+            files: true,
+            compress: false,
+            truncateBase64: true,
+            copyToClipboard: false,
+            includeDiffs: false,
+            includeLogs: false,
+            includeLogsCount: 0,
+            gitSortByChanges: false,
+            includeFullDirectoryStructure: false,
+          },
+          ignore: {
+            useGitignore: true,
+            useDotIgnore: true,
+            useDefaultPatterns: true,
+            customPatterns: [
+              '**/node_modules',
+              '**/dist',
+              '**/*.spec.ts',
+              '**/*.test.ts',
+              '**/coverage',
+              '**/.git',
+            ],
+          },
+          include: [],
+          security: { enableSecurityCheck: false },
+          tokenCount: { encoding: 'o200k_base' },
+          cwd: targetPath,
+        } as any);
+
+        const output = await fs.readFile(tempOutputFile, 'utf-8');
+        try {
+          await fs.unlink(tempOutputFile);
+        } catch {}
+        return `<COMPRESSED_MAP path="${targetPath}">\n${output}\n</COMPRESSED_MAP>`;
+      } catch (error) {
+        console.error(`[Context] Error generating map for ${targetPath}: ${error}`);
+        return `[Error generating map for ${targetPath}]`;
+      }
+    })();
+    asyncResolvers.set(id, promise);
+    return id;
   });
 
   let templateContent: string;
@@ -136,9 +243,25 @@ Examples:
   }
 
   console.log(`[Render] Rendering template with variables:`, JSON.stringify(argv, null, 2));
-  const renderedPrompt = env.renderString(templateContent, {
-    ...argv,
-  });
+  let renderedPrompt: string;
+  try {
+    renderedPrompt = env.renderString(templateContent, {
+      ...argv,
+    });
+  } catch (e) {
+    console.error(`Template render error: ${e}`);
+    process.exit(1);
+  }
+
+  for (const [id, promise] of asyncResolvers.entries()) {
+    try {
+      const resolvedValue = await promise;
+      renderedPrompt = renderedPrompt.replace(id, resolvedValue);
+    } catch (e) {
+      console.error(`[Render] Failed to resolve async variable ${id}: ${e}`);
+      renderedPrompt = renderedPrompt.replace(id, `[Error resolving ${id}]`);
+    }
+  }
 
   const tempFile = path.join(os.tmpdir(), '.temp_prompt_active.md');
   await fs.writeFile(tempFile, renderedPrompt, 'utf-8');
