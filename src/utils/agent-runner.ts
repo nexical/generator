@@ -32,12 +32,17 @@ export class AgentRunner {
   static run(
     agentName: string,
     promptPath: string,
-    args: Record<string, string>,
+    args: Record<string, unknown>,
     interactive: boolean = false,
   ) {
     const allArgs = { ...args, models: MODELS };
     const flags = Object.entries(allArgs)
-      .map(([key, value]) => `--${key} "${value}"`)
+      .map(([key, value]) => {
+        if (typeof value === 'object') {
+          return `--${key} '${JSON.stringify(value)}'`;
+        }
+        return `--${key} "${value}"`;
+      })
       .join(' ');
 
     // promptPath should be absolute or relative to CWD.

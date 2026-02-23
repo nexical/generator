@@ -32,6 +32,11 @@ export class SpecUpdateCommand extends BaseCommand {
     const options = args[0] as { name: string; interactive: boolean };
     const { name, interactive } = options;
 
+    const rawConfig = this as unknown as {
+      config?: { generator?: { ai?: Record<string, unknown> }; ai?: Record<string, unknown> };
+    };
+    const aiConfig = rawConfig.config?.generator?.ai || rawConfig.config?.ai || {};
+
     if (!name) {
       this.error('Please provide a module name.');
       return;
@@ -61,6 +66,7 @@ export class SpecUpdateCommand extends BaseCommand {
           {
             spec_file: specFile,
             user_input: userInput,
+            aiConfig,
           },
           interactive,
         );
@@ -111,6 +117,7 @@ export class SpecUpdateCommand extends BaseCommand {
           module_root: modulePath,
           spec_file: specFile,
           user_input: userInput,
+          aiConfig,
         },
         interactive,
       );

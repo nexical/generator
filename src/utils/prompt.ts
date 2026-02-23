@@ -7,10 +7,11 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import nunjucks from 'nunjucks';
-import { spawn, execSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import minimist from 'minimist';
 import readline from 'node:readline';
 import { globSync } from 'glob';
+import { AiClientFactory } from '@nexical/ai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,67 +19,6 @@ const __dirname = path.dirname(__filename);
 // dist/utils/prompt.js -> ../../prompts
 // src/utils/prompt.ts -> ../../prompts
 const PROMPTS_DIR = path.join(__dirname, '../../prompts');
-
-// Helper to run Gemini with a specific model
-interface GeminiResult {
-  code: number;
-  shouldRetry: boolean;
-  output: string;
-}
-
-function runGemini(model: string, input: string): Promise<GeminiResult> {
-  return new Promise((resolve) => {
-    console.log(`[Agent] Attempting with model: \x1b[36m${model}\x1b[0m...`);
-
-    const start = Date.now();
-    const child = spawn(`gemini --yolo --model ${model}`, {
-      shell: true,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    let stdoutData = '';
-    let stderrData = '';
-
-    child.stdout?.on('data', (data) => {
-      const chunk = data.toString();
-      process.stdout.write(chunk);
-      stdoutData += chunk;
-    });
-
-    child.stderr?.on('data', (data) => {
-      const chunk = data.toString();
-      process.stderr.write(chunk);
-      stderrData += chunk;
-    });
-
-    child.stdin.write(input);
-    child.stdin.end();
-
-    child.on('close', (code) => {
-      const duration = Date.now() - start;
-      const exitCode = code ?? 1;
-
-      const isExhausted =
-        stderrData.includes('429') ||
-        stderrData.includes('exhausted your capacity') ||
-        stderrData.includes('ResourceExhausted');
-
-      if (exitCode !== 0 && isExhausted) {
-        console.warn(
-          `[Agent] \u26A0\ufe0f Model ${model} exhausted (429). Duration: ${duration}ms`,
-        );
-        resolve({ code: exitCode, shouldRetry: true, output: stdoutData });
-      } else {
-        resolve({ code: exitCode, shouldRetry: false, output: stdoutData });
-      }
-    });
-
-    child.on('error', (err) => {
-      console.error(`[Agent] Failed to spawn Gemini (${model}):`, err);
-      resolve({ code: 1, shouldRetry: false, output: '' });
-    });
-  });
-}
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -220,8 +160,19 @@ Examples:
     let success = false;
     let lastOutput = '';
 
+    let aiConfig = undefined;
+    if (argv.aiConfig) {
+      try {
+        aiConfig = JSON.parse(argv.aiConfig);
+      } catch (e) {
+        console.warn('[Agent] Failed to parse aiConfig', e);
+      }
+    }
+
+    const aiClient = AiClientFactory.create(aiConfig);
     for (const model of models) {
-      const result = await runGemini(model, currentPrompt);
+      console.log(`[Agent] Attempting with model: \x1b[36m${model}\x1b[0m...`);
+      const result = await aiClient.run(model, currentPrompt);
 
       if (result.code === 0) {
         success = true;

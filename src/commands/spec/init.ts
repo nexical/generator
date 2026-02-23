@@ -15,7 +15,6 @@ export class SpecInitCommand extends BaseCommand {
         name: 'name',
         description:
           'The name of the module to update (e.g., "payment-api") or "project" for the root spec',
-        required: true,
       },
     ],
   };
@@ -23,6 +22,11 @@ export class SpecInitCommand extends BaseCommand {
   async run(...args: unknown[]) {
     const options = args[0] as { name: string };
     const { name } = options;
+
+    const rawConfig = this as unknown as {
+      config?: { generator?: { ai?: Record<string, unknown> }; ai?: Record<string, unknown> };
+    };
+    const aiConfig = rawConfig.config?.generator?.ai || rawConfig.config?.ai || {};
 
     if (!name) {
       this.error('Please provide a module name.');
@@ -53,6 +57,7 @@ export class SpecInitCommand extends BaseCommand {
           {
             spec_file: specFile,
             user_input: `I want to create a specification for this project. Please interview me.`,
+            aiConfig,
           },
           true,
         );
@@ -90,6 +95,7 @@ export class SpecInitCommand extends BaseCommand {
           module_root: modulePath,
           spec_file: specFile,
           user_input: `I want to create a new module named "${name}". Please interview me to build the specification.`,
+          aiConfig,
         },
         true,
       );
