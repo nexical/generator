@@ -1,4 +1,9 @@
-# generator-implement-audit
+---
+name: implement-audit
+description: Expert guide for implementing and extending the Audit suite within the @nexical/generator.
+---
+
+# implement-audit
 
 Expert guide for implementing and extending the Audit suite within the `@nexical/generator`. This skill focuses on detecting "drift" between domain configurations (YAML) and the source code (AST) using non-mutative validation patterns.
 

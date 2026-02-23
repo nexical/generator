@@ -1,57 +1,88 @@
 ---
 name: create-command
-description: 'This skill guides the creation of new CLI commands within the `@nexical/generator` package.'
+description: Standard for creating new CLI commands within the @nexical/generator package.
 ---
 
-# Create Command
+# generator-create-command
 
-This skill guides the creation of new CLI commands within the `@nexical/generator` package.
+This skill defines the standard for creating new CLI commands within the `@nexical/generator` package. All commands must adhere to the **Abstract Base Class Pattern** to ensure consistency in logging, help formatting, and execution flow.
 
-## Core Mandates
+## 1. Core Principles
 
-1.  **Inheritance**: All commands MUST extend `BaseCommand` from `@nexical/cli-core`.
-2.  **Configuration**: Command metadata (`usage`, `description`, `args`) MUST be defined as `static` properties on the class.
-3.  **Strict Typing**: `args` MUST be typed as `CommandDefinition`. The `run` method argument MUST NOT use `any`. Use `Record<string, unknown>` or a specific interface.
-4.  **Logic Delegation**: The `run` method MUST be minimal. It should parse options and immediately delegate business logic to a specialized function in `src/lib/`.
-5.  **Import Extensions**: You **MUST** use explicit `.js` extensions for all relative imports (e.g., `import { foo } from './foo.js';`). This is critical for the ESM environment.
+- **Inheritance**: Every command MUST extend the local `BaseCommand` class.
+- **Static Metadata**: Usage, description, and arguments are defined as static properties.
+- **ESM Compliance**: All relative imports MUST include the `.js` extension.
+- **Standardized Output**: Use inherited logging methods (`this.info()`, `this.success()`, etc.) instead of `console.log`.
 
-## File Structure
+## 2. Command Structure
 
-- Commands go in: `packages/generator/src/commands/`
-- Shared Logic goes in: `packages/generator/src/lib/`
+### The Base Class
 
-## Implementation Pattern
+Commands are implemented in `packages/generator/src/commands/`. They must import `BaseCommand` from the local `lib` directory.
 
 ```typescript
-import { BaseCommand, type CommandDefinition } from '@nexical/cli-core';
-// CRITICAL: Note the .js extension for relative imports
-import { performAction } from '../../lib/some-action.js';
+import { BaseCommand } from '../lib/BaseCommand.js';
+import type { CommandDefinition } from '../types/index.js';
 
-export default class ExampleCommand extends BaseCommand {
-  static usage = 'example:command';
-  static description = 'Example command description';
+export default class MyCommand extends BaseCommand {
+  static usage = 'my-command';
+  static description = 'Perform a specific task';
 
   static args: CommandDefinition = {
-    args: [
-      {
-        name: 'input',
-        description: 'Input argument',
-        required: true,
-      },
-    ],
-    options: [
-      {
-        name: '--flag',
-        description: 'An option flag',
-        default: false,
-      },
-    ],
+    arguments: [{ name: 'name', description: 'The name of the target' }],
+    options: [{ flags: '-f, --force', description: 'Force the operation' }],
+    helpMetadata: {
+      examples: ['$ nexical my-command my-name --force'],
+      troubleshooting: 'If the command fails, ensure you have the correct permissions.',
+    },
   };
 
-  async run(options: Record<string, unknown>) {
-    // Delegate logic
-    // Validate options if necessary, then call the library function
-    await performAction(this, options);
+  async run(...args: unknown[]): Promise<void> {
+    const [name, options] = args as [string, Record<string, unknown>];
+
+    this.info(`Starting operation for ${name}...`);
+
+    try {
+      // Logic here
+      this.success('Operation completed successfully!');
+    } catch (error) {
+      this.error(`Failed to complete operation: ${error.message}`);
+    }
   }
 }
 ```
+
+## 3. Mandatory Patterns
+
+### Static Metadata Declaration
+
+Use the `static args` property to define the command's interface. This includes `arguments`, `options`, and the `helpMetadata` object for extended help content (Examples and Troubleshooting).
+
+### Auto-Configured Action Handler
+
+The `BaseCommand` constructor automatically configures the commander instance. You MUST NOT manually call `.action()` in your subclass. Instead, implement all logic within the `run` method.
+
+### Method Signature
+
+The `run` method receives positional arguments and the options object as a rest parameter array.
+
+```typescript
+async run(...args: unknown[]): Promise<void>
+```
+
+Typically, positional arguments come first, followed by the options object.
+
+### Inherited Logging
+
+Always use the following methods for terminal output:
+
+- `this.info(message)`: For general information.
+- `this.warn(message)`: For non-critical warnings.
+- `this.error(message)`: For critical failures (this may exit the process).
+- `this.success(message)`: For successful completion messages.
+
+## 4. ESM Requirements
+
+Since the package uses ESM, all relative imports must be explicit.
+**Incorrect**: `import { helper } from '../utils/helper';`
+**Correct**: `import { helper } from '../utils/helper.js';`
