@@ -50,8 +50,9 @@ The **`ensure(config)`** method orchestrates this lifecycle, acting as the prima
 
 Builders reside above Primitives. They consume the Ecosystem's domain configuration (like `models.yaml`) and output a declarative `FileDefinition`.
 
-- Example: `ServiceBuilder` reads a `ModelDef` and constructs a JSON schema defining a class (e.g., `UserService`) with standard CRUD methods.
-- Builders _never_ touch the AST or `ts-morph` directly. They only construct JSON.
+- **Standard Builders**: Implement `getSchema(node?: NodeContainer): FileDefinition`. The `Reconciler` automatically handles the diffing and updates.
+- **UI Builders**: Specialized builders (extending `UiBaseBuilder`) may override the `build()` method to handle multi-file generation or complex UI logic. These builders manually invoke `Reconciler.reconcile(file, definition)`.
+- Builders _never_ touch the AST or `ts-morph` directly (except for orchestrating the Reconciler in manual modes). They primarily construct JSON definitions.
 
 ### 4. The Reconciler (`src/engine/reconciler.ts`)
 
@@ -97,6 +98,72 @@ When a developer runs an `arc gen` command:
 4. **Reconcile**: `Reconciler.reconcile(sourceFile, definition)` is executed.
 5. **Flush**: `ts-morph` saves the modified AST to the file system.
 6. **Format**: A secondary pass (often via Prettier/ESLint primitives) ensures aesthetic compliance.
+
+---
+
+## 🖥️ CLI Command Architecture
+
+The CLI interface for the generator is built on a standardized class-based architecture to ensure consistency in behavior, logging, and help documentation.
+
+### 1. The Thin Command / Delegation Pattern
+
+All CLI commands MUST extend the abstract `BaseCommand` (located in `src/lib/BaseCommand.ts`). Following the **Thin Command Pattern**, the command class acts as an entry point/adapter that parses CLI arguments and delegates domain logic to dedicated service functions.
+
+- **Static Metadata**: Commands define their interface (usage, description, arguments, options) using the `static usage`, `static description`, and `static args` properties.
+- **Auto-Registration**: The `BaseCommand` constructor automatically configures the internal Commander instance and sets up the action handler.
+- **Thin Execution**: The `async run(...args: unknown[])` method should contain minimal logic, primarily casting arguments from the CLI and calling a service-level function from the `src/lib/` directory.
+- **Standardized Output**: `BaseCommand` provides inherited logging methods (`this.info()`, `this.warn()`, `this.error()`, `this.success()`) which MUST be used for all terminal output to maintain a consistent look and feel.
+
+### 2. CLI-Aware Service Functions
+
+Logic functions in the `src/lib/` directory are designed to be "CLI-aware" by accepting the command instance as their first argument. This allows the service logic to utilize the command's standardized logging and interaction methods without being tightly coupled to the CLI framework.
+
+```typescript
+// Example: src/lib/audit-api.ts
+export async function auditApiModule(
+  command: BaseCommand,
+  name: string | undefined,
+  options: { schema?: boolean },
+) {
+  command.info(`Auditing API module: ${name}...`);
+  // ... implementation ...
+}
+```
+
+### 3. Custom Help Formatting
+
+The generator uses a `CustomHelp` formatter to render extended metadata defined in the `helpMetadata` property of the `CommandDefinition`. This allows commands to easily include "Examples" and "Troubleshooting" sections in their `--help` output.
+
+### 3. Command Signature Extraction
+
+The `run` method receives a spread of arguments from Commander. Positional arguments are provided in order, followed by the options object as the final element in the array.
+
+```typescript
+async run(...args: unknown[]): Promise<void> {
+  const [target, options] = args as [string, Record<string, unknown>];
+  // Implementation...
+}
+```
+
+---
+
+## 🔍 Validation & Auditing
+
+The generator ecosystem provides robust mechanisms for ensuring the integrity of both input configurations and the resulting source code.
+
+### 1. Zod Configuration Validation
+
+External configuration files, such as `models.yaml`, `api.yaml`, and `agents.yaml`, MUST be validated against strict Zod schemas before being processed by Builders. This ensures that domain-specific constraints are caught early and provides clear error messages to the developer.
+
+- **Schemas**: Located in `src/schemas/`.
+- **Validation**: Use `.safeParse()` from Zod schemas to evaluate configurations.
+
+### 2. Structural Auditing (Drift Detection)
+
+The `arc audit` suite allows developers to detect "drift" between the desired state (defined in YAML) and the actual source code (AST) without mutating files.
+
+- **Primitive Validation**: Every Primitive implements a `validate(config)` method. Unlike `update()`, this method only compares the configuration against the AST node and returns a `ValidationResult` containing any discrepancies.
+- **Audit Reports**: The `audit` commands collect these results and generate reports highlighting discrepancies, which can then be resolved by running `arc gen`.
 
 ---
 
