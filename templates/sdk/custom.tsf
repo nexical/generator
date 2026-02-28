@@ -13,5 +13,5 @@ declare const endpoint: string;
 declare const dataArg: string;
 
 export default fragment/* ts */`
-return this._request('${verb}', \`/${endpoint}${url}\`\${dataArg});
+return this._request('${verb}', \`\${endpoint ? '/' + endpoint : ''}${url}\`\${dataArg});
 `;

@@ -32,7 +32,7 @@ export class SdkBuilder extends BaseBuilder {
       .replace(/([a-z])([A-Z])/g, '$1-$2')
       .replace(/[\s_]+/g, '-')
       .toLowerCase();
-    const endpoint = kebabEntity; // e.g. "user-api"
+    const endpoint = entityName === 'Root' ? '' : kebabEntity;
 
     const methods: MethodConfig[] = [];
 

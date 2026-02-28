@@ -32,18 +32,18 @@ export class ApiModuleGenerator extends ModuleGenerator {
     const { models, enums, config } = ModelParser.parse(modelsYamlPath);
     console.info(`[ApiModuleGenerator] Models found: ${models.length}`);
 
-    if (models.length === 0) {
-      if (this.command) {
-        this.command.info('No models found in models.yaml. Skipping generation.');
-      } else {
-        logger.info('No models found in models.yaml. Skipping generation.');
-      }
-      return;
-    }
-
     const customRoutes: Record<string, CustomRoute[]> = fs.existsSync(apiYamlPath)
       ? parse(fs.readFileSync(apiYamlPath, 'utf-8'))
       : {};
+
+    if (models.length === 0 && Object.keys(customRoutes).length === 0) {
+      if (this.command) {
+        this.command.info('No models or custom routes found. Skipping generation.');
+      } else {
+        logger.info('No models or custom routes found. Skipping generation.');
+      }
+      return;
+    }
 
     // 1. Types
     const typesFile = this.getOrCreateFile('src/sdk/types.ts');
