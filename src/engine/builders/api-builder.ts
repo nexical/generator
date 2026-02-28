@@ -705,7 +705,10 @@ export class ApiBuilder extends BaseBuilder {
         initializer: TemplateLoader.load('api/custom/handler.tsf', {
           verb: verb,
           bodyLoader,
-          inputType: input && input !== 'unknown' ? `${moduleTypesNamespace}.${input}` : 'unknown',
+          inputType:
+            input && !['none', 'void', 'unknown', 'any'].includes(input)
+              ? `${moduleTypesNamespace}.${input}`
+              : 'unknown',
           entityName: this.model.name,
           lowerEntity: this.model.name.charAt(0).toLowerCase() + this.model.name.slice(1),
           method,

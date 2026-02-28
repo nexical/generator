@@ -193,7 +193,9 @@ export class SdkBuilder extends BaseBuilder {
 
     if (namedImports.length > 0 || otherTypes.size > 0) {
       const typesToImport = [...namedImports, ...Array.from(otherTypes)].filter(
-        (t) => t !== 'void' && t !== 'any',
+        (t) =>
+          t &&
+          !['void', 'any', 'unknown', 'never', 'object', 'string', 'number', 'boolean'].includes(t),
       );
       if (typesToImport.length > 0) {
         imports.push({
