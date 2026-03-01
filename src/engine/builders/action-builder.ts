@@ -138,6 +138,30 @@ export class ActionBuilder extends BaseBuilder {
       });
     }
 
+    const hasHookSystem = sourceText.includes('HookSystem');
+    if (hasHookSystem) {
+      imports.push({
+        moduleSpecifier: '@/lib/modules/hooks',
+        namedImports: ['HookSystem'],
+      });
+    }
+
+    const hasAuthService = sourceText.includes('AuthService');
+    if (hasAuthService) {
+      imports.push({
+        moduleSpecifier: '../services/auth-service',
+        namedImports: ['AuthService'],
+      });
+    }
+
+    const hasBcrypt = sourceText.includes('bcrypt');
+    if (hasBcrypt) {
+      imports.push({
+        moduleSpecifier: 'bcryptjs',
+        defaultImport: 'bcrypt',
+      });
+    }
+
     const hasDb = sourceText.includes('db.') || sourceText.includes(' db ');
     if (hasDb) {
       imports.push({
