@@ -70,6 +70,10 @@ export interface CustomRoute {
   action?: string; // Optional custom action file path/name
 }
 
+export interface ResolvedRoute extends CustomRoute {
+  modelName: string;
+}
+
 // --- UI Module Configurations ---
 
 export interface PageDefinition {

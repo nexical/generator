@@ -342,11 +342,6 @@ export class ApiBuilder extends BaseBuilder {
       });
     }
 
-    const usedEnums = Object.values(this.model.fields)
-      .filter((f) => f.isEnum && f.api !== false && !f.private)
-      .map((f) => f.type)
-      .filter((value, index, self) => self.indexOf(value) === index);
-
     const imports: ImportConfig[] = [
       { moduleSpecifier: '@/lib/api/api-docs', namedImports: ['defineApi'] },
       { moduleSpecifier: '@/lib/api/api-guard', namedImports: ['ApiGuard'] },
@@ -517,11 +512,6 @@ export class ApiBuilder extends BaseBuilder {
       });
     }
 
-    const usedEnums = Object.values(this.model.fields)
-      .filter((f) => f.isEnum && f.api !== false && !f.private)
-      .map((f) => f.type)
-      .filter((value, index, self) => self.indexOf(value) === index);
-
     const imports: ImportConfig[] = [
       { moduleSpecifier: '@/lib/api/api-docs', namedImports: ['defineApi'] },
       { moduleSpecifier: '@/lib/api/api-guard', namedImports: ['ApiGuard'] },
@@ -626,11 +616,11 @@ export class ApiBuilder extends BaseBuilder {
       const methodPascal = method.charAt(0).toUpperCase() + method.slice(1);
       const actionClassName = route.action
         ? route.action
-          .split('-')
-          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-          .join('') + 'Action'
+            .split('-')
+            .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+            .join('') + 'Action'
         : (methodPascal.includes(entityName) ? methodPascal : `${methodPascal}${entityName}`) +
-        'Action';
+          'Action';
 
       const actionImport = `@modules/${this.moduleName}/src/actions/${actionBase}`;
 
@@ -701,16 +691,17 @@ export class ApiBuilder extends BaseBuilder {
       const customDocs = `{
     summary: "${route.summary || ''}",
     tags: ["${this.model.name}"],
-    ${verb !== 'GET'
-          ? `requestBody: {
+    ${
+      verb !== 'GET'
+        ? `requestBody: {
         content: {
             "application/json": {
                 schema: ${requestBodySchema}
             }
         }
     },`
-          : ''
-        }
+        : ''
+    }
     responses: {
         200: {
             description: "OK",
@@ -777,7 +768,9 @@ export class ApiBuilder extends BaseBuilder {
       if (imp.moduleSpecifier === '@/lib/api/api-docs') {
         const existing = finalImports.find((i) => i.moduleSpecifier === imp.moduleSpecifier)!;
         if (imp.namedImports) {
-          existing.namedImports = [...new Set([...(existing.namedImports || []), ...imp.namedImports])];
+          existing.namedImports = [
+            ...new Set([...(existing.namedImports || []), ...imp.namedImports]),
+          ];
         }
         return;
       }

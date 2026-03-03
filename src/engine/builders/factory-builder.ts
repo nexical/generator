@@ -139,7 +139,7 @@ export class FactoryBuilder extends BaseBuilder {
       statements: [TemplateLoader.load('factory/utils.tsf')],
     };
 
-    const imports: any[] = [{ moduleSpecifier: 'bcryptjs', defaultImport: 'bcrypt' }];
+    const imports: ImportConfig[] = [{ moduleSpecifier: 'bcryptjs', defaultImport: 'bcrypt' }];
 
     if (this.models.length > 0) {
       imports.push({

@@ -28,7 +28,7 @@ export class MyPrimitive extends BasePrimitive<MyNode, MyConfig> {
   /**
    * Maps configuration to a ts-morph structure for clean creation.
    */
-  private toStructure(): any {
+  private toStructure(): unknown {
     // Return the appropriate OptionalKind structure
     // Example: return { name: this.config.name, isExported: true };
     return {};

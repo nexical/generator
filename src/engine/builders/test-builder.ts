@@ -80,7 +80,7 @@ export class TestBuilder extends BaseBuilder {
     }
 
     // Check config for matching role value
-    for (const [key, val] of Object.entries(this.roleConfig)) {
+    for (const [_key, val] of Object.entries(this.roleConfig)) {
       if (val.role === requiredRole) {
         const optsArray = JSON.stringify(val)
           .replace(/"([^"]+)":/g, '$1:')

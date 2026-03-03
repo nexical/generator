@@ -1,6 +1,11 @@
 import { Project, SourceFile } from 'ts-morph';
 import { UiBaseBuilder } from './ui/ui-base-builder.js';
-import { type FileDefinition, type ModelDef, type ModuleConfig } from '../types.js';
+import {
+  type FileDefinition,
+  type ModelDef,
+  type ModuleConfig,
+  type ResolvedRoute,
+} from '../types.js';
 import { Reconciler } from '../reconciler.js';
 import { toCamelCase, toKebabCase, toPascalCase } from '../../utils/string.js';
 import { ts } from '../primitives/statements/factory.js';
@@ -57,9 +62,7 @@ export class QueryBuilder extends UiBaseBuilder {
 
     // 4. Generate Hooks for Custom Actions
     const routes = this.resolveRoutes();
-    for (const r of routes) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const route = r as any;
+    for (const route of routes) {
       const actionName = route.action || `${route.verb}${route.modelName}${route.path}`; // simplified fallback
 
       const hookName = `use${toPascalCase(actionName)}`;
@@ -149,8 +152,7 @@ export class QueryBuilder extends UiBaseBuilder {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private generateCustomActionHook(route: any) {
+  private generateCustomActionHook(route: ResolvedRoute) {
     const camelModel = toCamelCase(route.modelName);
     const sdkMethod = toCamelCase(route.action || `${route.verb}${route.modelName}`);
 

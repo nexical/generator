@@ -78,7 +78,7 @@ export abstract class UiBaseBuilder extends BaseBuilder {
     }
   }
 
-  protected resolveRoutes(): unknown[] {
+  protected resolveRoutes(): ResolvedRoute[] {
     const targetModule = this.uiConfig.backend || this.moduleName;
     const backendModule = ModuleLocator.resolve(targetModule);
     const apiPath = join(backendModule.path, 'api.yaml');
@@ -92,11 +92,11 @@ export abstract class UiBaseBuilder extends BaseBuilder {
       const parsed = parse(content) as Record<string, unknown>;
       // api.yaml structure: User: [routes]
       // Flatten to list of routes with model info
-      const routes: unknown[] = [];
+      const routes: ResolvedRoute[] = [];
       Object.entries(parsed).forEach(([modelName, modelRoutes]) => {
         if (Array.isArray(modelRoutes)) {
           modelRoutes.forEach((route) => {
-            routes.push({ ...(route as Record<string, unknown>), modelName });
+            routes.push({ ...(route as CustomRoute), modelName });
           });
         }
       });

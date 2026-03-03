@@ -23,7 +23,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { parse } from 'yaml';
 import { Reconciler } from './reconciler.js';
-import { type AccessConfig, type FileDefinition } from './types.js';
+import { type AccessConfig } from './types.js';
 
 export class ApiModuleGenerator extends ModuleGenerator {
   async run(): Promise<void> {
@@ -120,9 +120,9 @@ export class ApiModuleGenerator extends ModuleGenerator {
             const methodPascal = route.method.charAt(0).toUpperCase() + route.method.slice(1);
             const actionName = route.action
               ? route.action
-                .split('-')
-                .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-                .join('') + 'Action'
+                  .split('-')
+                  .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+                  .join('') + 'Action'
               : (methodPascal.includes(name) ? methodPascal : `${methodPascal}${name}`) + 'Action';
 
             // Support "none" keyword mapped to "void"
@@ -250,11 +250,11 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const methodPascal = route.method.charAt(0).toUpperCase() + route.method.slice(1);
           const actionName = route.action
             ? route.action
-              .split('-')
-              .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-              .join('') + 'Action'
+                .split('-')
+                .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+                .join('') + 'Action'
             : (methodPascal.includes(entityName) ? methodPascal : `${methodPascal}${entityName}`) +
-            'Action';
+              'Action';
 
           // Support "none" keyword mapped to "void"
           const inputType = route.input === 'none' ? 'void' : route.input;
@@ -285,9 +285,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
     // 4. SDK Index
     const sdkIndexFile = this.getOrCreateFile('src/sdk/index.ts');
-    new SdkIndexBuilder([...models, ...virtualModels], this.moduleName, roles).ensure(
-      sdkIndexFile,
-    );
+    new SdkIndexBuilder([...models, ...virtualModels], this.moduleName, roles).ensure(sdkIndexFile);
 
     // 4. Test Utilities (Factories/Actors)
     const factoryFile = this.getOrCreateFile('tests/integration/factory.ts');
