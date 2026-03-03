@@ -8,6 +8,7 @@ import { SdkIndexBuilder } from './builders/sdk-index-builder.js';
 import { InitBuilder } from './builders/init-builder.js';
 import { TestBuilder } from './builders/test-builder.js';
 import { ActionBuilder } from './builders/action-builder.js';
+import { ServiceTestBuilder } from './builders/service-test-builder.js';
 import { TypeBuilder } from './builders/type-builder.js';
 import { FactoryBuilder } from './builders/factory-builder.js';
 import { ActorBuilder } from './builders/actor-builder.js';
@@ -130,6 +131,12 @@ export class ApiModuleGenerator extends ModuleGenerator {
             const outputType = route.output === 'none' ? 'void' : route.output;
 
             new ActionBuilder(actionName, inputType, outputType).ensure(actionFile);
+
+            const serviceTestPath = `tests/integration/services/${actionBase}.test.ts`;
+            const serviceTestFile = this.getOrCreateFile(serviceTestPath);
+            new ServiceTestBuilder(actionBase, actionName, inputType, outputType).ensure(
+              serviceTestFile,
+            );
           }
         }
 
@@ -261,6 +268,12 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const outputType = route.output === 'none' ? 'void' : route.output;
 
           new ActionBuilder(actionName, inputType, outputType).ensure(actionFile);
+
+          const serviceTestPath = `tests/integration/services/${actionBase}.test.ts`;
+          const serviceTestFile = this.getOrCreateFile(serviceTestPath);
+          new ServiceTestBuilder(actionBase, actionName, inputType, outputType).ensure(
+            serviceTestFile,
+          );
         }
       }
 

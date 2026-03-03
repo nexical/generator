@@ -363,17 +363,19 @@ export class TestBuilder extends BaseBuilder {
     );
 
     const filterTests = Object.keys(this.model.fields)
-      .filter(
-        // Reuse existing filter logic
-        (f) =>
+      .filter((f) => {
+        const type = this.model.fields[f].type;
+        return (
           !['id', 'createdAt', 'updatedAt', 'actorId', 'userId', 'actorType'].includes(f) &&
-          this.model.fields[f].type === 'String' &&
+          ['String', 'Boolean', 'Int', 'Float', 'Decimal', 'DateTime'].includes(type) &&
           this.model.fields[f].api !== false &&
           !this.model.fields[f].private &&
           !this.model.fields[f].isList &&
-          !this.isForeignKey(f),
-      )
+          !this.isForeignKey(f)
+        );
+      })
       .map((field) => {
+        const type = this.model.fields[field].type;
         const uniques = this.getUniqueFields();
         let uniqueInjectionA = '';
         let uniqueInjectionB = '';
@@ -385,6 +387,32 @@ export class TestBuilder extends BaseBuilder {
           uniqueInjectionB += `, ${u}: 'filter_b_' + Date.now() + '${s}'`;
         }
 
+        let val1Str = '';
+        let val2Str = '';
+        let assertion1 = '';
+
+        if (type === 'String') {
+          val1Str = `'${field}_' + Date.now() + '_A${field === 'email' ? '@example.com' : ''}'`;
+          val2Str = `'${field}_' + Date.now() + '_B${field === 'email' ? '@example.com' : ''}'`;
+          assertion1 = `expect(res.body.data[0].${field}).toBe(val1);`;
+        } else if (type === 'Boolean') {
+          val1Str = `true`;
+          val2Str = `false`;
+          assertion1 = `expect(res.body.data[0].${field}).toBe(val1);`;
+        } else if (type === 'Int') {
+          val1Str = `Date.now() % 1000`;
+          val2Str = `(Date.now() % 1000) + 1`;
+          assertion1 = `expect(res.body.data[0].${field}).toBe(val1);`;
+        } else if (type === 'Float' || type === 'Decimal') {
+          val1Str = `(Date.now() % 1000) + 0.5`;
+          val2Str = `(Date.now() % 1000) + 1.5`;
+          assertion1 = `expect(res.body.data[0].${field}).toBe(val1);`;
+        } else if (type === 'DateTime') {
+          val1Str = `new Date(Date.now() - 100000).toISOString()`;
+          val2Str = `new Date(Date.now() + 100000).toISOString()`;
+          assertion1 = `expect(res.body.data[0].${field}).toBe(val1);`;
+        }
+
         // Note: Template literal inside loop string generation
         return `
   it('should filter by ${field}', async () => {
@@ -394,8 +422,8 @@ export class TestBuilder extends BaseBuilder {
     ${this.getActorStatement('list', !!this.getActorRelationSnippet())}
     ${this.model.test?.actor === 'user' && this.model.role && typeof this.model.role === 'object' && this.model.role.list !== 'admin' ? `// Note: Ensure role allows filtering if restricted` : ''}
 
-    const val1 = '${field}_' + Date.now() + '_A${field === 'email' ? '@example.com' : ''}';
-    const val2 = '${field}_' + Date.now() + '_B${field === 'email' ? '@example.com' : ''}';
+    const val1 = ${val1Str};
+    const val2 = ${val2Str};
 
     const data1 = { ...baseData, ${field}: val1${uniqueInjectionA} };
     const data2 = { ...baseData, ${field}: val2${uniqueInjectionB} };
@@ -406,7 +434,7 @@ export class TestBuilder extends BaseBuilder {
     const res = await client.get('/api/${kebabEntity}?${field}=' + val1);
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
-    expect(res.body.data[0].${field}).toBe(val1);
+    ${assertion1}
   });`;
       })
       .join('\n');

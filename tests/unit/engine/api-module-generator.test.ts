@@ -113,7 +113,9 @@ describe('ApiModuleGenerator', () => {
     });
     const generator = new ApiModuleGenerator('/tmp/user-api');
     await generator.run();
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('No models found'));
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('No models or custom routes found'),
+    );
   });
 
   it('should handle virtual resources from api.yaml', async () => {

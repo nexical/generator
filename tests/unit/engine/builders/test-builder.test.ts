@@ -63,8 +63,19 @@ describe('TestBuilder', () => {
       id: { type: 'Int', isRequired: true, isList: false, api: true, attributes: ['@id'] },
       content: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] },
     },
-    role: { list: 'admin', create: 'admin' },
+    role: { list: 'admin', create: 'admin', get: 'public' },
     test: { actor: 'User' },
+  };
+
+  const missingActorModel: ModelDef = {
+    name: 'LogEntry',
+    db: true,
+    api: true,
+    fields: {
+      id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
+      message: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] },
+    },
+    // Missing test.actor intentionally
   };
 
   it('should generate CREATE tests', () => {
@@ -133,5 +144,29 @@ describe('TestBuilder', () => {
     const text = sourceFile.getFullText();
     expect(text).toContain("describe('DELETE /api/post/[id]'");
     expect(text).toContain('client.delete(`/api/post/${target.id}`)');
+  });
+
+  it('should generate GET tests with public role and no auth requirement', () => {
+    const builder = new TestBuilder(restrictedModel, 'AdminDocApi', 'get');
+    const project = new Project({ useInMemoryFileSystem: true });
+    const sourceFile = project.createSourceFile('test.ts', '');
+
+    builder.ensure(sourceFile);
+
+    const text = sourceFile.getFullText();
+    expect(text).toContain('// Public access - no auth required');
+    expect(text).not.toContain('should forbid non-admin/unauthorized users');
+  });
+
+  it('should fallback to User actor if test.actor is missing', () => {
+    const builder = new TestBuilder(missingActorModel, 'LogEntryApi', 'create');
+    const project = new Project({ useInMemoryFileSystem: true });
+    const sourceFile = project.createSourceFile('test.ts', '');
+
+    builder.ensure(sourceFile);
+
+    const text = sourceFile.getFullText();
+    // It should construct relations or use 'user' as actor
+    expect(text).toContain("const actor = await client.as('user', {});");
   });
 });
