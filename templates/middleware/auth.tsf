@@ -16,7 +16,7 @@ if (authHeader?.startsWith("Bearer ${prefix}")) {
     ${lookupLogic}
         
     if (entity) {
-        context.locals.actor = { ...entity, type: '${name}', role: '${role}' };
+        context.locals.actor = { ...entity, type: '${name}', role: (entity && 'role' in entity ? (entity as { role: string }).role : '${role}') };
         context.locals.actorType = '${name}';
         return next();
     }

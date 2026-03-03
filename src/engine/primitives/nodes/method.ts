@@ -230,7 +230,14 @@ export class MethodPrimitive extends BasePrimitive<MethodDeclaration, MethodConf
 
         for (const newStmt of newStatements) {
           const match = this.findStructuralMatch(node.getStatements(), newStmt);
-          if (match) continue;
+          if (match) {
+            const normalizedExisting = Normalizer.normalize(match.getText());
+            const normalizedTarget = Normalizer.normalize(newStmt.getText());
+            if (normalizedExisting !== normalizedTarget) {
+              match.replaceWithText(newStmt.getText());
+            }
+            continue;
+          }
           node.addStatements(newStmt.getText());
         }
 

@@ -93,7 +93,8 @@ export class FactoryBuilder extends BaseBuilder {
           val = 'new Date()';
         } else {
           // Enum fallback
-          if (field.type === 'SiteRole') val = "'EMPLOYEE'";
+          if (field.type === 'SiteRole') val = "'USER_EMPLOYEE'";
+          else if (field.type === 'TeamRole') val = "'TEAM_MEMBER'";
           else if (field.type === 'UserStatus') val = "'ACTIVE'";
           else if (field.type === 'UserMode') val = "'SINGLE'";
           // If it's an enum we don't know, it'll stay null and be excluded

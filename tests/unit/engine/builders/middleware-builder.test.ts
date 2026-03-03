@@ -26,6 +26,6 @@ describe('MiddlewareBuilder', () => {
     expect(onRequest).toBeDefined();
     const body = onRequest?.getBodyText();
     expect(body).toContain('if (authHeader?.startsWith("Bearer sk_user"))');
-    expect(body).toContain("context.locals.actor = { ...entity, type: 'user', role: 'USER' };");
+    expect(body).toContain("context.locals.actor = { ...entity, type: 'user', role: ('role' in entity ? entity.role : 'USER') as any };");
   });
 });

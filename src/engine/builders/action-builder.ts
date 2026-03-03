@@ -35,7 +35,9 @@ export class ActionBuilder extends BaseBuilder {
           );
           const body = method.getBodyText();
           if (body) {
-            existingStatements = [ts`${body}`];
+            // Automated cleanup for common linting issues during regeneration
+            const cleanedBody = body.replace(/error:\s*any\b/g, 'error: unknown');
+            existingStatements = [ts`${cleanedBody}`];
           }
         } else {
           console.info(`[ActionBuilder] Method 'run' NOT found in ${this.actionName}`);
@@ -121,7 +123,7 @@ export class ActionBuilder extends BaseBuilder {
       });
     }
 
-    const hasApiActor = sourceText.includes('ApiActor');
+    const hasApiActor = sourceText.split('\n').some(line => !line.trim().startsWith('import') && line.includes('ApiActor'));
     if (hasApiActor) {
       imports.push({
         moduleSpecifier: '@/lib/api/api-docs',
@@ -136,6 +138,11 @@ export class ActionBuilder extends BaseBuilder {
         moduleSpecifier: 'zod',
         namedImports: ['z'],
       });
+    }
+
+    const hasTeamRole = sourceText.includes('TeamRole');
+    if (hasTeamRole && !namedImports.includes('TeamRole')) {
+      namedImports.push('TeamRole');
     }
 
     const hasHookSystem = sourceText.includes('HookSystem');
@@ -177,14 +184,49 @@ export class ActionBuilder extends BaseBuilder {
         imports.push({
           moduleSpecifier: '../sdk/types',
           namedImports: uniqueImports,
-          isTypeOnly: true,
+          isTypeOnly: !uniqueImports.includes('TeamRole'),
         });
       }
     }
 
+    // Preserve existing manual imports
+    const existingImports = this.getExistingImports(node);
+    const importMap = new Map<string, ImportConfig>();
+
+    // Add generated imports first
+    imports.forEach((imp) => importMap.set(imp.moduleSpecifier, imp));
+
+    // Add existing imports if not already present or merge named imports
+    existingImports.forEach((existing) => {
+      const existingSpecifier = existing.moduleSpecifier;
+      if (importMap.has(existingSpecifier)) {
+        const generated = importMap.get(existingSpecifier)!;
+        if (existing.namedImports && generated.namedImports) {
+          const mergedNames = [...new Set([...generated.namedImports, ...existing.namedImports])];
+          generated.namedImports = mergedNames;
+          generated.isTypeOnly = generated.isTypeOnly && existing.isTypeOnly;
+        }
+      } else {
+        importMap.set(existingSpecifier, existing);
+      }
+    });
+
+    // Merge imports
+    const finalImports = Array.from(importMap.values());
+
+    // Cleanup ApiActor if not used
+    if (!hasApiActor) {
+      finalImports.forEach((imp) => {
+        if (imp.namedImports?.includes('ApiActor')) {
+          imp.namedImports = imp.namedImports.filter((n) => n !== 'ApiActor');
+        }
+      });
+    }
+
     return {
-      header: '// GENERATED CODE - DO NOT MODIFY',
-      imports,
+      header:
+        '// GENERATED CODE - THE SIGNATURE IS MANAGED BY THE GENERATOR. YOU MAY MODIFY THE IMPLEMENTATION AND ADD CUSTOM IMPORTS.',
+      imports: finalImports.filter((imp) => !imp.namedImports || imp.namedImports.length > 0),
       classes: [actionClass],
     };
   }

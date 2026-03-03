@@ -30,7 +30,6 @@ describe('PUT /api/${kebabEntity}/[id]', () => {
 
     expect(res.status).toBe(200);
             
-    const updated = await Factory.prisma.${camelEntity}.findUnique({ where: { id: target.id } });
     ${assertionBlock}
   });
 });

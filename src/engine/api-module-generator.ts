@@ -16,6 +16,7 @@ import { MiddlewareBuilder } from './builders/middleware-builder.js';
 import { EmailBuilder } from './builders/email-builder.js';
 import { AgentBuilder } from './builders/agent-builder.js';
 import { HookBuilder } from './builders/hook-builder.js';
+import { RoleBuilder } from './builders/role-builder.js';
 import { type CustomRoute, type ModelDef, type ModuleConfig } from './types.js';
 import { toKebabCase } from '../utils/string.js';
 import path from 'node:path';
@@ -119,9 +120,9 @@ export class ApiModuleGenerator extends ModuleGenerator {
             const methodPascal = route.method.charAt(0).toUpperCase() + route.method.slice(1);
             const actionName = route.action
               ? route.action
-                  .split('-')
-                  .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-                  .join('') + 'Action'
+                .split('-')
+                .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+                .join('') + 'Action'
               : (methodPascal.includes(name) ? methodPascal : `${methodPascal}${name}`) + 'Action';
 
             // Support "none" keyword mapped to "void"
@@ -249,11 +250,11 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const methodPascal = route.method.charAt(0).toUpperCase() + route.method.slice(1);
           const actionName = route.action
             ? route.action
-                .split('-')
-                .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-                .join('') + 'Action'
+              .split('-')
+              .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+              .join('') + 'Action'
             : (methodPascal.includes(entityName) ? methodPascal : `${methodPascal}${entityName}`) +
-              'Action';
+            'Action';
 
           // Support "none" keyword mapped to "void"
           const inputType = route.input === 'none' ? 'void' : route.input;
@@ -269,9 +270,24 @@ export class ApiModuleGenerator extends ModuleGenerator {
       new SdkBuilder(virtualModel, routes).ensure(sdkFile);
     }
 
+    // 4. Security Config (Roles & Permissions)
+    const accessYamlPath = path.join(this.modulePath, 'access.yaml');
+    let roles: string[] = [];
+    let accessConfig: AccessConfig | undefined;
+
+    if (fs.existsSync(accessYamlPath)) {
+      const parsedAccess = parse(fs.readFileSync(accessYamlPath, 'utf-8'));
+      accessConfig = (parsedAccess.config || parsedAccess) as AccessConfig;
+      if (accessConfig.roles) {
+        roles = Object.keys(accessConfig.roles);
+      }
+    }
+
     // 4. SDK Index
     const sdkIndexFile = this.getOrCreateFile('src/sdk/index.ts');
-    new SdkIndexBuilder([...models, ...virtualModels], this.moduleName).ensure(sdkIndexFile);
+    new SdkIndexBuilder([...models, ...virtualModels], this.moduleName, roles).ensure(
+      sdkIndexFile,
+    );
 
     // 4. Test Utilities (Factories/Actors)
     const factoryFile = this.getOrCreateFile('tests/integration/factory.ts');
@@ -333,11 +349,13 @@ export class ApiModuleGenerator extends ModuleGenerator {
     new MiddlewareBuilder(models, [...allCustomRoutes, ...modelRoutes]).ensure(middlewareFile);
 
     // 9. Access Control (Roles & Permissions)
-    const accessYamlPath = path.join(this.modulePath, 'access.yaml');
     if (fs.existsSync(accessYamlPath)) {
       logger.info(`[ModuleGenerator] Found access.yaml. Generating Security Layer...`);
-      const parsedAccess = parse(fs.readFileSync(accessYamlPath, 'utf-8'));
-      const accessConfig = (parsedAccess.config || parsedAccess) as AccessConfig;
+      // Use pre-parsed accessConfig
+      if (!accessConfig) {
+        const parsedAccess = parse(fs.readFileSync(accessYamlPath, 'utf-8'));
+        accessConfig = (parsedAccess.config || parsedAccess) as AccessConfig;
+      }
 
       // 9a. Generate Role Files
       if (accessConfig.roles) {
@@ -359,15 +377,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           logger.info(`[ModuleGenerator] Generating Role: ${roleName}`);
           const pascalName = roleName.charAt(0).toUpperCase() + roleName.slice(1).toLowerCase();
           const roleFile = this.getOrCreateFile(`src/roles/${pascalName.toLowerCase()}.ts`);
-
-          const fileDef: FileDefinition = {
-            header: '// GENERATED CODE - DO NOT MODIFY',
-            role: {
-              name: roleName,
-              definition: roleDef,
-            },
-          };
-          Reconciler.reconcile(roleFile, fileDef);
+          new RoleBuilder({ name: roleName, definition: roleDef }).ensure(roleFile);
         }
       }
 

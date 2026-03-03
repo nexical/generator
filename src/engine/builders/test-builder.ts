@@ -64,16 +64,34 @@ export class TestBuilder extends BaseBuilder {
   }
 
   private getActorStatement(operation: string, isUsed: boolean = false): string {
-    const requiredRole = this.getRole(operation);
+    const requiredRole = this.getRole(operation).toUpperCase();
     const actorName = this.model.test?.actor || 'user';
 
-    if (requiredRole === 'public') {
+    if (requiredRole === 'PUBLIC' || requiredRole === 'NONE') {
       return `// Public access - no auth required\n    ${!isUsed ? '// eslint-disable-next-line @typescript-eslint/no-unused-vars\n    ' : ''}const actor = undefined as unknown;`;
     }
 
-    // Check config first
+    // Check config for direct key match
     if (this.roleConfig[requiredRole]) {
       const optsArray = JSON.stringify(this.roleConfig[requiredRole])
+        .replace(/"([^"]+)":/g, '$1:')
+        .replace(/"/g, "'");
+      return `${!isUsed ? '// eslint-disable-next-line @typescript-eslint/no-unused-vars\n      ' : ''}const actor = await client.as('${actorName}', ${optsArray});`;
+    }
+
+    // Check config for matching role value
+    for (const [key, val] of Object.entries(this.roleConfig)) {
+      if (val.role === requiredRole) {
+        const optsArray = JSON.stringify(val)
+          .replace(/"([^"]+)":/g, '$1:')
+          .replace(/"/g, "'");
+        return `${!isUsed ? '// eslint-disable-next-line @typescript-eslint/no-unused-vars\n      ' : ''}const actor = await client.as('${actorName}', ${optsArray});`;
+      }
+    }
+
+    // Special case for legacy 'member' or 'admin' strings if they are used as requiredRole
+    if (requiredRole === 'ADMIN' && this.roleConfig['admin']) {
+      const optsArray = JSON.stringify(this.roleConfig['admin'])
         .replace(/"([^"]+)":/g, '$1:')
         .replace(/"/g, "'");
       return `${!isUsed ? '// eslint-disable-next-line @typescript-eslint/no-unused-vars\n      ' : ''}const actor = await client.as('${actorName}', ${optsArray});`;
@@ -89,17 +107,21 @@ export class TestBuilder extends BaseBuilder {
             const actor = undefined as unknown;`;
   }
 
-  private getUniqueField(): string | null {
-    // Priority: email > username > any unique string field
-    if (this.model.fields['email']) return 'email';
-    if (this.model.fields['username']) return 'username';
+  private getUniqueFields(): string[] {
+    const uniques: string[] = [];
+
+    // Always treat email, username and token as unique-ish for tests to avoid collisions
+    if (this.model.fields['email']) uniques.push('email');
+    if (this.model.fields['username']) uniques.push('username');
+    if (this.model.fields['token']) uniques.push('token');
 
     for (const [name, field] of Object.entries(this.model.fields)) {
+      if (uniques.includes(name)) continue;
       if (field.type === 'String' && field.attributes?.some((a) => a.includes('@unique'))) {
-        return name;
+        uniques.push(name);
       }
     }
-    return null;
+    return uniques;
   }
 
   private isForeignKey(fieldName: string): boolean {
@@ -352,14 +374,15 @@ export class TestBuilder extends BaseBuilder {
           !this.isForeignKey(f),
       )
       .map((field) => {
-        const uniqueField = this.getUniqueField();
+        const uniques = this.getUniqueFields();
         let uniqueInjectionA = '';
         let uniqueInjectionB = '';
 
-        if (uniqueField && uniqueField !== field) {
-          const _listSuffix = uniqueField === 'email' ? '@example.com' : '';
-          uniqueInjectionA = `, ${uniqueField}: 'filter_a_' + Date.now() + '${_listSuffix}'`;
-          uniqueInjectionB = `, ${uniqueField}: 'filter_b_' + Date.now() + '${_listSuffix}'`;
+        for (const u of uniques) {
+          if (u === field) continue;
+          const s = u === 'email' ? '@example.com' : '';
+          uniqueInjectionA += `, ${u}: 'filter_a_' + Date.now() + '${s}'`;
+          uniqueInjectionB += `, ${u}: 'filter_b_' + Date.now() + '${s}'`;
         }
 
         // Note: Template literal inside loop string generation
@@ -410,12 +433,23 @@ export class TestBuilder extends BaseBuilder {
     const actorStatementNeg = this.getActorStatement('list', false);
 
     const seedClause = (() => {
-      const unique = this.getUniqueField();
+      const uniques = this.getUniqueFields();
       const rel = this.getActorRelationSnippet();
-      if (unique) {
-        const s = unique === 'email' ? '@example.com' : '';
-        return `await Factory.create('${camelEntity}', { ...baseData, ${unique}: 'list_1_' + _listSuffix + '${s}'${rel} });
-             await Factory.create('${camelEntity}', { ...baseData, ${unique}: 'list_2_' + _listSuffix + '${s}'${rel} });`;
+      if (uniques.length > 0) {
+        const randomization1 = uniques
+          .map((u) => {
+            const s = u === 'email' ? '@example.com' : '';
+            return `${u}: 'list_1_' + _listSuffix + '${s}'`;
+          })
+          .join(', ');
+        const randomization2 = uniques
+          .map((u) => {
+            const s = u === 'email' ? '@example.com' : '';
+            return `${u}: 'list_2_' + _listSuffix + '${s}'`;
+          })
+          .join(', ');
+        return `await Factory.create('${camelEntity}', { ...baseData, ${randomization1}${rel} });
+             await Factory.create('${camelEntity}', { ...baseData, ${randomization2}${rel} });`;
       }
       return `await Factory.create('${camelEntity}', { ...baseData${rel} });
              await Factory.create('${camelEntity}', { ...baseData${rel} });`;
@@ -428,11 +462,16 @@ export class TestBuilder extends BaseBuilder {
       : '';
 
     const loopBody = (() => {
-      const unique = this.getUniqueField();
+      const uniques = this.getUniqueFields();
       const rel = this.getActorRelationSnippet();
-      if (unique) {
-        const s = unique === 'email' ? '@example.com' : '';
-        return `const rec = await Factory.create('${camelEntity}', { ...baseData, ${unique}: \`page_\${i}_\${_listSuffix}${s}\`${rel} });
+      if (uniques.length > 0) {
+        const randomization = uniques
+          .map((u) => {
+            const s = u === 'email' ? '@example.com' : '';
+            return `${u}: \`page_\${i}_\${_listSuffix}${s}\``;
+          })
+          .join(', ');
+        return `const rec = await Factory.create('${camelEntity}', { ...baseData, ${randomization}${rel} });
                             createdIds.push(rec.id);`;
       }
       return `const rec = await Factory.create('${camelEntity}', { ...baseData${rel} });
@@ -588,13 +627,18 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
       })
       .join('\n            ');
 
+    const verificationBlock = assertionBlock
+      ? `const updated = await Factory.prisma.${camelEntity}.findUnique({ where: { id: target.id } });
+            ${assertionBlock}`
+      : '// No specific assertions provided';
+
     return TemplateLoader.load('test/update.tsf', {
       kebabEntity,
       camelEntity,
       actorStatement,
       setupSnippet,
       updatePayload,
-      assertionBlock,
+      assertionBlock: verificationBlock,
     }).raw;
   }
 

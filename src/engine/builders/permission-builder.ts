@@ -4,16 +4,15 @@ import {
   type NodeContainer,
   type ImportConfig,
 } from '../types.js';
-import { Reconciler } from '../reconciler.js';
+import { BaseBuilder } from './base-builder.js';
 import { TemplateLoader } from '../../utils/template-loader.js';
 
-export class PermissionBuilder {
-  constructor(
-    private actionName: string,
-    // private context: PermissionContext
-  ) {}
+export class PermissionBuilder extends BaseBuilder {
+  constructor(private actionName: string) {
+    super();
+  }
 
-  private getSchema(): FileDefinition {
+  protected getSchema(node?: NodeContainer): FileDefinition {
     // Class Name: RegisterUserPermission
     const className = `${this.actionName}Permission`;
 
@@ -41,13 +40,31 @@ export class PermissionBuilder {
       { moduleSpecifier: 'astro', namedImports: ['APIContext'], isTypeOnly: true },
     ];
 
+    // Preserve existing manual imports
+    const existingImports = this.getExistingImports(node);
+    const importMap = new Map<string, ImportConfig>();
+
+    // Add generated imports first
+    imports.forEach((imp) => importMap.set(imp.moduleSpecifier, imp));
+
+    // Add existing imports if not already present or merge named imports
+    existingImports.forEach((existing) => {
+      const existingSpecifier = existing.moduleSpecifier;
+      if (importMap.has(existingSpecifier)) {
+        const generated = importMap.get(existingSpecifier)!;
+        if (existing.namedImports && generated.namedImports) {
+          const mergedNames = [...new Set([...generated.namedImports, ...existing.namedImports])];
+          generated.namedImports = mergedNames;
+        }
+      } else {
+        importMap.set(existingSpecifier, existing);
+      }
+    });
+
     return {
-      imports,
+      header: '// GENERATED CODE - THE SIGNATURE IS MANAGED BY THE GENERATOR. YOU MAY MODIFY THE IMPLEMENTATION AND ADD CUSTOM IMPORTS.',
+      imports: Array.from(importMap.values()),
       classes: [permissionClass],
     };
-  }
-
-  ensure(sourceFile: NodeContainer): void {
-    Reconciler.reconcile(sourceFile, this.getSchema());
   }
 }

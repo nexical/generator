@@ -26,4 +26,18 @@ export abstract class BaseBuilder {
   validate(node: NodeContainer): ValidationResult {
     return Reconciler.validate(node, this.getSchema(node));
   }
+
+  /**
+   * Extracts existing imports from a SourceFile to preserve them.
+   */
+  protected getExistingImports(node?: NodeContainer): import('../types.js').ImportConfig[] {
+    if (!node || !('getImportDeclarations' in node)) return [];
+
+    return node.getImportDeclarations().map((decl) => ({
+      moduleSpecifier: decl.getModuleSpecifierValue(),
+      defaultImport: decl.getDefaultImport()?.getText(),
+      namedImports: decl.getNamedImports().map((ni) => ni.getText().replace(/^type\s+/, '')),
+      isTypeOnly: decl.isTypeOnly(),
+    }));
+  }
 }

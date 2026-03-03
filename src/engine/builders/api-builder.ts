@@ -21,8 +21,9 @@ export class ApiBuilder extends BaseBuilder {
   }
 
   private get moduleTypesNamespace(): string {
+    const cleanName = this.moduleName.replace(/-api$/, '');
     return (
-      this.moduleName
+      cleanName
         .split('-')
         .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
         .join('') + 'ModuleTypes'
@@ -349,17 +350,33 @@ export class ApiBuilder extends BaseBuilder {
     const imports: ImportConfig[] = [
       { moduleSpecifier: '@/lib/api/api-docs', namedImports: ['defineApi'] },
       { moduleSpecifier: '@/lib/api/api-guard', namedImports: ['ApiGuard'] },
-      { moduleSpecifier: '@/lib/api/api-query', namedImports: ['parseQuery'] },
-      { moduleSpecifier: '@/lib/modules/hooks', namedImports: ['HookSystem'] },
-      { moduleSpecifier: 'zod', namedImports: ['z'] },
       { moduleSpecifier: serviceImport, namedImports: [serviceName] },
     ];
 
-    if (usedEnums.length > 0) {
+    const sourceText =
+      variables
+        .map((v) => (typeof v.initializer === 'string' ? v.initializer : v.initializer?.raw || ''))
+        .join('\n') + selectObject;
+
+    if (sourceText.includes('parseQuery')) {
+      imports.push({ moduleSpecifier: '@/lib/api/api-query', namedImports: ['parseQuery'] });
+    }
+
+    if (sourceText.includes('HookSystem')) {
+      imports.push({ moduleSpecifier: '@/lib/modules/hooks', namedImports: ['HookSystem'] });
+    }
+
+    if (sourceText.includes('z.')) {
+      imports.push({ moduleSpecifier: 'zod', namedImports: ['z'] });
+    }
+
+    if (
+      sourceText.includes(this.moduleTypesNamespace + '.') ||
+      new RegExp(`\\b${this.moduleTypesNamespace}\\b`).test(sourceText)
+    ) {
       imports.push({
         moduleSpecifier: '@/lib/api',
         namedImports: [this.moduleTypesNamespace],
-        isTypeOnly: true,
       });
     }
 
@@ -508,15 +525,25 @@ export class ApiBuilder extends BaseBuilder {
     const imports: ImportConfig[] = [
       { moduleSpecifier: '@/lib/api/api-docs', namedImports: ['defineApi'] },
       { moduleSpecifier: '@/lib/api/api-guard', namedImports: ['ApiGuard'] },
-      { moduleSpecifier: 'zod', namedImports: ['z'] },
       { moduleSpecifier: serviceImport, namedImports: [serviceName] },
     ];
 
-    if (usedEnums.length > 0) {
+    const sourceText =
+      variables
+        .map((v) => (typeof v.initializer === 'string' ? v.initializer : v.initializer?.raw || ''))
+        .join('\n') + selectObject;
+
+    if (sourceText.includes('z.')) {
+      imports.push({ moduleSpecifier: 'zod', namedImports: ['z'] });
+    }
+
+    if (
+      sourceText.includes(this.moduleTypesNamespace + '.') ||
+      new RegExp(`\\b${this.moduleTypesNamespace}\\b`).test(sourceText)
+    ) {
       imports.push({
         moduleSpecifier: '@/lib/api',
         namedImports: [this.moduleTypesNamespace],
-        isTypeOnly: true,
       });
     }
 
@@ -599,16 +626,21 @@ export class ApiBuilder extends BaseBuilder {
       const methodPascal = method.charAt(0).toUpperCase() + method.slice(1);
       const actionClassName = route.action
         ? route.action
-            .split('-')
-            .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-            .join('') + 'Action'
+          .split('-')
+          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+          .join('') + 'Action'
         : (methodPascal.includes(entityName) ? methodPascal : `${methodPascal}${entityName}`) +
-          'Action';
+        'Action';
 
       const actionImport = `@modules/${this.moduleName}/src/actions/${actionBase}`;
 
-      if (!imports.find((i) => i.moduleSpecifier === actionImport)) {
+      const existingImport = imports.find((i) => i.moduleSpecifier === actionImport);
+      if (!existingImport) {
         imports.push({ moduleSpecifier: actionImport, namedImports: [actionClassName] });
+      } else {
+        if (!existingImport.namedImports?.includes(actionClassName)) {
+          existingImport.namedImports?.push(actionClassName);
+        }
       }
 
       let requestBodySchema = '{ type: "object" }';
@@ -660,7 +692,6 @@ export class ApiBuilder extends BaseBuilder {
             imports.push({
               moduleSpecifier: sdkTypes,
               namedImports: [moduleTypesNamespace],
-              isTypeOnly: true,
             });
           }
           responseSchema = this.generateJsonSchema(output);
@@ -670,17 +701,16 @@ export class ApiBuilder extends BaseBuilder {
       const customDocs = `{
     summary: "${route.summary || ''}",
     tags: ["${this.model.name}"],
-    ${
-      verb !== 'GET'
-        ? `requestBody: {
+    ${verb !== 'GET'
+          ? `requestBody: {
         content: {
             "application/json": {
                 schema: ${requestBodySchema}
             }
         }
     },`
-        : ''
-    }
+          : ''
+        }
     responses: {
         200: {
             description: "OK",
@@ -692,10 +722,6 @@ export class ApiBuilder extends BaseBuilder {
         }
     }${['anonymous', 'public'].includes(role || '') ? ',\n        protected: false' : ''}
 }`;
-      console.info(
-        `[ApiBuilder] Generated docs for ${method}: role=${role}, protected=${['anonymous', 'public'].includes(role || '')}`,
-      );
-
       const bodyLoader = verb === 'GET' ? '{}' : 'await context.request.json()';
 
       variables.push({
@@ -719,9 +745,54 @@ export class ApiBuilder extends BaseBuilder {
       });
     }
 
+    const sourceText =
+      variables
+        .map((v) => (typeof v.initializer === 'string' ? v.initializer : v.initializer?.raw || ''))
+        .join('\n') + this.model.name;
+
+    const finalImports: ImportConfig[] = [
+      { moduleSpecifier: '@/lib/api/api-docs', namedImports: ['defineApi'] },
+    ];
+
+    if (sourceText.includes('ApiGuard')) {
+      finalImports.push({ moduleSpecifier: '@/lib/api/api-guard', namedImports: ['ApiGuard'] });
+    }
+
+    if (sourceText.includes('HookSystem')) {
+      finalImports.push({ moduleSpecifier: '@/lib/modules/hooks', namedImports: ['HookSystem'] });
+    }
+
+    if (
+      sourceText.includes(this.moduleTypesNamespace + '.') ||
+      new RegExp(`\\b${this.moduleTypesNamespace}\\b`).test(sourceText)
+    ) {
+      finalImports.push({
+        moduleSpecifier: '@/lib/api',
+        namedImports: [this.moduleTypesNamespace],
+      });
+    }
+
+    // Add all collected action/DTO imports
+    imports.forEach((imp) => {
+      if (imp.moduleSpecifier === '@/lib/api/api-docs') {
+        const existing = finalImports.find((i) => i.moduleSpecifier === imp.moduleSpecifier)!;
+        if (imp.namedImports) {
+          existing.namedImports = [...new Set([...(existing.namedImports || []), ...imp.namedImports])];
+        }
+        return;
+      }
+      if (
+        imp.moduleSpecifier === '@/lib/api/api-guard' ||
+        imp.moduleSpecifier === '@/lib/modules/hooks'
+      )
+        return;
+
+      finalImports.push(imp);
+    });
+
     return {
       header: '// GENERATED CODE - DO NOT MODIFY',
-      imports,
+      imports: finalImports,
       variables,
     };
   }

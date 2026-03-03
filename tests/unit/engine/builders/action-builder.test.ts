@@ -94,4 +94,30 @@ describe('ActionBuilder', () => {
     expect(imports).toContain('zod');
     expect(imports).toContain('@/lib/core/db');
   });
+
+  it('should preserve custom manual imports', () => {
+    sourceFile = project.createSourceFile(
+      'custom-imports.ts',
+      `
+        import { randomUUID } from 'node:crypto';
+        // GENERATED CODE - THE SIGNATURE IS MANAGED BY THE GENERATOR. YOU MAY MODIFY THE IMPLEMENTATION AND ADD CUSTOM IMPORTS.
+        export class CustomAction {
+            static async run(_input: void, context: APIContext) {
+                return { success: true, data: randomUUID() };
+            }
+        }
+    `,
+    );
+
+    const builder = new ActionBuilder('CustomAction', 'void', 'string');
+    builder.ensure(sourceFile);
+
+    const imports = sourceFile.getImportDeclarations().map((i) => i.getModuleSpecifierValue());
+    expect(imports).toContain('node:crypto');
+    expect(imports).toContain('@/types/service');
+    expect(imports).toContain('astro');
+
+    const cryptoImport = sourceFile.getImportDeclaration('node:crypto');
+    expect(cryptoImport?.getNamedImports().map((n) => n.getName())).toContain('randomUUID');
+  });
 });

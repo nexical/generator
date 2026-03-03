@@ -15,6 +15,7 @@ export class SdkIndexBuilder extends BaseBuilder {
   constructor(
     private models: ModelDef[],
     private moduleName: string, // e.g. "user-api"
+    private roles: string[] = [],
   ) {
     super();
   }
@@ -63,7 +64,23 @@ export class SdkIndexBuilder extends BaseBuilder {
       name: mainSdkName,
       isExported: true,
       extends: classExtends,
-      properties: properties,
+      properties: [
+        ...properties,
+        {
+          name: 'roles',
+          type: 'Record<string, string>',
+          scope: Scope.Public,
+          isStatic: true,
+          readonly: true,
+          initializer: `{ ${this.roles
+            .map((r) => {
+              const parts = r.split('-');
+              const baseName = parts.length > 1 ? parts[parts.length - 1] : r;
+              return `${baseName}: '${r}'`;
+            })
+            .join(', ')} }`,
+        },
+      ],
       constructorDef: constructorConfig,
       docs: [`Main SDK for the ${this.moduleName} module.`],
     };

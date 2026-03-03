@@ -25,7 +25,9 @@ export default fragment/* ts */`async (client: ApiClient, params: Record<string,
 
     if (!actor) {
             const factoryParams = { ...params };
-            if (params.password) delete factoryParams.password; 
+            if (factoryParams.password) delete factoryParams.password; 
+            if (factoryParams.role) delete factoryParams.role; 
+            if (factoryParams.strategy) delete factoryParams.strategy; 
             
         actor = await Factory.create('${actorName}', {
             ...factoryParams,

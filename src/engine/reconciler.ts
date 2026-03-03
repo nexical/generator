@@ -312,11 +312,10 @@ export class Reconciler {
         const sourceText = sourceFileNode.getFullText();
 
         // Regex to match ANY line starting with // GENERATED CODE
-        // This is more robust than splitting by the exact header string.
-        const headerPattern = definition.header.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const headerRegex = new RegExp(`^\\s*${headerPattern}.*$`, 'gm');
+        // This ensures old headers are replaced by the new version in the definition.
+        const headerRegex = /^\s*\/\/\s*GENERATED CODE.*$/gm;
 
-        // 1. Remove all existing occurrences of the header
+        // 1. Remove all existing occurrences of ANY generated code header
         let cleanText = sourceText.replace(headerRegex, '');
         cleanText = cleanText.trimStart();
 
