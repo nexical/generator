@@ -9,6 +9,8 @@ import {
   type RegistryItemDefinition,
   type TableConfig,
   type FormFieldConfig,
+  type ResolvedRoute,
+  type CustomRoute,
 } from '../../types.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';

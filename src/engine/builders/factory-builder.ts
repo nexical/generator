@@ -4,6 +4,7 @@ import {
   type VariableConfig,
   type FunctionConfig,
   type NodeContainer,
+  type ImportConfig,
 } from '../types.js';
 import { BaseBuilder } from './base-builder.js';
 import { TemplateLoader } from '../../utils/template-loader.js';

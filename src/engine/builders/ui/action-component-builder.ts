@@ -23,9 +23,9 @@ export class ActionComponentBuilder extends UiBaseBuilder {
       // Only generate generic components for actions, mostly mutations (POST/PUT/DELETE/PATCH) or GET with explicit action intent
       // Actually, usually buttons imply mutation or side-effect.
       // But let's support all custom routes.
-      if (!(route as Record<string, unknown>)['action']) continue;
+      if (!(route as unknown as Record<string, unknown>)['action']) continue;
 
-      const actionName = (route as Record<string, unknown>)['action'] as string;
+      const actionName = (route as unknown as Record<string, unknown>)['action'] as string;
       const componentName = `${toPascalCase(actionName)}Button`;
       const fileName = `src/components/actions/${componentName}.tsx`;
 
@@ -65,7 +65,7 @@ export class ActionComponentBuilder extends UiBaseBuilder {
   }
 
   private generateComponent(route: unknown, hookName: string): ParsedStatement {
-    const action = (route as Record<string, unknown>)['action'] as string;
+    const action = (route as unknown as Record<string, unknown>)['action'] as string;
     const label = toPascalCase(action)
       .replace(/([A-Z])/g, ' $1')
       .trim();
