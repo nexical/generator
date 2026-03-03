@@ -50,18 +50,22 @@ export class ServiceTestBuilder extends BaseBuilder {
 
     if (this.inputType !== 'void' || this.outputType !== 'void') {
       const typesToImport = [];
+      const normalize = (t: string) => t.replace('[]', '').trim();
+      const inputBase = normalize(this.inputType);
+      const outputBase = normalize(this.outputType);
+
       if (
         this.inputType !== 'void' &&
-        !['string', 'number', 'boolean', 'unknown', 'any'].includes(this.inputType.toLowerCase())
+        !['string', 'number', 'boolean', 'unknown', 'any'].includes(inputBase.toLowerCase())
       ) {
-        typesToImport.push(this.inputType);
+        typesToImport.push(inputBase);
       }
       if (
         this.outputType !== 'void' &&
-        !typesToImport.includes(this.outputType) &&
-        !['string', 'number', 'boolean', 'unknown', 'any'].includes(this.outputType.toLowerCase())
+        !typesToImport.includes(outputBase) &&
+        !['string', 'number', 'boolean', 'unknown', 'any'].includes(outputBase.toLowerCase())
       ) {
-        typesToImport.push(this.outputType);
+        typesToImport.push(outputBase);
       }
 
       if (typesToImport.length > 0) {
