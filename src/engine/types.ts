@@ -231,6 +231,7 @@ export interface ClassConfig {
 }
 
 export interface ImportConfig {
+  header?: string;
   moduleSpecifier: string;
   defaultImport?: string;
   namedImports?: string[];

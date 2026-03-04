@@ -17,7 +17,7 @@ export class ServiceTestBuilder extends BaseBuilder {
 
     const mockInputSnippet = isVoidInput
       ? ''
-      : `const input: ${this.inputType} = {} as any; // TODO: Provide valid mock data`;
+      : `const input: ${this.inputType} = {} as unknown as ${this.inputType}; // TODO: Provide valid mock data`;
 
     // Using DataFactory directly since this is a database-centric integration test
     const testBody = `
@@ -30,7 +30,7 @@ export class ServiceTestBuilder extends BaseBuilder {
         
         // 3. Invoke Action directly (bypassing API Client)
         // Note: For service level tests, context is typically mocked or omitted if the action doesn't strictly depend on it.
-        const ctx = {} as any; 
+        const ctx = {} as unknown as APIContext; 
         const result = await ${this.actionName}.run(${isVoidInput ? 'undefined' : 'input'}, ctx);
         
         // 4. Verify Database state explicitly using Prisma
@@ -44,34 +44,18 @@ export class ServiceTestBuilder extends BaseBuilder {
 
     const imports: ImportConfig[] = [
       { moduleSpecifier: 'vitest', namedImports: ['describe', 'it', 'expect'] },
-      { moduleSpecifier: '@tests/integration/lib/factory', namedImports: ['Factory'] },
+      { moduleSpecifier: 'astro', namedImports: ['APIContext'], isTypeOnly: true },
       { moduleSpecifier: `@/actions/${this.actionBase}`, namedImports: [this.actionName] },
     ];
 
-    if (this.inputType !== 'void' || this.outputType !== 'void') {
-      const typesToImport = [];
+    if (this.inputType !== 'void') {
       const normalize = (t: string) => t.replace('[]', '').trim();
       const inputBase = normalize(this.inputType);
-      const outputBase = normalize(this.outputType);
 
-      if (
-        this.inputType !== 'void' &&
-        !['string', 'number', 'boolean', 'unknown', 'any'].includes(inputBase.toLowerCase())
-      ) {
-        typesToImport.push(inputBase);
-      }
-      if (
-        this.outputType !== 'void' &&
-        !typesToImport.includes(outputBase) &&
-        !['string', 'number', 'boolean', 'unknown', 'any'].includes(outputBase.toLowerCase())
-      ) {
-        typesToImport.push(outputBase);
-      }
-
-      if (typesToImport.length > 0) {
+      if (!['string', 'number', 'boolean', 'unknown', 'any'].includes(inputBase.toLowerCase())) {
         imports.push({
           moduleSpecifier: '@/sdk/types',
-          namedImports: typesToImport,
+          namedImports: [inputBase],
           isTypeOnly: true,
         });
       }

@@ -311,9 +311,9 @@ export class Reconciler {
         const isSourceFile = 'replaceWithText' in sourceFileNode;
         const sourceText = sourceFileNode.getFullText();
 
-        // Regex to match ANY line starting with // GENERATED CODE
+        // Regex to match ANY line starting with // GENERATED CODE or INITIAL GENERATED CODE
         // This ensures old headers are replaced by the new version in the definition.
-        const headerRegex = /^\s*\/\/\s*GENERATED CODE.*$/gm;
+        const headerRegex = /^\s*\/\/\s*(INITIAL\s+)?GENERATED CODE.*$/gm;
 
         // 1. Remove all existing occurrences of ANY generated code header
         let cleanText = sourceText.replace(headerRegex, '');

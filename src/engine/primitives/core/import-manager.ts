@@ -14,12 +14,19 @@ export class ImportPrimitive extends BasePrimitive<ImportDeclaration, ImportConf
   }
 
   create(parent: SourceFile) {
-    return parent.addImportDeclaration({
+    const decl = parent.addImportDeclaration({
       moduleSpecifier: Normalizer.normalizeImport(this.config.moduleSpecifier),
       defaultImport: this.config.defaultImport,
       namedImports: this.config.namedImports,
       isTypeOnly: this.config.isTypeOnly,
     });
+
+    if (this.config.header) {
+      const index = decl.getChildIndex();
+      parent.insertStatements(index, this.config.header);
+    }
+
+    return decl;
   }
 
   update(node: ImportDeclaration) {
@@ -149,7 +156,19 @@ export class ImportPrimitive extends BasePrimitive<ImportDeclaration, ImportConf
       }
     }
 
-    // 4. Remove if empty (no named, no default)
+    // 4. Enforce Header
+    if (this.config.header) {
+      const headerText = this.config.header!.trim();
+      const hasHeader = node.getFullText().includes(headerText);
+
+      if (!hasHeader) {
+        const parent = node.getSourceFile() as unknown as SourceFile;
+        const index = node.getChildIndex();
+        parent.insertStatements(index, this.config.header);
+      }
+    }
+
+    // 5. Remove if empty (no named, no default)
     if (
       !node.getDefaultImport() &&
       node.getNamedImports().length === 0 &&
