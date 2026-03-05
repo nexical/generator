@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ts, type ParsedStatement } from '../engine/primitives/statements/factory.js';
@@ -9,9 +9,21 @@ const __dirname = dirname(__filename);
 
 export class TemplateLoader {
   private static templatesDir = resolve(__dirname, '../../templates');
+  private static activeModulePath: string | undefined;
+
+  static setModulePath(modulePath: string | undefined) {
+    this.activeModulePath = modulePath;
+  }
 
   static load(path: string, variables: Record<string, string> = {}): ParsedStatement {
-    const fullPath = join(this.templatesDir, path);
+    let fullPath = join(this.templatesDir, path);
+    // If an active module path is set, check if it has an override for this template
+    if (this.activeModulePath) {
+      const overridePath = join(this.activeModulePath, 'generator/templates', path);
+      if (existsSync(overridePath)) {
+        fullPath = overridePath;
+      }
+    }
     const fileContent = readFileSync(fullPath, 'utf-8');
     const ext = extname(path);
 

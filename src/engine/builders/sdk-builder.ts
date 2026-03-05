@@ -140,7 +140,7 @@ export class SdkBuilder extends BaseBuilder {
       methodConfig.statements!.push(
         TemplateLoader.load('sdk/custom.tsf', {
           verb: route.verb,
-          endpoint,
+          endpointPath: endpoint ? '/' + endpoint : '',
           url,
           dataArg,
         }),

@@ -9,6 +9,7 @@ import { fragment } from '@nexical/generator';
 declare const actorName: string;
 declare const keyModelProp: string;
 declare const ownerField: string;
+declare const hasRoleField: string;
 
 export default fragment/* ts */`async (client: ApiClient, params: Record<string, unknown> = {}) => {
     let actor;
@@ -17,7 +18,10 @@ export default fragment/* ts */`async (client: ApiClient, params: Record<string,
     }
 
     if (!actor) {
-        actor = await Factory.create('${actorName}', params);
+        const factoryParams = { ...params };
+        if (factoryParams.strategy) delete factoryParams.strategy;
+        if ('${hasRoleField}' === 'false' && factoryParams.role) delete factoryParams.role;
+        actor = await Factory.create('${actorName}', factoryParams);
     }
 
     const randomHex = crypto.randomBytes(32).toString('hex');

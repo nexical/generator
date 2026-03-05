@@ -60,8 +60,8 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('status: z.nativeEnum(UserApiModuleTypes.Status)');
-    expect(text).toContain('import type { UserApiModuleTypes } from "@/lib/api"');
+    expect(text).toContain('status: z.nativeEnum(UserModuleTypes.Status)');
+    expect(text).toContain('import { UserModuleTypes } from "@/lib/api"');
   });
 
   it('should generate individual schema (GET/PUT/DELETE)', () => {
@@ -152,7 +152,7 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('import type { UserApiModuleTypes } from "@/lib/api"');
+    expect(text).toContain('import { UserApiModuleTypes } from "@/lib/api"');
     // Verify GET routes have empty body with correct type (unknown default)
     expect(text).toContain('const body = {} as unknown;');
   });

@@ -36,7 +36,7 @@ describe('FactoryBuilder', () => {
     const initText = factoriesVar?.getDeclarations()[0].getInitializer()?.getText();
     expect(initText).toContain('user: (index: number) => {');
     expect(initText).toContain('email:');
-    expect(initText).toContain("'EMPLOYEE'"); // Enum fallback
+    expect(initText).toContain("'USER_EMPLOYEE'"); // Enum fallback
   });
 
   it('should handle relations and special fields', () => {

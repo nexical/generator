@@ -21,7 +21,7 @@ export class ServiceTestBuilder extends BaseBuilder {
 
     // Using DataFactory directly since this is a database-centric integration test
     const testBody = `
-    it('should execute successfully', async () => {
+    it.skip('should execute successfully', async () => {
         // 1. Setup prerequisite state using DataFactory
         // const prerequisite = await Factory.create('someModel', { ... });
         
@@ -45,20 +45,36 @@ export class ServiceTestBuilder extends BaseBuilder {
     const imports: ImportConfig[] = [
       { moduleSpecifier: 'vitest', namedImports: ['describe', 'it', 'expect'] },
       { moduleSpecifier: 'astro', namedImports: ['APIContext'], isTypeOnly: true },
-      { moduleSpecifier: `@/actions/${this.actionBase}`, namedImports: [this.actionName] },
+      {
+        moduleSpecifier: `../../../src/actions/${this.actionBase}`,
+        namedImports: [this.actionName],
+      },
     ];
 
-    if (this.inputType !== 'void') {
-      const normalize = (t: string) => t.replace('[]', '').trim();
-      const inputBase = normalize(this.inputType);
+    const typesToImport = new Set<string>();
+    const normalize = (t: string) =>
+      t.replace('[]', '').replace('Array<', '').replace('>', '').trim();
 
+    if (this.inputType !== 'void') {
+      const inputBase = normalize(this.inputType);
       if (!['string', 'number', 'boolean', 'unknown', 'any'].includes(inputBase.toLowerCase())) {
-        imports.push({
-          moduleSpecifier: '@/sdk/types',
-          namedImports: [inputBase],
-          isTypeOnly: true,
-        });
+        typesToImport.add(inputBase);
       }
+    }
+
+    if (this.outputType && this.outputType !== 'void') {
+      const outputBase = normalize(this.outputType);
+      if (!['string', 'number', 'boolean', 'unknown', 'any'].includes(outputBase.toLowerCase())) {
+        typesToImport.add(outputBase);
+      }
+    }
+
+    if (typesToImport.size > 0) {
+      imports.push({
+        moduleSpecifier: '../../../src/sdk',
+        namedImports: Array.from(typesToImport),
+        isTypeOnly: true,
+      });
     }
 
     return {

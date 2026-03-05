@@ -641,8 +641,10 @@ export class ApiBuilder extends BaseBuilder {
         .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
         .join('');
       const moduleTypesNamespace = `${pascalModule}ModuleTypes`;
-
-      if (input && input !== 'unknown' && (input.endsWith('DTO') || input.endsWith('Input'))) {
+      let addedNamespaceImport = false;
+      const addNamespaceImport = () => {
+        if (addedNamespaceImport) return;
+        addedNamespaceImport = true;
         const sdkTypes = '@/lib/api';
         const existing = imports.find((i) => i.moduleSpecifier === sdkTypes);
         if (existing) {
@@ -652,9 +654,12 @@ export class ApiBuilder extends BaseBuilder {
           imports.push({
             moduleSpecifier: sdkTypes,
             namedImports: [moduleTypesNamespace],
-            isTypeOnly: true,
           });
         }
+      };
+
+      if (input && input !== 'unknown' && (input.endsWith('DTO') || input.endsWith('Input'))) {
+        addNamespaceImport();
         requestBodySchema = this.generateJsonSchema(input);
       }
 
@@ -673,17 +678,7 @@ export class ApiBuilder extends BaseBuilder {
           }
         } else if (output.endsWith('DTO') || output.endsWith('Response')) {
           // Try generated schema for DTO
-          const sdkTypes = '@/lib/api';
-          const existing = imports.find((i) => i.moduleSpecifier === sdkTypes);
-          if (existing) {
-            if (!existing.namedImports?.includes(moduleTypesNamespace))
-              existing.namedImports?.push(moduleTypesNamespace);
-          } else {
-            imports.push({
-              moduleSpecifier: sdkTypes,
-              namedImports: [moduleTypesNamespace],
-            });
-          }
+          addNamespaceImport();
           responseSchema = this.generateJsonSchema(output);
         }
       }

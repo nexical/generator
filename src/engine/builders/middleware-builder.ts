@@ -73,7 +73,7 @@ export class MiddlewareBuilder extends BaseBuilder {
           prefix,
           lookupLogic: lookupLogic.raw,
           name: name || modelName,
-          role: (name || modelName).toUpperCase(),
+          role: model.actor.role || (name || modelName).toUpperCase(),
         }),
       );
     }

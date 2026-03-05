@@ -15,6 +15,7 @@ declare const tokenModelLocal: string;
 declare const relationFieldStr: string;
 declare const keyField: string;
 declare const hashLogic: string;
+declare const hasRoleField: string;
 
 export default fragment/* ts */`async (client: ApiClient, params: Record<string, unknown> = {}) => {
     let actor;
@@ -27,10 +28,11 @@ export default fragment/* ts */`async (client: ApiClient, params: Record<string,
     if (!actor) {
             const factoryParams = { ...params };
             if (factoryParams.strategy) delete factoryParams.strategy;
+            if ('${hasRoleField}' === 'false' && factoryParams.role) delete factoryParams.role;
         actor = await Factory.create('${actorName}', factoryParams);
     }
 
-    const rawKey = \`${prefix}\${Date.now()}\`;
+    const rawKey = \`${prefix}\${crypto.randomUUID().replace(/-/g, '')}\`;
     let dbKey = rawKey;
     
     ${hashLogic}

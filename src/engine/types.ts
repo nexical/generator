@@ -27,6 +27,7 @@ export interface ActorConfig {
   strategy: 'login' | 'api-key' | 'bearer';
   fields?: Record<string, string>;
   validStatus?: string;
+  role?: string;
 }
 
 export interface ModelDef {
@@ -265,6 +266,7 @@ export interface AccessConfig {
 export interface RoleConfig {
   name: string; // The specific role name, e.g. 'ADMIN'
   definition: RoleDefinition;
+  compatibleRoles?: string[];
   isDefault?: boolean;
 }
 

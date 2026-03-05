@@ -12,6 +12,11 @@ import { logger } from '@nexical/cli-core';
 vi.mock('@nexical/generator/engine/model-parser');
 vi.mock('@nexical/generator/engine/builders/service-builder');
 vi.mock('@nexical/generator/engine/builders/api-builder');
+vi.mock('@nexical/generator/engine/builder-loader', () => ({
+  BuilderLoader: {
+    loadAndRun: vi.fn(),
+  },
+}));
 vi.mock('@nexical/cli-core', () => ({
   logger: {
     info: vi.fn(),
@@ -23,6 +28,7 @@ vi.mock('@nexical/cli-core', () => ({
 }));
 vi.mock('@nexical/generator/utils/template-loader', () => ({
   TemplateLoader: {
+    setModulePath: vi.fn(),
     load: () => ({
       raw: '/* mocked content */',
       getNodes: () => [],

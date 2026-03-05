@@ -51,6 +51,7 @@ export class ActorBuilder extends BaseBuilder {
           modelName: model.name,
           actorName,
           idField,
+          hasRoleField: String(!!model.fields.role),
         }).raw;
       } else if (config.strategy === 'api-key') {
         const keyModel = config.fields?.keyModel;
@@ -69,6 +70,7 @@ export class ActorBuilder extends BaseBuilder {
           actorName,
           keyModelProp,
           ownerField,
+          hasRoleField: String(!!model.fields.role),
         }).raw;
       } else if (config.strategy === 'bearer') {
         const tokenModel = config.fields?.tokenModel || model.name;
@@ -111,6 +113,8 @@ export class ActorBuilder extends BaseBuilder {
           relationFieldStr,
           keyField,
           hashLogic,
+          role: model.actor.role || actorName.toUpperCase(),
+          hasRoleField: String(!!model.fields.role),
         }).raw;
       }
 

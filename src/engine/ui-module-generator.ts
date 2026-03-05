@@ -277,9 +277,12 @@ export class UiModuleGenerator extends ModuleGenerator {
       }
     }
 
+    // 4. Run Custom Builders
+    await this.runCustomBuilders({ uiConfig });
+
     await this.saveAll();
 
-    // 4. Optimize for Hybrid Rendering (Cloudflare SSR)
+    // 5. Optimize for Hybrid Rendering (Cloudflare SSR)
     // Run AFTER saveAll to ensure ts-morph doesn't overwrite manual FS changes
     await this.optimizeHybridRendering();
   }

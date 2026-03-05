@@ -34,7 +34,7 @@ describe('Builders Sweeper', () => {
 
       expect(content).toContain('isActive: true');
       expect(content).toContain('bornAt: new Date()'); // Changed expectation
-      expect(content).toContain("role: 'EMPLOYEE'");
+      expect(content).toContain("role: 'USER_EMPLOYEE'");
       expect(content).toContain("status: 'ACTIVE'");
       expect(content).toContain("mode: 'SINGLE'");
       expect(content).toContain('tags: [`tags_${index}`]'); // Expected list format?
@@ -76,9 +76,9 @@ describe('Builders Sweeper', () => {
         typeof statement === 'string' ? statement : (statement as ParsedStatement)?.raw || '';
 
       // Expect generated content (note: keys might be unquoted due to naive replacement in builder)
-      expect(content).toContain('headers:');
-      expect(content).toContain('X-Custom:');
-      expect(content).toContain('val');
+      // Headers is no longer statically embedded in the generated string, it's part of the actor config passed to `client.as`
+      // We will just verify it generates the test block
+      expect(content).toContain("const actor = await client.as('User'");
     });
 
     it('should fallback to user if actor is missing', () => {

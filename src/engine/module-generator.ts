@@ -3,6 +3,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { Formatter } from '../utils/formatter.js';
 import { BaseCommand, logger } from '@nexical/cli-core';
+import { BuilderLoader } from './builder-loader.js';
+import { TemplateLoader } from '../utils/template-loader.js';
 
 export abstract class ModuleGenerator {
   protected project: Project;
@@ -30,6 +32,26 @@ export abstract class ModuleGenerator {
   }
 
   abstract run(): Promise<void>;
+
+  protected async runCustomBuilders(context: Record<string, unknown> = {}): Promise<void> {
+    // Configure TemplateLoader to look in this module first
+    TemplateLoader.setModulePath(this.modulePath);
+
+    // Dynamically load and run any custom builders
+    await BuilderLoader.loadAndRun(
+      this.modulePath,
+      this.project,
+      {
+        moduleName: this.moduleName,
+        modulePath: this.modulePath,
+        ...context,
+      },
+      (filePath) => this.getOrCreateFile(filePath),
+    );
+
+    // Reset TemplateLoader
+    TemplateLoader.setModulePath(undefined);
+  }
 
   protected getOrCreateFile(filePath: string): SourceFile {
     const absolutePath = path.isAbsolute(filePath)
