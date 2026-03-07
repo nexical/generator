@@ -28,9 +28,8 @@ export class ServiceTestBuilder extends BaseBuilder {
         // 2. Prepare Action Input
         ${mockInputSnippet}
         
-        // 3. Invoke Action directly (bypassing API Client)
-        // Note: For service level tests, context is typically mocked or omitted if the action doesn't strictly depend on it.
-        const ctx = {} as unknown as APIContext; 
+        // 3. Prepare Mock Context with Actor
+        const ctx = await createMockContext(); 
         const result = await ${this.actionName}.run(${isVoidInput ? 'undefined' : 'input'}, ctx);
         
         // 4. Verify Database state explicitly using Prisma
@@ -44,7 +43,10 @@ export class ServiceTestBuilder extends BaseBuilder {
 
     const imports: ImportConfig[] = [
       { moduleSpecifier: 'vitest', namedImports: ['describe', 'it', 'expect'] },
-      { moduleSpecifier: 'astro', namedImports: ['APIContext'], isTypeOnly: true },
+      {
+        moduleSpecifier: '../../../../../tests/integration/helpers/context',
+        namedImports: ['createMockContext'],
+      },
       {
         moduleSpecifier: `../../../src/actions/${this.actionBase}`,
         namedImports: [this.actionName],
