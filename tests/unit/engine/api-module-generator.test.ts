@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ApiModuleGenerator } from '../../../src/engine/api-module-generator.js';
+const parseSpy = vi.fn();
 vi.mock('../../../src/engine/model-parser.js', () => ({
   ModelParser: {
     parse: (...args: unknown[]) => parseSpy(...args),
