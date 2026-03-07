@@ -1,30 +1,34 @@
-import { ModuleGenerator } from './module-generator.js';
-import { ModelParser } from './model-parser.js';
+import { ModuleGenerator } from '@nexical/generator/engine/module-generator.js';
+import { ModelParser } from '@nexical/generator/engine/model-parser.js';
 import { logger } from '@nexical/cli-core';
-import { ServiceBuilder } from './builders/service-builder.js';
-import { ApiBuilder } from './builders/api-builder.js';
-import { SdkBuilder } from './builders/sdk-builder.js';
-import { SdkIndexBuilder } from './builders/sdk-index-builder.js';
-import { InitBuilder } from './builders/init-builder.js';
-import { TestBuilder } from './builders/test-builder.js';
-import { ActionBuilder } from './builders/action-builder.js';
-import { ServiceTestBuilder } from './builders/service-test-builder.js';
-import { TypeBuilder } from './builders/type-builder.js';
-import { FactoryBuilder } from './builders/factory-builder.js';
-import { ActorBuilder } from './builders/actor-builder.js';
-import { ActorTypeBuilder } from './builders/actor-type-builder.js';
-import { MiddlewareBuilder } from './builders/middleware-builder.js';
-import { EmailBuilder } from './builders/email-builder.js';
-import { AgentBuilder } from './builders/agent-builder.js';
-import { HookBuilder } from './builders/hook-builder.js';
-import { RoleBuilder } from './builders/role-builder.js';
-import { type CustomRoute, type ModelDef, type ModuleConfig } from './types.js';
-import { toKebabCase } from '../utils/string.js';
+import { ServiceBuilder } from '@nexical/generator/engine/builders/service-builder.js';
+import { ApiBuilder } from '@nexical/generator/engine/builders/api-builder.js';
+import { SdkBuilder } from '@nexical/generator/engine/builders/sdk-builder.js';
+import { SdkIndexBuilder } from '@nexical/generator/engine/builders/sdk-index-builder.js';
+import { InitBuilder } from '@nexical/generator/engine/builders/init-builder.js';
+import { TestBuilder } from '@nexical/generator/engine/builders/test-builder.js';
+import { ActionBuilder } from '@nexical/generator/engine/builders/action-builder.js';
+import { ServiceTestBuilder } from '@nexical/generator/engine/builders/service-test-builder.js';
+import { TypeBuilder } from '@nexical/generator/engine/builders/type-builder.js';
+import { FactoryBuilder } from '@nexical/generator/engine/builders/factory-builder.js';
+import { ActorBuilder } from '@nexical/generator/engine/builders/actor-builder.js';
+import { ActorTypeBuilder } from '@nexical/generator/engine/builders/actor-type-builder.js';
+import { MiddlewareBuilder } from '@nexical/generator/engine/builders/middleware-builder.js';
+import { EmailBuilder } from '@nexical/generator/engine/builders/email-builder.js';
+import { AgentBuilder } from '@nexical/generator/engine/builders/agent-builder.js';
+import { HookBuilder } from '@nexical/generator/engine/builders/hook-builder.js';
+import { RoleBuilder } from '@nexical/generator/engine/builders/role-builder.js';
+import {
+  type CustomRoute,
+  type ModelDef,
+  type ModuleConfig,
+  type AccessConfig,
+} from '@nexical/generator/engine/types.js';
+import { toKebabCase } from '@nexical/generator/utils/string.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import { parse } from 'yaml';
-import { Reconciler } from './reconciler.js';
-import { type AccessConfig } from './types.js';
+import { Reconciler } from '@nexical/generator/engine/reconciler.js';
 
 export class ApiModuleGenerator extends ModuleGenerator {
   async run(): Promise<void> {

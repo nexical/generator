@@ -12,7 +12,8 @@
     "allowImportingTsExtensions": false,
     "types": ["node"],
     "paths": {
-      "@nexical/generator": ["./src/index.ts"]
+      "@nexical/generator": ["./src/index.ts"],
+      "@nexical/generator/*": ["./src/*"]
     }
   },
   "include": ["src/**/*", "templates/**/*"],

@@ -99,10 +99,10 @@ describe('ApiBuilder', () => {
     );
     // Verify strong typing restoration
     expect(text).toContain(
-      'const body = await context.request.json() as UserApiModuleTypes.ResetPasswordInput;',
+      'const body = await context.request.json() as UserModuleTypes.ResetPasswordInput;',
     );
     expect(text).toContain(
-      "const input: UserApiModuleTypes.ResetPasswordInput = await HookSystem.filter('user.resetPassword.input', body);",
+      "const input: UserModuleTypes.ResetPasswordInput = await HookSystem.filter('user.resetPassword.input', body);",
     );
   });
 
@@ -152,7 +152,7 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('import { UserApiModuleTypes } from "@/lib/api"');
+    expect(text).toContain('import { UserModuleTypes } from "@/lib/api"');
     // Verify GET routes have empty body with correct type (unknown default)
     expect(text).toContain('const body = {} as unknown;');
   });

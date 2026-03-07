@@ -355,6 +355,7 @@ export interface VariableConfig {
   initializer?: string | ParsedStatement;
   declarationKind?: 'const' | 'let' | 'var';
   isExported?: boolean;
+  comments?: string[];
 }
 
 export interface ModuleConfig {

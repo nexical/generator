@@ -14,7 +14,7 @@ import {
 } from '../../types.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse } from 'yaml';
+import YAML from 'yaml';
 import { ModelParser } from '../../model-parser.js';
 import { toPascalCase } from '../../../utils/string.js';
 import { ModuleLocator } from '../../../lib/module-locator.js';
@@ -49,17 +49,18 @@ export abstract class UiBaseBuilder extends BaseBuilder {
 
   protected loadUiConfig() {
     if (!this.modulePath) {
-      console.warn('[UiBaseBuilder] modulePath is undefined, skipping UI config load');
       return;
     }
     const configPath = join(this.modulePath, 'ui.yaml');
     if (existsSync(configPath)) {
       try {
         const content = readFileSync(configPath, 'utf8');
-        this.uiConfig = parse(content) as UiConfig;
+        this.uiConfig = YAML.parse(content) as UiConfig;
       } catch {
         console.warn(`[UiBaseBuilder] Failed to parse ui.yaml for ${this.moduleName}`);
       }
+    } else {
+      console.warn(`[UiBaseBuilder] ui.yaml NOT FOUND at ${configPath}`);
     }
   }
 
@@ -91,11 +92,11 @@ export abstract class UiBaseBuilder extends BaseBuilder {
 
     try {
       const content = readFileSync(apiPath, 'utf8');
-      const parsed = parse(content) as Record<string, unknown>;
+      const parsed = YAML.parse(content) as Record<string, unknown>;
       // api.yaml structure: User: [routes]
       // Flatten to list of routes with model info
       const routes: ResolvedRoute[] = [];
-      Object.entries(parsed).forEach(([modelName, modelRoutes]) => {
+      Object.entries(parsed || {}).forEach(([modelName, modelRoutes]) => {
         if (Array.isArray(modelRoutes)) {
           modelRoutes.forEach((route) => {
             routes.push({ ...(route as CustomRoute), modelName });

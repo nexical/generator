@@ -54,11 +54,8 @@ export class ApiBuilder extends BaseBuilder {
       .filter(([name, f]) => {
         const typeName = f.type.replace('[]', '');
         const isModel = this.allModels.some((m) => m.name === typeName);
-        const isIdWithDefault =
-          name === 'id' && f.attributes?.some((a) => a.startsWith('@default'));
         return (
-          (!['id', 'createdAt', 'updatedAt'].includes(name) ||
-            (name === 'id' && !isIdWithDefault)) &&
+          !['createdAt', 'updatedAt'].includes(name) &&
           f.api !== false &&
           !f.private &&
           !f.isRelation &&
@@ -636,11 +633,7 @@ export class ApiBuilder extends BaseBuilder {
       let requestBodySchema = '{ type: "object" }';
 
       // Resolve schemas for DTOs
-      const pascalModule = this.moduleName
-        .split('-')
-        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-        .join('');
-      const moduleTypesNamespace = `${pascalModule}ModuleTypes`;
+      const moduleTypesNamespace = this.moduleTypesNamespace;
       let addedNamespaceImport = false;
       const addNamespaceImport = () => {
         if (addedNamespaceImport) return;

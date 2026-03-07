@@ -3,6 +3,7 @@ import {
   VariableStatement,
   VariableDeclarationKind,
   ModuleDeclaration,
+  CodeBlockWriter,
 } from 'ts-morph';
 import { BasePrimitive } from '../core/base-primitive.js';
 import { type VariableConfig } from '../../types.js';
@@ -29,6 +30,11 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
           initializer: this.getInitializerText(this.config.initializer),
         },
       ],
+      leadingTrivia: this.config.comments
+        ? (writer: CodeBlockWriter) => {
+            this.config.comments?.forEach((c) => writer.writeLine(`// ${c}`));
+          }
+        : undefined,
     });
   }
 
@@ -59,6 +65,12 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
       if (Normalizer.normalize(currentInit) !== Normalizer.normalize(initText)) {
         decl.setInitializer(initText);
       }
+    }
+
+    // Comments / Trivia
+    if (this.config.comments) {
+      const trivia = this.config.comments.map((c) => `// ${c}`).join('\n') + '\n';
+      node.set({ leadingTrivia: trivia });
     }
   }
 

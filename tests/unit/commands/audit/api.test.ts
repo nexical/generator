@@ -1,30 +1,26 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AuditApiCommand from '@nexical/generator/commands/audit/api.js';
 import { auditApiModule } from '@nexical/generator/lib/audit-api.js';
 
-vi.mock('@nexical/generator/lib/audit-api.js');
+vi.mock('@nexical/generator/lib/audit-api.js', () => ({
+  auditApiModule: vi.fn(),
+}));
 
 describe('AuditApiCommand', () => {
-  let command: AuditApiCommand;
-
   beforeEach(() => {
-    command = new AuditApiCommand();
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('should call auditApiModule with the correct arguments', async () => {
-    await command.run({ name: 'test-api' });
-
-    expect(auditApiModule).toHaveBeenCalledWith(command, 'test-api', { schema: undefined });
-  });
-
-  it('should pass schema option', async () => {
+  it('should call auditApiModule with the provided name and options', async () => {
+    const command = new AuditApiCommand();
     await command.run({ name: 'test-api', schema: true });
 
     expect(auditApiModule).toHaveBeenCalledWith(command, 'test-api', { schema: true });
+  });
+
+  it('should have correct metadata', () => {
+    expect(AuditApiCommand.usage).toBe('audit api');
+    expect(AuditApiCommand.description).toBe('Audit web-api module code against models.yaml');
+    expect(AuditApiCommand.args).toBeDefined();
   });
 });

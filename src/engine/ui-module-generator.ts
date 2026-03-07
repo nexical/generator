@@ -24,7 +24,7 @@ export class UiModuleGenerator extends ModuleGenerator {
       order: 100,
     } as unknown as ModuleConfig; // Defaults, as we don't strictly parsing module.config.mjs here yet
 
-    console.info(`[UiModuleGenerator] Running for ${this.moduleName}`);
+    console.info(`[UiModuleGenerator] Running for ${this.moduleName} at ${this.modulePath}`);
 
     // 0. Parse ui.yaml
     const uiYamlPath = path.join(this.modulePath, 'ui.yaml');

@@ -46,7 +46,7 @@ export abstract class ModuleGenerator {
         modulePath: this.modulePath,
         ...context,
       },
-      (filePath) => this.getOrCreateFile(filePath),
+      (filePath: string) => this.getOrCreateFile(filePath),
     );
 
     // Reset TemplateLoader
@@ -135,34 +135,30 @@ export abstract class ModuleGenerator {
         `[ModuleGenerator] [PROJECT_FILE] ${filePath} | IN_SET: ${inSet} | FORGOTTEN: ${forgotten}`,
       );
 
-      if (inSet) {
-        // console.log(`[Reconciler DEBUG] Saving file: ${filePath}`);
-        // console.log(`[Reconciler DEBUG] First 100 chars: ${file.getFullText().substring(0, 100)}`);
-        logger.debug(`[ModuleGenerator] [SAVE] ${filePath}`);
+      // console.log(`[Reconciler DEBUG] Saving file: ${filePath}`);
+      // console.log(`[Reconciler DEBUG] First 100 chars: ${file.getFullText().substring(0, 100)}`);
+      logger.debug(`[ModuleGenerator] [SAVE] ${filePath}`);
 
-        // Get the text from ts-morph
-        const content = file.getFullText();
+      // Get the text from ts-morph
+      const content = file.getFullText();
 
-        // Format the content
-        let formatted = await Formatter.format(content, filePath);
+      // Format the content
+      let formatted = await Formatter.format(content, filePath);
 
-        // FINAL SAFETY: Ensure header is at the very top (after formatter potentially moved it)
-        if (formatted.includes('// GENERATED CODE - DO NOT MODIFY')) {
-          const { Reconciler } = await import('./reconciler.js');
-          formatted = Reconciler.hoistHeader(formatted, '// GENERATED CODE - DO NOT MODIFY');
-        }
-
-        // Create directory if it doesn't exist
-        const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-
-        // Write to disk manually
-        fs.writeFileSync(filePath, formatted);
-      } else {
-        logger.debug(`[ModuleGenerator] [SAVE_SKIP] ${filePath}`);
+      // FINAL SAFETY: Ensure header is at the very top (after formatter potentially moved it)
+      if (formatted.includes('// GENERATED CODE - DO NOT MODIFY')) {
+        const { Reconciler } = await import('./reconciler.js');
+        formatted = Reconciler.hoistHeader(formatted, '// GENERATED CODE - DO NOT MODIFY');
       }
+
+      // Create directory if it doesn't exist
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      // Write to disk manually
+      fs.writeFileSync(filePath, formatted);
     }
 
     // Also check if any files in set are NOT in project

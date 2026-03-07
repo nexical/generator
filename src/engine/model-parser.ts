@@ -1,5 +1,5 @@
 import { type ModelDef, type EnumConfig, type GlobalConfig } from './types.js';
-import { parse } from 'yaml';
+import YAML from 'yaml';
 import fs from 'node:fs';
 
 export interface RawModelConfig {
@@ -42,8 +42,8 @@ export class ModelParser {
     }
 
     const content = fs.readFileSync(modelsYamlPath, 'utf-8');
-    const parsed = parse(content);
-    const rawModels: Record<string, RawModelConfig> = parsed.models || {};
+    const parsed = YAML.parse(content);
+    const rawModels: Record<string, RawModelConfig> = parsed?.models || {};
     const rawEnums = parsed.enums || {};
 
     const enums: EnumConfig[] = Object.entries(rawEnums).map(

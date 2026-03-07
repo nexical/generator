@@ -182,14 +182,7 @@ describe('auditApiModule', () => {
     const { ModelParser } = await import('../../../src/engine/model-parser.js');
     if (ModelParser) {
       type MockedModelParser = {
-        parse: Mock<
-          [string, string, string],
-          {
-            models: import('../../../src/engine/types.js').ModelDef[];
-            enums: import('../../../src/engine/types.js').EnumConfig[];
-            config: import('../../../src/engine/types.js').GlobalConfig;
-          }
-        >;
+        parse: Mock<any>;
       };
       vi.mocked(ModelParser as unknown as MockedModelParser).parse.mockReturnValue({
         models: [],
@@ -231,14 +224,7 @@ describe('auditApiModule', () => {
 
   it('should validate complete semantic rules for objects and arrays', async () => {
     type MockedModelParser = {
-      parse: Mock<
-        [string, string, string],
-        {
-          models: import('../../../src/engine/types.js').ModelDef[];
-          enums: import('../../../src/engine/types.js').EnumConfig[];
-          config: import('../../../src/engine/types.js').GlobalConfig;
-        }
-      >;
+      parse: Mock<any>;
     };
     const { ModelParser } = await import('../../../src/engine/model-parser.js');
     if (ModelParser) {
@@ -269,5 +255,33 @@ describe('auditApiModule', () => {
     expect(issues.some((i) => i.includes("unknown input type 'BadInput[]'"))).toBe(true);
     expect(issues.some((i) => i.includes("unknown output type 'BadOutput[]'"))).toBe(true);
     expect(issues.some((i) => i.includes("unknown role 'BadRole'"))).toBe(true);
+  });
+
+  it('should report api.yaml schema validation issues', async () => {
+    vi.spyOn(fs, 'readFileSync').mockImplementation((p: unknown) => {
+      const ps = String(p);
+      if (ps.endsWith('models.yaml')) return 'models: {}';
+      if (ps.endsWith('api.yaml')) return 'User: [{ path: "/", method: "INVALID" }]';
+      return '';
+    });
+    const issues = await auditModuleWrapper(mockCommand, mockModuleInfo, true);
+    expect(issues.some((i) => i.includes('[Schema] api.yaml validation errors'))).toBe(true);
+  });
+
+  it('should report missing custom action files', async () => {
+    vi.spyOn(fs, 'existsSync').mockImplementation((p: unknown) => {
+      const ps = String(p);
+      return ps.endsWith('models.yaml') || ps.endsWith('api.yaml');
+    });
+    vi.spyOn(fs, 'readFileSync').mockImplementation((p: unknown) => {
+      const ps = String(p);
+      if (ps.endsWith('models.yaml')) return 'models: {}';
+      if (ps.endsWith('api.yaml'))
+        return 'User: [{ path: "/foo", method: "post", action: "missingAction" }]';
+      return '';
+    });
+
+    const issues = await auditModuleWrapper(mockCommand, mockModuleInfo, false);
+    expect(issues.some((i) => i.includes('[Missing] src/actions/post-user.ts'))).toBe(true);
   });
 });

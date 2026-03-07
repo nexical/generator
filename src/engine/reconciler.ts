@@ -39,9 +39,12 @@ import { toPascalCase } from '../utils/string.js';
 
 export class Reconciler {
   static reconcile(sourceFile: NodeContainer, definition: FileDefinition): void {
-    const filePath =
-      'getFilePath' in sourceFile ? (sourceFile as SourceFile).getFilePath() : 'namespace';
+    let filePath = 'namespace';
     try {
+      if (sourceFile && 'getFilePath' in sourceFile) {
+        filePath = (sourceFile as SourceFile).getFilePath();
+      }
+
       // 1. Handle Imports (Only strictly valid on SourceFile, but let's check or just allow primitive to handle it)
       if ('getImportDeclarations' in sourceFile) {
         const source = sourceFile as SourceFile;
