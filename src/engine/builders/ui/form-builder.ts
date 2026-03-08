@@ -136,11 +136,7 @@ export class FormBuilder extends UiBaseBuilder {
     formConfig: Record<string, FormFieldConfig>,
   ): FunctionConfig {
     const modelName = toPascalCase(model.name);
-    const zodSchema = ZodHelper.generateSchema(
-      model,
-      allModels,
-      formConfig ? Object.keys(formConfig) : undefined,
-    );
+    const zodSchema = ZodHelper.generateSchema(model, allModels, Object.keys(formConfig));
 
     // Register generic button keys
     const keys = {
@@ -207,13 +203,9 @@ export class FormBuilder extends UiBaseBuilder {
           },
         ],
       },
-      {
-        raw: 'type FormData = z.infer<typeof schema>;',
-        getNodes: () => [],
-      },
+      'type FormData = z.infer<typeof schema>;',
       // Hook form raw statement for now as it's complex destructuring
-      {
-        raw: `const {
+      `const {
         register,
         handleSubmit,
         reset,
@@ -223,18 +215,12 @@ export class FormBuilder extends UiBaseBuilder {
         resolver: zodResolver(schema) as unknown as Resolver<FormData>,
         defaultValues: (initialData as unknown as FormData) || {},
     });`,
-        getNodes: () => [],
-      },
-      {
-        raw: `useEffect(() => {
+      `useEffect(() => {
         if (initialData) {
             reset(initialData as unknown as FormData);
         }
     }, [initialData, reset]);`,
-        getNodes: () => [],
-      },
-      {
-        raw: `const onSubmit = (data: FormData) => {
+      `const onSubmit = (data: FormData) => {
         if (isEdit && id) {
             updateMutation.mutate({ id, data: data as unknown as ${this.getModuleTypeName()}.Update${toPascalCase(
               model.name,
@@ -245,8 +231,6 @@ export class FormBuilder extends UiBaseBuilder {
             )}DTO, { onSuccess });
         }
     };`,
-        getNodes: () => [],
-      },
     ];
 
     // Build JSX Fields

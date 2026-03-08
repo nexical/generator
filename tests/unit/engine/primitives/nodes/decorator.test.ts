@@ -57,4 +57,33 @@ describe('DecoratorPrimitive', () => {
     primitive.ensure(classNode);
     expect(classNode.getDecorator('NewDeco')).toBeDefined();
   });
+
+  it('should return undefined for non-decoratable parent', () => {
+    const primitive = new DecoratorPrimitive({ name: 'Role' });
+    const result = primitive.find(sourceFile); // SourceFile is not decoratable
+    expect(result).toBeUndefined();
+  });
+
+  it('should validate argument count mismatch', () => {
+    const classNode = sourceFile.getClass('TestClass')!;
+    const primitive = new DecoratorPrimitive({
+      name: 'Existing',
+      arguments: ['"a"', '"b"'], // Expected 2, Found 1
+    });
+
+    const decorator = classNode.getDecorator('Existing')!;
+    const result = primitive.validate(decorator);
+    expect(result.valid).toBe(false);
+    expect(result.issues[0]).toContain('argument count mismatch');
+  });
+
+  it('should handle decorators without arguments', () => {
+    const classNode = sourceFile.getClass('TestClass')!;
+    const primitive = new DecoratorPrimitive({
+      name: 'Simple',
+    });
+    primitive.ensure(classNode);
+    const text = classNode.getDecorator('Simple')?.getText();
+    expect(text).toBe('@Simple');
+  });
 });

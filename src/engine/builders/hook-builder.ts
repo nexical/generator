@@ -43,7 +43,7 @@ export class HookBuilder extends BaseBuilder {
     if (existsSync(configPath)) {
       try {
         const content = readFileSync(configPath, 'utf8');
-        this.hooksConfig = parse(content) as HooksConfig;
+        this.hooksConfig = parse(content) || { hooks: [] };
       } catch {
         console.warn(`[HookBuilder] Failed to parse hooks.yaml for ${this.moduleName}`);
       }
@@ -52,7 +52,9 @@ export class HookBuilder extends BaseBuilder {
 
   private generateHookFile(project: Project, hook: HookTemplateConfig) {
     const fileName = `src/hooks/${hook.event.replace(/\./g, '-')}-${hook.action.replace(/\./g, '-')}.ts`;
-    const file = project.createSourceFile(fileName, '', { overwrite: true });
+    const file =
+      project.getSourceFile(fileName) ||
+      project.createSourceFile(fileName, '', { overwrite: true });
 
     const method = hook.filter ? 'filter' : 'on';
 

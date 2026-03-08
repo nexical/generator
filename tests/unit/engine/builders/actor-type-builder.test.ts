@@ -1,5 +1,5 @@
 /** @vitest-environment node */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
 import { ActorTypeBuilder } from '../../../../src/engine/builders/actor-type-builder';
 import { type ModelDef } from '../../../../src/engine/types';
@@ -37,5 +37,33 @@ describe('ActorTypeBuilder', () => {
     builder.ensure(sourceFile);
 
     expect(sourceFile.getFullText().trim()).toBe('');
+  });
+
+  it('should handle node without removeText', () => {
+    const builder = new ActorTypeBuilder([]);
+    const mockNode = {
+      addStatements: vi.fn(),
+      getImportDeclarations: vi.fn().mockReturnValue([]),
+      getImportDeclaration: vi.fn(),
+      addImportDeclaration: vi.fn(),
+      getText: vi.fn().mockReturnValue(''),
+    };
+    expect(() =>
+      builder.ensure(mockNode as unknown as import('../../../../src/engine/types').NodeContainer),
+    ).not.toThrow();
+  });
+
+  it('should handle multiple actor models', () => {
+    const models: ModelDef[] = [
+      { name: 'User', actor: { strategy: 'login' }, fields: {}, api: true },
+      { name: 'Team', actor: { strategy: 'bearer' }, fields: {}, api: true },
+    ];
+    const builder = new ActorTypeBuilder(models);
+    builder.ensure(sourceFile);
+    const text = sourceFile.getFullText();
+    expect(text).toContain('User');
+    expect(text).toContain('Team');
+    expect(text).toContain('user: User');
+    expect(text).toContain('team: Team');
   });
 });

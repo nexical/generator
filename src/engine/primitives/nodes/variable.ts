@@ -70,7 +70,9 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
     // Comments / Trivia
     if (this.config.comments) {
       const trivia = this.config.comments.map((c) => `// ${c}`).join('\n') + '\n';
-      node.set({ leadingTrivia: trivia });
+      if (node.getLeadingCommentRanges().length === 0) {
+        node.replaceWithText(trivia + node.getText());
+      }
     }
   }
 
@@ -100,8 +102,6 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
         `Variable '${this.config.name}' initializer mismatch. Expected: ${this.config.initializer}, Found: ${decl.getInitializer()?.getText()}`,
       );
     }
-
-    // Additional validations can be added
 
     return { valid: issues.length === 0, issues };
   }

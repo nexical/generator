@@ -3,6 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import * as fs from 'node:fs';
 import { UiBaseBuilder, type UiConfig } from '../../../src/engine/builders/ui/ui-base-builder.js';
+import { type ModuleConfig } from '../../../src/engine/types.js';
 import { ModuleLocator } from '../../../src/lib/module-locator.js';
 import { ModelParser } from '../../../src/engine/model-parser.js';
 
@@ -51,10 +52,11 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
     fs.mkdirSync(tmpDir, { recursive: true });
 
     // Default mock implementation
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (ModuleLocator.resolve as unknown as any).mockImplementation((name: string) => {
-      return { name, path: path.join(tmpDir, name), app: 'backend' };
-    });
+    (ModuleLocator.resolve as unknown as import('vitest').Mock).mockImplementation(
+      (name: string) => {
+        return { name, path: path.join(tmpDir, name), app: 'backend' };
+      },
+    );
   });
 
   afterEach(async () => {
@@ -65,7 +67,7 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
   });
 
   it('should throw in getSchema (lines 45-47)', () => {
-    const builder = new TestUiBuilder('test', {} as unknown as UiConfig, tmpDir);
+    const builder = new TestUiBuilder('test', { name: 'test' } as ModuleConfig, tmpDir);
     expect(() => builder.exposeGetSchema()).toThrow(
       'UiBaseBuilder subclasses often manage their own file generation loop',
     );
@@ -73,13 +75,13 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
 
   describe('loadUiConfig', () => {
     it('should return if modulePath is missing (lines 51-53)', () => {
-      const builder = new TestUiBuilder('test', {} as unknown as UiConfig, '');
+      const builder = new TestUiBuilder('test', { name: 'test' } as ModuleConfig, '');
       builder.exposeLoadUiConfig();
       // No config loaded
     });
 
     it('should warn if ui.yaml not found (lines 62-64)', () => {
-      const builder = new TestUiBuilder('test', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test', { name: 'test' } as ModuleConfig, tmpDir);
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       builder.exposeLoadUiConfig();
       expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ui.yaml NOT FOUND'));
@@ -87,14 +89,14 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
     });
 
     it('should load valid ui.yaml (line 58)', () => {
-      const builder = new TestUiBuilder('test', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test', { name: 'test' } as ModuleConfig, tmpDir);
       fs.writeFileSync(path.join(tmpDir, 'ui.yaml'), 'backend: my-api\nprefix: test');
       builder.exposeLoadUiConfig();
       expect((builder as unknown as { uiConfig: UiConfig }).uiConfig.backend).toBe('my-api');
     });
 
     it('should warn on invalid ui.yaml (lines 59-61)', () => {
-      const builder = new TestUiBuilder('test', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test', { name: 'test' } as ModuleConfig, tmpDir);
       fs.writeFileSync(path.join(tmpDir, 'ui.yaml'), 'invalid: yaml: :');
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       builder.exposeLoadUiConfig();
@@ -105,34 +107,36 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
 
   describe('resolveModels', () => {
     it('should return empty if models.yaml not found (lines 72-74)', () => {
-      const builder = new TestUiBuilder('test-ui', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test-ui', { name: 'test-ui' } as ModuleConfig, tmpDir);
       const models = builder.exposeResolveModels();
       expect(models).toEqual([]);
     });
 
     it('should return parsed models (line 78)', () => {
-      const builder = new TestUiBuilder('test-ui', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test-ui', { name: 'test-ui' } as ModuleConfig, tmpDir);
       const backendPath = path.join(tmpDir, 'test-ui');
       fs.mkdirSync(backendPath, { recursive: true });
       fs.writeFileSync(path.join(backendPath, 'models.yaml'), 'dummy');
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (ModelParser.parse as unknown as any).mockReturnValue({
+      (ModelParser.parse as unknown as import('vitest').Mock).mockReturnValue({
         models: [{ name: 'User' }],
-      } as unknown as { models: any[]; enums: any[]; config: any });
+      } as unknown as {
+        models: import('../../../src/engine/types.js').ModelDef[];
+        enums: import('../../../src/engine/types.js').EnumConfig[];
+        config: import('../../../src/engine/types.js').GlobalConfig;
+      });
 
       const models = builder.exposeResolveModels();
       expect(models).toEqual([{ name: 'User' }]);
     });
 
     it('should return empty on parse error (lines 79-81)', () => {
-      const builder = new TestUiBuilder('test-ui', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test-ui', { name: 'test-ui' } as ModuleConfig, tmpDir);
       const backendPath = path.join(tmpDir, 'test-ui');
       fs.mkdirSync(backendPath, { recursive: true });
       fs.writeFileSync(path.join(backendPath, 'models.yaml'), 'dummy');
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (ModelParser.parse as unknown as any).mockImplementation(() => {
+      (ModelParser.parse as unknown as import('vitest').Mock).mockImplementation(() => {
         throw new Error('Parse error');
       });
 
@@ -143,13 +147,13 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
 
   describe('resolveRoutes', () => {
     it('should return empty if api.yaml not found (lines 89-91)', () => {
-      const builder = new TestUiBuilder('test-ui', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test-ui', { name: 'test-ui' } as ModuleConfig, tmpDir);
       const routes = builder.exposeResolveRoutes();
       expect(routes).toEqual([]);
     });
 
     it('should return parsed routes (lines 99-106)', () => {
-      const builder = new TestUiBuilder('test-ui', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test-ui', { name: 'test-ui' } as ModuleConfig, tmpDir);
       const backendPath = path.join(tmpDir, 'test-ui');
       fs.mkdirSync(backendPath, { recursive: true });
       fs.writeFileSync(
@@ -162,7 +166,7 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
     });
 
     it('should skip non-array routes (line 100)', () => {
-      const builder = new TestUiBuilder('test-ui', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test-ui', { name: 'test-ui' } as ModuleConfig, tmpDir);
       const backendPath = path.join(tmpDir, 'test-ui');
       fs.mkdirSync(backendPath, { recursive: true });
       fs.writeFileSync(path.join(backendPath, 'api.yaml'), 'User: not-an-array');
@@ -172,7 +176,7 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
     });
 
     it('should return empty on parse error (lines 107-109)', () => {
-      const builder = new TestUiBuilder('test-ui', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('test-ui', { name: 'test-ui' } as ModuleConfig, tmpDir);
       const backendPath = path.join(tmpDir, 'test-ui');
       fs.mkdirSync(backendPath, { recursive: true });
       fs.writeFileSync(path.join(backendPath, 'api.yaml'), 'invalid: yaml: :');
@@ -184,18 +188,18 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
 
   describe('getModuleTypeName', () => {
     it('should return GlobalModuleTypes if no targetModule (line 114)', () => {
-      const builder = new TestUiBuilder('', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('', { name: '' } as ModuleConfig, tmpDir);
       builder.setUiConfig({ backend: '' });
       expect(builder.exposeGetModuleTypeName()).toBe('GlobalModuleTypes');
     });
 
     it('should handle -api suffix (lines 115-117)', () => {
-      const builder = new TestUiBuilder('user-api', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('user-api', { name: 'user-api' } as ModuleConfig, tmpDir);
       expect(builder.exposeGetModuleTypeName()).toBe('UserModuleTypes');
     });
 
     it('should handle regular name (line 118)', () => {
-      const builder = new TestUiBuilder('user', {} as unknown as UiConfig, tmpDir);
+      const builder = new TestUiBuilder('user', { name: 'user' } as ModuleConfig, tmpDir);
       expect(builder.exposeGetModuleTypeName()).toBe('UserModuleTypes');
     });
   });

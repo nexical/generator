@@ -54,4 +54,38 @@ User:
     expect(text).toContain('mutation.mutate(payload');
     expect(text).toContain('Promote User'); // Derived label
   });
+
+  it('should skip if no routes are resolved', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    const builder = new ActionComponentBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
+    await builder.build(project, undefined);
+    expect(project.getSourceFiles().length).toBe(0);
+  });
+
+  it('should skip routes without action key', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      const p = String(path);
+      if (p.includes('ui.yaml')) return 'backend: "user-api"';
+      if (p.includes('api.yaml')) return 'User: [{ path: "/foo", verb: "GET" }]'; // No action
+      return '';
+    });
+    const builder = new ActionComponentBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
+    await builder.build(project, undefined);
+    expect(project.getSourceFiles().length).toBe(0);
+  });
+
+  it('should handle root actions (no model)', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      const p = String(path);
+      if (p.includes('ui.yaml')) return 'backend: "user-api"';
+      if (p.includes('api.yaml')) return 'Root: [{ path: "/ping", verb: "GET", action: "ping" }]';
+      return '';
+    });
+    const builder = new ActionComponentBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
+    await builder.build(project, undefined);
+    const pingFile = project.getSourceFile('src/components/actions/PingButton.tsx');
+    expect(pingFile?.getFullText()).toContain('initialData?: UserModuleTypes.Root');
+  });
 });

@@ -25,7 +25,8 @@ describe('TableBuilder - Exhaustive Coverage', () => {
     vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
       name: 'user-api',
       path: 'user-api',
-    } as unknown as { name: string; path: string });
+      app: 'backend',
+    } as unknown as import('../../../../../src/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -43,7 +44,8 @@ describe('TableBuilder - Exhaustive Coverage', () => {
     vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
       name: 'test-ui',
       path: 'test-ui',
-    } as unknown as { name: string; path: string });
+      app: 'frontend',
+    } as unknown as import('../../../../../src/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -61,7 +63,8 @@ describe('TableBuilder - Exhaustive Coverage', () => {
     vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
       name: 'test-ui',
       path: 'test-ui',
-    } as unknown as { name: string; path: string });
+      app: 'frontend',
+    } as unknown as import('../../../../../src/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -97,7 +100,8 @@ models:
     vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
       name: 'test-ui',
       path: 'test-ui',
-    } as unknown as { name: string; path: string });
+      app: 'frontend',
+    } as unknown as import('../../../../../src/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);

@@ -84,9 +84,7 @@ export class ExportPrimitive extends BasePrimitive<ExportDeclaration, ExportConf
           if (text.startsWith('type ')) {
             const newName = text.replace(/^type\s+/, '');
             ne.remove();
-            if (!node.getNamedExports().some((n) => n.getName() === newName)) {
-              node.addNamedExport(newName);
-            }
+            node.addNamedExport(newName);
           }
         });
       }
@@ -109,10 +107,6 @@ export class ExportPrimitive extends BasePrimitive<ExportDeclaration, ExportConf
           `Export '${this.config.moduleSpecifier}' missing named exports: ${missingExports.join(', ')}`,
         );
       }
-    } else if (this.config.exportClause === '*') {
-      // Check if it is a namespace export or named export?
-      // Ideally should check `!node.hasNamedExports()` but existing code might have mixed usage.
-      // For now, assume if it exists, it's consistent enough or the user can manually fix complex cases.
     }
 
     // Check Type Only

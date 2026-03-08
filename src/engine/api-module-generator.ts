@@ -33,8 +33,9 @@ export class ApiModuleGenerator extends ModuleGenerator {
     const { models, enums, config } = ModelParser.parse(modelsYamlPath);
     console.info(`[ApiModuleGenerator] Models found: ${models.length}`);
 
-    const customRoutes: Record<string, CustomRoute[]> = fs.existsSync(apiYamlPath)
-      ? parse(fs.readFileSync(apiYamlPath, 'utf-8'))
+    const apiContent = fs.existsSync(apiYamlPath) ? fs.readFileSync(apiYamlPath, 'utf-8') : '';
+    const customRoutes: Record<string, CustomRoute[]> = apiContent.trim()
+      ? parse(apiContent) || {}
       : {};
 
     if (models.length === 0 && Object.keys(customRoutes).length === 0) {
@@ -289,10 +290,15 @@ export class ApiModuleGenerator extends ModuleGenerator {
     let accessConfig: AccessConfig | undefined;
 
     if (fs.existsSync(accessYamlPath)) {
-      const parsedAccess = parse(fs.readFileSync(accessYamlPath, 'utf-8'));
-      accessConfig = (parsedAccess.config || parsedAccess) as AccessConfig;
-      if (accessConfig.roles) {
-        roles = Object.keys(accessConfig.roles);
+      const content = fs.readFileSync(accessYamlPath, 'utf-8');
+      if (content.trim()) {
+        const parsedAccess = parse(content);
+        if (parsedAccess) {
+          accessConfig = (parsedAccess.config || parsedAccess) as AccessConfig;
+          if (accessConfig?.roles) {
+            roles = Object.keys(accessConfig.roles);
+          }
+        }
       }
     }
 
@@ -364,56 +370,65 @@ export class ApiModuleGenerator extends ModuleGenerator {
       logger.info(`[ModuleGenerator] Found access.yaml. Generating Security Layer...`);
       // Use pre-parsed accessConfig
       if (!accessConfig) {
-        const parsedAccess = parse(fs.readFileSync(accessYamlPath, 'utf-8'));
-        accessConfig = (parsedAccess.config || parsedAccess) as AccessConfig;
+        const content = fs.readFileSync(accessYamlPath, 'utf-8');
+        if (content.trim()) {
+          const parsedAccess = parse(content);
+          if (parsedAccess) {
+            accessConfig = (parsedAccess.config || parsedAccess) as AccessConfig;
+          }
+        }
       }
 
-      // 9a. Generate Role Files
-      if (accessConfig.roles) {
-        // Ensure BaseRole exists
-        const baseRoleFile = this.getOrCreateFile(path.join('src', 'roles', 'base-role.ts'));
-        baseRoleFile.replaceWithText(this.debugBaseRoleText(accessConfig));
+      if (accessConfig) {
+        // 9a. Generate Role Files
+        if (accessConfig.roles) {
+          // Ensure BaseRole exists
+          const baseRoleFile = this.getOrCreateFile(path.join('src', 'roles', 'base-role.ts'));
+          baseRoleFile.replaceWithText(this.debugBaseRoleText(accessConfig));
 
-        for (const [roleName, roleDef] of Object.entries(accessConfig.roles)) {
-          logger.info(`[ModuleGenerator] Generating Role: ${roleName}`);
-          const roleFile = this.getOrCreateFile(`src/roles/${roleName.toLowerCase()}.ts`);
+          for (const [roleName, roleDef] of Object.entries(accessConfig.roles)) {
+            logger.info(`[ModuleGenerator] Generating Role: ${roleName}`);
+            const roleFile = this.getOrCreateFile(`src/roles/${roleName.toLowerCase()}.ts`);
 
-          // Extract compatible roles from config.test.roles
-          const compatibleRoles: string[] = [];
-          const testRoles = (
-            this as unknown as { config: { test?: { roles?: Record<string, { role?: string }> } } }
-          ).config?.test?.roles;
-          if (testRoles) {
-            for (const [testRole, mapping] of Object.entries(testRoles)) {
-              if (testRole === roleName && mapping?.role) {
-                compatibleRoles.push(mapping.role);
+            // Extract compatible roles from config.test.roles
+            const compatibleRoles: string[] = [];
+            const testRoles = (
+              this as unknown as {
+                config: { test?: { roles?: Record<string, { role?: string }> } };
               }
+            ).config?.test?.roles;
+            if (testRoles) {
+              for (const [testRole, mapping] of Object.entries(testRoles)) {
+                if (testRole === roleName && mapping?.role) {
+                  compatibleRoles.push(mapping.role);
+                }
+              }
+            }
+
+            new RoleBuilder({ name: roleName, definition: roleDef, compatibleRoles }).ensure(
+              roleFile,
+            );
+          }
+        }
+
+        // 9b. Generate Permission Registry
+        if (accessConfig.permissions) {
+          logger.info(`[ModuleGenerator] Generating Permission Registry`);
+
+          const rolePermissions: Record<string, string[]> = {};
+          if (accessConfig.roles) {
+            for (const [role, def] of Object.entries(accessConfig.roles)) {
+              rolePermissions[role] = def.permissions || [];
             }
           }
 
-          new RoleBuilder({ name: roleName, definition: roleDef, compatibleRoles }).ensure(
-            roleFile,
-          );
+          const permFile = this.getOrCreateFile('src/permissions.ts');
+          Reconciler.reconcile(permFile, {
+            header: '// GENERATED CODE - DO NOT MODIFY',
+            permissions: accessConfig.permissions,
+            rolePermissions,
+          });
         }
-      }
-
-      // 9b. Generate Permission Registry
-      if (accessConfig.permissions) {
-        logger.info(`[ModuleGenerator] Generating Permission Registry`);
-
-        const rolePermissions: Record<string, string[]> = {};
-        if (accessConfig.roles) {
-          for (const [role, def] of Object.entries(accessConfig.roles)) {
-            rolePermissions[role] = def.permissions || [];
-          }
-        }
-
-        const permFile = this.getOrCreateFile('src/permissions.ts');
-        Reconciler.reconcile(permFile, {
-          header: '// GENERATED CODE - DO NOT MODIFY',
-          permissions: accessConfig.permissions,
-          rolePermissions,
-        });
       }
     }
 

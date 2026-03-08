@@ -97,4 +97,50 @@ describe('InterfacePrimitive', () => {
     expect(result.issues.some((i) => i.includes('type mismatch'))).toBe(true);
     expect(result.issues.some((i) => i.includes('missing property'))).toBe(true);
   });
+
+  it('should handle comments', () => {
+    const testProject = createTestProject();
+    const sourceFile = testProject.createSourceFile('test.ts', '');
+
+    const primitive = new InterfacePrimitive({
+      name: 'CommentedInterface',
+      comments: ['@internal', 'test comment'],
+    });
+
+    primitive.ensure(sourceFile);
+    const interfaceDecl = sourceFile.getInterface('CommentedInterface')!;
+    expect(interfaceDecl.getFullText()).toContain('// @internal');
+    expect(interfaceDecl.getFullText()).toContain('// test comment');
+
+    // Update comments
+    const updatePrimitive = new InterfacePrimitive({
+      name: 'CommentedInterface',
+      comments: ['updated comment'],
+    });
+    updatePrimitive.ensure(sourceFile);
+    const updatedDecl = sourceFile.getInterface('CommentedInterface')!;
+    expect(updatedDecl.getFullText()).toContain('// updated comment');
+  });
+
+  it('should update optional status of properties', () => {
+    const testProject = createTestProject();
+    const sourceFile = testProject.createSourceFile(
+      'test.ts',
+      'interface TestInterface { id: string; opt?: string; }',
+    );
+    const node = sourceFile.getInterface('TestInterface')!;
+
+    const primitive = new InterfacePrimitive({
+      name: 'TestInterface',
+      properties: [
+        { name: 'id', type: 'string', optional: true },
+        { name: 'opt', type: 'string', optional: false },
+      ],
+    });
+
+    primitive.ensure(sourceFile);
+
+    expect(node.getProperty('id')?.hasQuestionToken()).toBe(true);
+    expect(node.getProperty('opt')?.hasQuestionToken()).toBe(false);
+  });
 });

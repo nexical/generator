@@ -117,7 +117,7 @@ export class ShellBuilder extends UiBaseBuilder {
     }
 
     if (conditions.length === 0) {
-      return '() => true';
+      return '(ctx) => true';
     }
 
     const condition = conditions.join(' && ');

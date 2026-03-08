@@ -148,9 +148,7 @@ export class ImportPrimitive extends BasePrimitive<ImportDeclaration, ImportConf
           if (text.startsWith('type ')) {
             const newName = text.replace(/^type\s+/, '');
             ni.remove();
-            if (!node.getNamedImports().some((n) => n.getName() === newName)) {
-              node.addNamedImport(newName);
-            }
+            node.addNamedImport(newName);
           }
         });
       }
@@ -168,8 +166,9 @@ export class ImportPrimitive extends BasePrimitive<ImportDeclaration, ImportConf
       }
     }
 
-    // 5. Remove if empty (no named, no default)
+    // 5. Remove if empty (no named, no default), unless it is a side-effect import
     if (
+      node.getImportClause() &&
       !node.getDefaultImport() &&
       node.getNamedImports().length === 0 &&
       !node.getNamespaceImport()

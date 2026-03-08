@@ -4,6 +4,7 @@ import { Project } from 'ts-morph';
 import { FormBuilder } from '../../../../../src/engine/builders/ui/form-builder.js';
 import * as fs from 'node:fs';
 import { ModelParser } from '../../../../../src/engine/model-parser.js';
+import { type ModelDef } from '../../../../../src/engine/types.js';
 
 vi.mock('node:fs');
 
@@ -94,6 +95,9 @@ forms:
       component:
         name: "AvatarUploader"
         path: "@/components/custom/AvatarUploader"
+    badge:
+      component:
+        name: "GlobalBadgeComponent"
 `;
       }
       if (String(path).endsWith('models.yaml')) {
@@ -103,6 +107,7 @@ models:
     api: true
     fields:
       avatar: { type: String, private: true } # Private but in forms
+      badge: { type: String } # Custom component without path
       score: { type: Float }
       birthday: { type: DateTime }
       bio: { type: Json } # Should be filtered out
@@ -121,6 +126,7 @@ models:
 
     expect(text).toContain('import { AvatarUploader } from "@/components/custom/AvatarUploader"');
     expect(text).toContain('<AvatarUploader');
+    expect(text).toContain('<GlobalBadgeComponent');
     expect(text).toContain('type="number"'); // for Float
     expect(text).toContain('type="datetime-local"'); // for DateTime
     expect(text).not.toContain('<input type="text" id="bio"'); // bio is in schema but NOT in JSX
@@ -147,25 +153,19 @@ models:
               isEnum: true,
               isRequired: true,
               attributes: [],
-            } as unknown as {
-              type: string;
-              isEnum: boolean;
-              isRequired: boolean;
-              attributes: string[];
+              isList: false,
+              api: true,
             },
             status: {
               type: 'UserStatus',
               isEnum: true,
               isRequired: true,
               attributes: [],
-            } as unknown as {
-              type: string;
-              isEnum: boolean;
-              isRequired: boolean;
-              attributes: string[];
+              isList: false,
+              api: true,
             },
           },
-        } as unknown as { name: string; api: boolean; fields: Record<string, unknown> },
+        } as ModelDef,
       ],
       enums: [],
       config: {},

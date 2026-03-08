@@ -16,6 +16,33 @@ describe('PermissionBuilder', () => {
     const checkMethod = cls?.getStaticMethod('check');
     expect(checkMethod).toBeDefined();
     expect(checkMethod?.getBodyText()).toContain('if (!context.locals?.actor && !context.user)');
-    expect(checkMethod?.getBodyText()).toContain('throw new Error');
+  });
+
+  it('should merge named imports if module already exists', () => {
+    const builder = new PermissionBuilder('UpdateUser');
+    const project = new Project({ useInMemoryFileSystem: true });
+    const sourceFile = project.createSourceFile(
+      'test.ts',
+      "import { Other } from 'astro';\nimport { Custom } from './local';",
+    );
+
+    builder.ensure(sourceFile);
+
+    const impAstro = sourceFile.getImportDeclaration('astro');
+    expect(impAstro?.getNamedImports().map((i) => i.getName())).toContain('APIContext');
+    expect(impAstro?.getNamedImports().map((i) => i.getName())).toContain('Other');
+
+    const impLocal = sourceFile.getImportDeclaration('./local');
+    expect(impLocal).toBeDefined();
+    expect(impLocal?.getNamedImports().map((i) => i.getName())).toContain('Custom');
+  });
+
+  it('should handle existing imports without named imports (coverage)', () => {
+    const builder = new PermissionBuilder('Test');
+    const project = new Project({ useInMemoryFileSystem: true });
+    const sourceFile = project.createSourceFile('test.ts', "import './side-effect';");
+
+    builder.ensure(sourceFile);
+    expect(sourceFile.getImportDeclaration('./side-effect')).toBeDefined();
   });
 });

@@ -57,7 +57,9 @@ export class ActorTypeBuilder extends BaseBuilder {
 
   public override ensure(node: NodeContainer): void {
     // Fully generated file, clear previous content to avoid duplication
-    if ('removeText' in node) (node as unknown as { removeText(): void }).removeText();
+    if ('removeText' in node && typeof node.removeText === 'function') {
+      (node as unknown as { removeText: () => void }).removeText();
+    }
     super.ensure(node);
   }
 }

@@ -317,4 +317,38 @@ describe('ApiBuilder', () => {
     // Check DTO Array logic (falls back to object if no schema properties are defined)
     expect(text).toContain('schema: { type: "object" }'); // Check input FilterDTO and ReportResponse fallback
   });
+
+  it('should handle string role config', () => {
+    const stringRoleModel: ModelDef = { ...model, role: 'admin' };
+    const builder = new ApiBuilder(stringRoleModel, [stringRoleModel], 'user-api', 'collection');
+    builder.ensure(sourceFile);
+    expect(sourceFile.getFullText()).toContain("ApiGuard.protect(context, 'admin'");
+  });
+
+  it('should handle relation to missing model in select object', () => {
+    const brokenModel: ModelDef = {
+      ...model,
+      fields: {
+        item: {
+          type: 'Item',
+          isRelation: true,
+          relationTo: 'Missing',
+          api: true,
+          isRequired: true,
+          isList: false,
+          attributes: [],
+        },
+      },
+    };
+    const builder = new ApiBuilder(brokenModel, [model], 'user-api', 'collection');
+    builder.ensure(sourceFile);
+    expect(sourceFile.getFullText()).toContain('item: true');
+  });
+
+  it('should handle custom route with GET and public role', () => {
+    const routes = [{ method: 'ping', path: '/ping', verb: 'GET' as const, role: 'public' }];
+    const builder = new ApiBuilder(model, [model], 'user-api', 'custom', routes);
+    builder.ensure(sourceFile);
+    expect(sourceFile.getFullText()).toContain('protected: false');
+  });
 });

@@ -8,7 +8,6 @@ import {
   FunctionDeclaration,
   TypeAliasDeclaration,
   VariableStatement,
-  ModuleDeclaration,
 } from 'ts-morph';
 import { GeneratorError } from './errors.js';
 import {
@@ -56,7 +55,7 @@ export class Reconciler {
         // 1b. Prune imports that are no longer in the definition
         // We only prune if it's a GENERATED file (has our marker) to be safe,
         // or if we're in a strictly-managed part of the definition.
-        const sourceText = source.getFullText();
+        const sourceText = Node.isSourceFile(source) ? source.getFullText() : '';
         if (sourceText.includes('GENERATED CODE')) {
           source.getImportDeclarations().forEach((decl) => {
             const specifier = decl.getModuleSpecifierValue();
@@ -77,8 +76,8 @@ export class Reconciler {
 
       // --- Pruning Pass (Only for GENERATED files) ---
       const sourceText =
-        'getFullText' in sourceFile
-          ? (sourceFile as SourceFile | ModuleDeclaration).getFullText()
+        Node.isSourceFile(sourceFile) || Node.isModuleDeclaration(sourceFile)
+          ? sourceFile.getFullText()
           : '';
       const isGenerated = sourceText.includes('GENERATED CODE');
 
@@ -244,12 +243,12 @@ export class Reconciler {
       if ('statements' in definition && Array.isArray(definition.statements)) {
         const rawStatements = (definition.statements as (string | StatementConfig)[]).map((s) => {
           if (typeof s === 'string') return s;
-          if ('raw' in s) return (s as ParsedStatement).raw;
+          if (s && typeof s === 'object' && 'raw' in s) return (s as ParsedStatement).raw;
           return ''; // Or handle other structural configs if needed
         });
 
         if ('addStatements' in sourceFile) {
-          const sourceText = (sourceFile as unknown as Node).getFullText();
+          const sourceText = Node.isNode(sourceFile) ? (sourceFile as Node).getFullText() : '';
           const normalizedExisting = Normalizer.normalize(sourceText);
 
           const uniqueStmts: string[] = [];
@@ -312,7 +311,7 @@ export class Reconciler {
       if (definition.header && 'insertStatements' in sourceFile) {
         const sourceFileNode = sourceFile as SourceFile;
         const isSourceFile = Node.isSourceFile(sourceFileNode);
-        const sourceText = sourceFileNode.getFullText();
+        const sourceText = Node.isSourceFile(sourceFileNode) ? sourceFileNode.getFullText() : '';
 
         // Regex to match ANY line starting with // GENERATED CODE or INITIAL GENERATED CODE
         // This ensures old headers are replaced by the new version in the definition.
@@ -337,6 +336,7 @@ export class Reconciler {
         }
       }
     } catch (error) {
+      console.error('[Reconciler] Error caught during reconciliation:', error);
       throw new GeneratorError(
         `Failed to reconcile file: ${filePath} | ${error instanceof Error ? error.message : String(error)}`,
         { filePath },
@@ -362,11 +362,11 @@ export class Reconciler {
     const filteredLines = lines.filter((line) => {
       const normalized = line.trim().toLowerCase().replace(/\s+/g, '');
       if (!normalized) return false;
-      
+
       // Match header or boilerplates using whitespace-agnostic substring
       if (normalized.includes(headerTrimmed)) return false;
       if (boilerplates.some((b) => normalized.includes(b))) return false;
-      
+
       // Keep everything else
       return true;
     });
@@ -387,7 +387,9 @@ export class Reconciler {
     // 0. Header
     if (definition.header && 'insertStatements' in sourceFile) {
       const headerTrimmed = definition.header.trim();
-      const sourceText = (sourceFile as SourceFile).getFullText().trimStart();
+      const sourceText = Node.isSourceFile(sourceFile)
+        ? (sourceFile as SourceFile).getFullText().trimStart()
+        : '';
       if (!sourceText.startsWith(headerTrimmed)) {
         issues.push('File header mismatch or missing.');
       }

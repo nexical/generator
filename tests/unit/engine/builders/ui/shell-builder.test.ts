@@ -93,4 +93,65 @@ shells:
     const sourceFile = project.getSourceFile('src/init.ts');
     expect(sourceFile).toBeUndefined();
   });
+
+  it('should handle various matcher patterns', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(`
+shells:
+  - name: 'all-shell'
+    matcher:
+      path: '*'
+  - name: 'suffix-shell'
+    matcher:
+      path: '*.pdf'
+  - name: 'exact-shell'
+    matcher:
+      path: '/home'
+  - name: 'mobile-shell'
+    matcher:
+      isMobile: true
+  - name: 'not-mobile-shell'
+    matcher:
+      isMobile: false
+  - name: 'custom-shell'
+    matcher:
+      isAdmin: true
+      role: 'manager'
+  - name: 'empty-matcher'
+    matcher: {}
+`);
+
+    const builder = new ShellBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
+    await builder.build(project, undefined);
+
+    const text = project.getSourceFile('src/init.ts')?.getFullText() || '';
+    expect(text).toContain("ShellRegistry.register('all-shell', AllShell, (ctx) => true)");
+    expect(text).toContain("ctx.url.pathname.endsWith('.pdf')");
+    expect(text).toContain("ctx.url.pathname === '/home'");
+    expect(text).toContain('ctx.isMobile');
+    expect(text).toContain('!ctx.isMobile');
+    expect(text).toContain("ctx.isAdmin && ctx.role === 'manager'");
+    expect(text).toContain("register('empty-matcher', EmptyMatcher, (ctx) => true)");
+  });
+
+  it('should not duplicate imports', async () => {
+    const initFile = project.createSourceFile(
+      'src/init.ts',
+      "import { ShellRegistry } from '@/lib/registries/shell-registry';\nimport { MyShell } from './components/shells/MyShell';",
+    );
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue("shells: [{ name: 'my-shell', matcher: {} }]");
+
+    const builder = new ShellBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
+    await builder.build(project, initFile);
+
+    const imports = initFile.getImportDeclarations();
+    expect(
+      imports.filter((i) => i.getModuleSpecifierValue() === '@/lib/registries/shell-registry')
+        .length,
+    ).toBe(1);
+    expect(
+      imports.filter((i) => i.getModuleSpecifierValue() === './components/shells/MyShell').length,
+    ).toBe(1);
+  });
 });

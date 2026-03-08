@@ -42,4 +42,52 @@ hooks:
     expect(filterFile).toBeDefined();
     expect(filterFile?.getFullText()).toContain('HookSystem.on("order.paid"');
   });
+
+  it('should handle filters and existing imports', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(`
+hooks:
+  - event: "data.process"
+    action: "Transform"
+    filter: true
+`);
+
+    const builder = new HookBuilder('test-api', { name: 'test-api' });
+    // Setup a file with existing imports to cover the filter branch
+    const fileName = 'src/hooks/data-process-Transform.ts';
+    project.createSourceFile(fileName, "import { something } from './else';", { overwrite: true });
+
+    await builder.build(project, undefined);
+
+    const file = project.getSourceFile(fileName);
+    const text = file?.getFullText();
+    expect(text).toContain('HookSystem.filter("data.process"');
+    expect(text).toContain("import { something } from './else'");
+  });
+
+  it('should handle parsing errors in hooks.yaml', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue('invalid: yaml: :');
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const builder = new HookBuilder('test-api', { name: 'test-api' });
+    await builder.build(project, undefined);
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to parse hooks.yaml'));
+    warnSpy.mockRestore();
+  });
+
+  it('should throw error in getSchema', () => {
+    const builder = new HookBuilder('test-api', { name: 'test-api' });
+    // @ts-expect-error - testing private/protected method
+    expect(() => builder.getSchema()).toThrow('HookBuilder manages multiple files. Use build().');
+  });
+
+  it('should skip if hooks.yaml is empty or whitespace', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue('   ');
+    const builder = new HookBuilder('test-api', { name: 'test-api' });
+    await builder.build(project, undefined);
+    expect(project.getSourceFiles().length).toBe(0);
+  });
 });

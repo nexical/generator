@@ -192,6 +192,7 @@ export interface JsxElementConfig extends BaseStatementConfig {
 }
 
 export type StatementConfig =
+  | string
   | ParsedStatement
   | VariableStatementConfig
   | ReturnStatementConfig

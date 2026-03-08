@@ -98,7 +98,13 @@ export class ActionBuilder extends BaseBuilder {
       sourceText = (node as { getFullText(): string }).getFullText();
     } else if (existingStatements) {
       sourceText = existingStatements
-        .map((s) => ('raw' in s ? (s as ParsedStatement).raw : ''))
+        .map((s) =>
+          typeof s === 'string'
+            ? s
+            : s && typeof s === 'object' && 'raw' in s
+              ? (s as ParsedStatement).raw
+              : '',
+        )
         .join('\n');
     }
 

@@ -62,7 +62,7 @@ describe('Reconciler - Exhaustive Coverage', () => {
 
     const definition: FileDefinition = {
       header: '// INITIAL GENERATED CODE',
-      statements: ['', 'import { X } from "Y";'] as unknown[],
+      statements: ['', 'import { X } from "Y";'],
     };
 
     Reconciler.reconcile(file, definition);
@@ -160,7 +160,7 @@ export const myVar = 1;
     const definition: FileDefinition = {
       header: '// GENERATED CODE',
       classes: [{ name: 'C' }],
-      statements: ['class C {\n  // generator content\n}'] as unknown[],
+      statements: ['class C {\n  // generator content\n}'],
     };
     Reconciler.reconcile(file, definition);
     expect(file.getFullText()).not.toContain('generator content');
@@ -216,7 +216,7 @@ export const myVar = 1;
     const file = project.createSourceFile('test.ts', 'class C {}');
     const classNode = file.getClass('C')!;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Reconciler.reconcile(classNode as unknown as any, { statements: ['// x'] as unknown[] });
+    Reconciler.reconcile(classNode as unknown as any, { statements: ['// x'] });
   });
 
   it('should handle reconcile with invalid sourceFile', () => {

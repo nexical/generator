@@ -126,4 +126,26 @@ registries: {}
     const files = project.getSourceFiles();
     expect(files.length).toBe(1); // Only RoleGuard.tsx
   });
+
+  it('should handle non-array or missing guards', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(`
+pages:
+  - path: '/no-guard'
+    component: '@/CP'
+  - path: '/wrong-guard'
+    component: '@/CP'
+    guard: 'admin' # Not an array
+registries:
+  nav:
+    - name: 'item'
+      guard: null
+`);
+
+    const builder = new GuardBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
+    await builder.build(project, undefined);
+
+    const files = project.getSourceFiles();
+    expect(files.length).toBe(1); // Only RoleGuard.tsx
+  });
 });

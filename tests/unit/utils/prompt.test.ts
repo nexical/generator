@@ -38,6 +38,14 @@ describe('prompt utility', () => {
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
   });
 
+  it('should show help if -h is provided', async () => {
+    process.argv = ['node', 'prompt.js', '-h'];
+    const code = await runPrompt();
+    expect(code).toBe(0);
+    // eslint-disable-next-line no-console
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
+  });
+
   it('should run PromptRunner with default models if none provided', async () => {
     process.argv = ['node', 'prompt.js', 'my-prompt'];
     await runPrompt();
@@ -79,6 +87,16 @@ describe('prompt utility', () => {
     );
   });
 
+  it('should handle models with empty strings or trailing commas', async () => {
+    process.argv = ['node', 'prompt.js', 'my-prompt', '--models', 'model1,, model2, '];
+    await runPrompt();
+    expect(PromptRunner.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        models: ['model1', 'model2'],
+      }),
+    );
+  });
+
   it('should enable interactive mode from flag', async () => {
     process.argv = ['node', 'prompt.js', 'my-prompt', '--interactive'];
     await runPrompt();
@@ -87,5 +105,9 @@ describe('prompt utility', () => {
         interactive: true,
       }),
     );
+  });
+
+  it('should be defined', () => {
+    expect(runPrompt).toBeDefined();
   });
 });

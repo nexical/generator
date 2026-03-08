@@ -61,4 +61,10 @@ describe('AuditAgentCommand', () => {
     expect(command.info).toHaveBeenCalledWith(expect.stringContaining('Schema validation issues'));
     expect(command.error).toHaveBeenCalledWith(expect.stringContaining('Audit failed'));
   });
+
+  it('should use default pattern *-api if no name is provided', async () => {
+    vi.mocked(ModuleLocator.expand).mockResolvedValue([]);
+    await (command as unknown as { run: (args: unknown) => Promise<void> }).run({}); // Use unknown cast to bypass required type if necessary
+    expect(ModuleLocator.expand).toHaveBeenCalledWith('*-api');
+  });
 });

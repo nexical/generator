@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ApiModuleGenerator } from '../../../src/engine/api-module-generator.js';
+import fs from 'node:fs';
+
 const parseSpy = vi.fn();
 vi.mock('../../../src/engine/model-parser.js', () => ({
   ModelParser: {
@@ -7,7 +9,14 @@ vi.mock('../../../src/engine/model-parser.js', () => ({
   },
 }));
 
-// Mock builders RELATIVELY to match source imports
+vi.mock('node:fs');
+
+// Mock ALL builders used in ApiModuleGenerator
+vi.mock('../../../src/engine/builders/type-builder.js', () => ({
+  TypeBuilder: class {
+    ensure() {}
+  },
+}));
 vi.mock('../../../src/engine/builders/service-builder.js', () => ({
   ServiceBuilder: class {
     ensure() {}
@@ -18,23 +27,28 @@ vi.mock('../../../src/engine/builders/api-builder.js', () => ({
     ensure() {}
   },
 }));
+vi.mock('../../../src/engine/builders/action-builder.js', () => ({
+  ActionBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/service-test-builder.js', () => ({
+  ServiceTestBuilder: class {
+    ensure() {}
+  },
+}));
 vi.mock('../../../src/engine/builders/sdk-builder.js', () => ({
   SdkBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/sdk-index-builder.js', () => ({
-  SdkIndexBuilder: class {
-    ensure() {}
-  },
-}));
-vi.mock('../../../src/engine/builders/init-builder.js', () => ({
-  InitBuilder: class {
-    ensure() {}
-  },
-}));
 vi.mock('../../../src/engine/builders/test-builder.js', () => ({
   TestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/sdk-index-builder.js', () => ({
+  SdkIndexBuilder: class {
     ensure() {}
   },
 }));
@@ -53,14 +67,29 @@ vi.mock('../../../src/engine/builders/actor-type-builder.js', () => ({
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/middleware-builder.js', () => ({
-  MiddlewareBuilder: class {
+vi.mock('../../../src/engine/builders/init-builder.js', () => ({
+  InitBuilder: class {
     ensure() {}
   },
 }));
 vi.mock('../../../src/engine/builders/email-builder.js', () => ({
   EmailBuilder: class {
     build() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/agent-builder.js', () => ({
+  AgentBuilder: class {
+    build() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/hook-builder.js', () => ({
+  HookBuilder: class {
+    build() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/middleware-builder.js', () => ({
+  MiddlewareBuilder: class {
+    ensure() {}
   },
 }));
 vi.mock('../../../src/engine/builders/role-builder.js', () => ({
@@ -73,7 +102,18 @@ vi.mock('../../../src/engine/reconciler.js', () => ({
 }));
 
 describe('ApiModuleGenerator Functional Mocked', () => {
-  it('should run successfully with mocked parser', async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should skip generation when no models or custom routes found', async () => {
+    parseSpy.mockReturnValue({ models: [], enums: [], config: {} });
+    const generator = new ApiModuleGenerator('/tmp/mock-path');
+    await generator.run();
+    expect(parseSpy).toHaveBeenCalled();
+  });
+
+  it('should run successfully with standard models and generate types', async () => {
     const mockModel = {
       name: 'User',
       api: true,
@@ -88,8 +128,164 @@ describe('ApiModuleGenerator Functional Mocked', () => {
     });
 
     const generator = new ApiModuleGenerator('/tmp/mock-path');
+    generator.saveAll = vi.fn().mockResolvedValue(undefined);
+    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
     await generator.run();
 
     expect(parseSpy).toHaveBeenCalled();
+  });
+
+  it('should skip model if neither db nor api is true', async () => {
+    const mockModel = {
+      name: 'IgnoredModel',
+      api: false,
+      db: false,
+      fields: {},
+    };
+
+    parseSpy.mockReturnValue({
+      models: [mockModel],
+      enums: [],
+      config: {},
+    });
+
+    const generator = new ApiModuleGenerator('/tmp/mock-path');
+    generator.saveAll = vi.fn().mockResolvedValue(undefined);
+    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    await generator.run();
+  });
+
+  it('should correctly process model with complex role object', async () => {
+    const mockModel = {
+      name: 'CustomRoleModel',
+      api: true,
+      db: true,
+      role: { create: 'admin', get: 'none' }, // testing object role mapping and "none" skip
+      fields: {},
+    };
+
+    parseSpy.mockReturnValue({
+      models: [mockModel],
+      enums: [],
+      config: {},
+    });
+
+    const generator = new ApiModuleGenerator('/tmp/mock-path');
+    generator.saveAll = vi.fn().mockResolvedValue(undefined);
+    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    await generator.run();
+  });
+
+  it('should correctly process model with explicit string "none" role', async () => {
+    const mockModel = {
+      name: 'ExplicitNoneRoleModel',
+      api: true,
+      db: true,
+      role: 'none',
+      fields: {},
+    };
+
+    parseSpy.mockReturnValue({
+      models: [mockModel],
+      enums: [],
+      config: {},
+    });
+
+    const generator = new ApiModuleGenerator('/tmp/mock-path');
+    generator.saveAll = vi.fn().mockResolvedValue(undefined);
+    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    await generator.run();
+  });
+
+  it('should correct process model with api only and custom routes', async () => {
+    const mockModel = {
+      name: 'ApiOnlyModel',
+      api: true,
+      db: false,
+      fields: {},
+    };
+
+    const customRoutesContent = `
+ApiOnlyModel:
+  - path: /custom
+    input: none
+    output: none
+    method: GET
+`;
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => String(p).endsWith('.yaml'));
+    vi.mocked(fs.readFileSync).mockReturnValue(customRoutesContent);
+
+    parseSpy.mockReturnValue({
+      models: [mockModel],
+      enums: [],
+      config: {},
+    });
+
+    const generator = new ApiModuleGenerator('/tmp/mock-path');
+    generator.saveAll = vi.fn().mockResolvedValue(undefined);
+    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    await generator.run();
+  });
+
+  it('should process virtual models without problems', async () => {
+    const customRoutesContent = `
+VirtualEntity:
+  - path: /virtual
+    input: none
+    output: none
+    method: doSomething
+    verb: POST
+`;
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => String(p).endsWith('.yaml'));
+    vi.mocked(fs.readFileSync).mockReturnValue(customRoutesContent);
+
+    parseSpy.mockReturnValue({
+      models: [],
+      enums: [],
+      config: {},
+    });
+
+    const generator = new ApiModuleGenerator('/tmp/mock-path');
+    generator.saveAll = vi.fn().mockResolvedValue(undefined);
+    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    await generator.run();
+  });
+
+  it('should throw error when custom route is missing input', async () => {
+    const customRoutesContent = `
+VirtualEntity:
+  - path: /virtual
+    output: none
+`;
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => String(p).endsWith('.yaml'));
+    vi.mocked(fs.readFileSync).mockReturnValue(customRoutesContent);
+
+    parseSpy.mockReturnValue({
+      models: [],
+      enums: [],
+      config: {},
+    });
+
+    const generator = new ApiModuleGenerator('/tmp/mock-path');
+    await expect(generator.run()).rejects.toThrow(/missing 'input'/);
+  });
+
+  it('should throw error when custom route is missing output', async () => {
+    const customRoutesContent = `
+VirtualEntity:
+  - path: /virtual
+    input: none
+`;
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => String(p).endsWith('.yaml'));
+    vi.mocked(fs.readFileSync).mockReturnValue(customRoutesContent);
+
+    parseSpy.mockReturnValue({
+      models: [],
+      enums: [],
+      config: {},
+    });
+
+    const generator = new ApiModuleGenerator('/tmp/mock-path');
+    await expect(generator.run()).rejects.toThrow(/missing 'output'/);
   });
 });

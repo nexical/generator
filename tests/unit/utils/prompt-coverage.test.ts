@@ -1,89 +1,75 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { runPrompt } from '../../../src/utils/prompt.js';
-import { PromptRunner } from '@nexical/ai';
+import { describe, it, expect, vi } from 'vitest';
+import path from 'node:path';
 
+// Mock PromptRunner to avoid side effects during module evaluation
 vi.mock('@nexical/ai', () => ({
   PromptRunner: {
-    run: vi.fn().mockResolvedValue('test code'),
+    run: vi.fn().mockResolvedValue('module-evaluation-success'),
   },
 }));
 
-describe('prompt utility coverage', () => {
-  let originalArgv: string[];
+describe('prompt main block coverage', () => {
+  it('should trigger the main block without unhandled process.exit', async () => {
+    // 1. Simulate the environment
+    const originalEnv = process.env.NODE_ENV;
+    const originalArgv = [...process.argv];
 
-  beforeEach(() => {
-    originalArgv = process.argv;
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(process, 'exit').mockImplementation(() => {
-      return undefined as never;
-    });
+    // 2. Mock process.exit to prevent Vitest from seeing it as an unhandled error
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => {}) as unknown as (
+        code?: string | number | null | undefined,
+      ) => never);
+
+    try {
+      // 3. Set environment to non-test to enter the script guard
+      process.env.NODE_ENV = 'production';
+
+      // 4. Spoof the script path to match import.meta.url and provide a prompt name
+      const promptPath = path.resolve(__dirname, '../../../src/utils/prompt.ts');
+      process.argv = ['node', promptPath, 'dummy-prompt'];
+
+      // 5. Dynamic import with cache-bust to force execution of the top-level block
+      await import('../../../src/utils/prompt.js?cachebust=' + Date.now());
+
+      // 6. Verify it reached the exit call (which confirms it went through .then())
+      expect(exitSpy).toHaveBeenCalled();
+    } finally {
+      // 7. Cleanup
+      process.env.NODE_ENV = originalEnv;
+      process.argv = originalArgv;
+      exitSpy.mockRestore();
+    }
   });
 
-  afterEach(() => {
-    process.argv = originalArgv;
-    vi.restoreAllMocks();
-  });
+  it('should trigger the catch block on error', async () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalArgv = [...process.argv];
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => {}) as unknown as (
+        code?: string | number | null | undefined,
+      ) => never);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-  it('should show help for -h flag', async () => {
-    process.argv = ['node', 'prompt.js', '-h'];
-    const result = await runPrompt();
-    expect(result).toBe(0);
-    // eslint-disable-next-line no-console
-    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
-  });
+    // Force an error in the promise chain
+    const { PromptRunner } = await import('@nexical/ai');
+    vi.mocked(PromptRunner.run).mockRejectedValueOnce(new Error('Triggered Catch'));
 
-  it('should show help for --help flag', async () => {
-    process.argv = ['node', 'prompt.js', '--help'];
-    const result = await runPrompt();
-    expect(result).toBe(0);
-    // eslint-disable-next-line no-console
-    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
-  });
+    try {
+      process.env.NODE_ENV = 'production';
+      const promptPath = path.resolve(__dirname, '../../../src/utils/prompt.ts');
+      process.argv = ['node', promptPath, 'dummy-prompt-error'];
 
-  it('should handle custom models with spaces and empty strings', async () => {
-    process.argv = ['node', 'prompt.js', 'test', '--models', 'm1, ,m2,'];
-    await runPrompt();
-    expect(PromptRunner.run).toHaveBeenCalledWith(
-      expect.objectContaining({
-        models: ['m1', 'm2'],
-      }),
-    );
-  });
+      await import('../../../src/utils/prompt.js?cachebust-error=' + Date.now());
 
-  it('should use default models if none provided', async () => {
-    process.argv = ['node', 'prompt.js', 'test'];
-    await runPrompt();
-    expect(PromptRunner.run).toHaveBeenCalledWith(
-      expect.objectContaining({
-        models: ['gemini-3-flash-preview', 'gemini-3-pro-preview'],
-      }),
-    );
-  });
-
-  it('should handle invalid aiConfig JSON', async () => {
-    process.argv = ['node', 'prompt.js', 'test', '--aiConfig', '{invalid}'];
-    await runPrompt();
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to parse aiConfig'),
-      expect.any(Error),
-    );
-  });
-
-  it('should use provided aiConfig JSON', async () => {
-    const config = { temp: 0.1 };
-    process.argv = ['node', 'prompt.js', 'test', '--aiConfig', JSON.stringify(config)];
-    await runPrompt();
-    expect(PromptRunner.run).toHaveBeenCalledWith(
-      expect.objectContaining({
-        aiConfig: config,
-      }),
-    );
-  });
-
-  it('should return result from PromptRunner', async () => {
-    process.argv = ['node', 'prompt.js', 'test'];
-    const result = await runPrompt();
-    expect(result).toBe('test code');
+      expect(exitSpy).toHaveBeenCalledWith(1);
+      expect(errorSpy).toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      process.argv = originalArgv;
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
   });
 });

@@ -25,7 +25,6 @@ import { ActorBuilder } from '../engine/builders/actor-builder.js';
 import { ActorTypeBuilder } from '../engine/builders/actor-type-builder.js';
 import { type ModelDef, type CustomRoute } from '../engine/types.js';
 import { ModuleLocator, type ModuleInfo } from '../lib/module-locator.js';
-import { type BaseBuilder } from '../engine/builders/base-builder.js';
 
 export async function auditApiModule(
   command: BaseCommand,
@@ -45,13 +44,13 @@ export async function auditApiModule(
   let totalIssues: string[] = [];
 
   for (const moduleInfo of modules) {
-    command.info(`Auditing module: ${moduleInfo.name} `);
+    command.info(`Auditing module: ${moduleInfo.name}`);
     const issues = await auditModule(command, moduleInfo, options.schema || false);
     totalIssues = totalIssues.concat(issues);
   }
 
   if (totalIssues.length > 0) {
-    command.error(`Audit failed with ${totalIssues.length} issues: `);
+    command.error(`Audit failed with ${totalIssues.length} issues:`);
     totalIssues.forEach((issue) => command.info(issue));
     // command.error usually exits, but if we want to mimic process.exitCode = 1 without immediate exit if possible:
     // BaseCommand implementation of error() usually calls exit(1).
@@ -73,12 +72,12 @@ export async function auditModule(
   const apiPath = path.join(moduleDir, 'api.yaml');
 
   const issues: string[] = [];
-  const report = (msg: string) => issues.push(`[${name}] ${msg} `);
+  const report = (msg: string) => issues.push(`[${name}] ${msg}`);
 
   try {
     // 1. Schema Validation
     if (!fs.existsSync(modelsPath)) {
-      report(`models.yaml not found at: ${modelsPath} `);
+      report(`models.yaml not found at: ${modelsPath}`);
       return issues;
     }
 
@@ -87,16 +86,16 @@ export async function auditModule(
     try {
       parsedModels = YAML.parse(modelsContent);
     } catch (e: unknown) {
-      report(`Failed to parse models.yaml: ${e instanceof Error ? e.message : String(e)} `);
+      report(`Failed to parse models.yaml: ${e instanceof Error ? e.message : String(e)}`);
       return issues;
     }
 
     // Validate against Zod Schema
     const modelResult = PlatformDefinitionSchema.safeParse(parsedModels);
     if (!modelResult.success) {
-      report(`[Schema] models.yaml validation errors: `);
+      report(`[Schema] models.yaml validation errors:`);
       modelResult.error.issues.forEach((err) => {
-        report(`  Path: ${err.path.join('.')} - ${err.message} `);
+        report(`  Path: ${err.path.join('.')} - ${err.message}`);
       });
     }
 
@@ -108,13 +107,13 @@ export async function auditModule(
         const apiResult = PlatformApiDefinitionSchema.safeParse(parsedApi);
 
         if (!apiResult.success) {
-          report(`[Schema] api.yaml validation errors: `);
+          report(`[Schema] api.yaml validation errors:`);
           apiResult.error.issues.forEach((err) => {
-            report(`  Path: ${err.path.join('.')} - ${err.message} `);
+            report(`  Path: ${err.path.join('.')} - ${err.message}`);
           });
         }
       } catch (e: unknown) {
-        report(`[Schema] Failed to parse api.yaml: ${e instanceof Error ? e.message : String(e)} `);
+        report(`[Schema] Failed to parse api.yaml: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
@@ -189,7 +188,7 @@ export async function auditModule(
         rolesToCheck.forEach((r) => {
           if (!validRoles.has(r)) {
             report(
-              `[Semantic] Model '${modelName}' has unknown role '${r}'. Valid: ${Array.from(validRoles).join(', ')} `,
+              `[Semantic] Model '${modelName}' has unknown role '${r}'. Valid: ${Array.from(validRoles).join(', ')}`,
             );
           }
         });
@@ -204,7 +203,7 @@ export async function auditModule(
 
         for (const [entityName, routes] of Object.entries(parsedApi)) {
           routes.forEach((route, idx) => {
-            const label = `api.yaml[${entityName}][${idx}] ${route.path} `;
+            const label = `api.yaml[${entityName}][${idx}] ${route.path}`;
 
             // Check Input Type
             if (route.input) {
@@ -228,7 +227,7 @@ export async function auditModule(
             if (route.role) {
               if (!validRoles.has(route.role)) {
                 report(
-                  `[Semantic] ${label} has unknown role '${route.role}'. Valid: ${Array.from(validRoles).join(', ')} `,
+                  `[Semantic] ${label} has unknown role '${route.role}'. Valid: ${Array.from(validRoles).join(', ')}`,
                 );
               }
             }
@@ -264,17 +263,21 @@ export async function auditModule(
     const getFile = (relPath: string): SourceFile | undefined => {
       const absPath = path.join(moduleDir, relPath);
       if (!fs.existsSync(absPath)) {
-        report(`[Missing] ${relPath} `);
+        report(`[Missing] ${relPath}`);
         return undefined;
       }
       return project.addSourceFileAtPath(absPath);
     };
 
-    const validate = (builder: BaseBuilder, file: SourceFile | undefined, label: string) => {
+    const validate = (
+      builder: { validate: (file: SourceFile) => { valid: boolean; issues: string[] } },
+      file: SourceFile | undefined,
+      label: string,
+    ) => {
       if (!file) return;
       const res = builder.validate(file);
       if (!res.valid) {
-        res.issues.forEach((i: string) => report(`[${label}] ${i} `));
+        res.issues.forEach((i: string) => report(`[${label}] ${i}`));
       }
     };
 
@@ -306,12 +309,12 @@ export async function auditModule(
           validate(
             new ApiBuilder(model, models, name, 'collection'),
             getFile(`src/pages/api/${kebabName}/index.ts`),
-            `${entityName}API List`,
+            `${entityName} API List`,
           );
           validate(
             new ApiBuilder(model, models, name, 'individual'),
             getFile(`src/pages/api/${kebabName}/[id].ts`),
-            `${entityName}API Detail`,
+            `${entityName} API Detail`,
           );
         }
 
@@ -322,7 +325,7 @@ export async function auditModule(
           validate(
             new ApiBuilder(model, models, name, 'custom', [route]),
             getFile(`src/pages/api/${kebabName}/${routePath}.ts`),
-            `${entityName}API ${routePath}`,
+            `${entityName} API ${routePath}`,
           );
 
           const actionName = `${route.method.charAt(0).toUpperCase() + route.method.slice(1)}${entityName}Action`;
@@ -338,7 +341,7 @@ export async function auditModule(
         validate(
           new SdkBuilder(model, modelRoutes),
           getFile(`src/sdk/${kebabName}-sdk.ts`),
-          `${entityName}SDK`,
+          `${entityName} SDK`,
         );
 
         // Tests
@@ -394,7 +397,7 @@ export async function auditModule(
         validate(
           new ApiBuilder(virtualModel, [...models, ...virtualModels], name, 'custom', [route]),
           getFile(apiPathResult),
-          `${entityName}API ${fileName}`,
+          isRoot ? `Root API ${fileName}` : `${entityName} API ${fileName}`,
         );
 
         // Action
@@ -410,7 +413,11 @@ export async function auditModule(
 
       // SDK
       const sdkPath = isRoot ? `src/sdk/root-sdk.ts` : `src/sdk/${kebabEntity}-sdk.ts`;
-      validate(new SdkBuilder(virtualModel, routes), getFile(sdkPath), `${entityName}SDK`);
+      validate(
+        new SdkBuilder(virtualModel, routes),
+        getFile(sdkPath),
+        isRoot ? `Root SDK` : `${entityName} SDK`,
+      );
     }
 
     // Global Files

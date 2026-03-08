@@ -67,4 +67,29 @@ describe('JSDocPrimitive', () => {
     primitive.ensure(classNode);
     expect(classNode.getJsDocs()[0].getDescription()).toBe('Fresh Docs');
   });
+
+  it('should return undefined if node is not JSDocable', () => {
+    const textFile = project.createSourceFile('new.ts', 'const x = "y";', { overwrite: true });
+    const literal = textFile.getVariableDeclaration('x')!.getInitializer()!;
+    const primitive = new JSDocPrimitive({ description: 'Doc' });
+
+    // Line 11 false branch
+    expect(primitive.find(literal)).toBeUndefined();
+  });
+
+  it('should fallback to empty string if description is undefined during update and validate', () => {
+    const classNode = sourceFile.getClass('TestClass')!;
+    const primitive = new JSDocPrimitive(
+      {} as unknown as import('../../../../src/engine/primitives/nodes/docs.js').JSDocConfig,
+    ); // trigger || '' fallback
+
+    // Line 30 fallback
+    primitive.update(classNode.getJsDocs()[0]);
+    expect(classNode.getJsDocs()[0].getDescription().trim()).toBe('');
+
+    // Line 42-44 true validation check
+    const result = primitive.validate(classNode.getJsDocs()[0]);
+    expect(result.valid).toBe(true);
+    expect(result.issues).toHaveLength(0);
+  });
 });

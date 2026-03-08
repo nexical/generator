@@ -34,4 +34,13 @@ describe('VariableStatementPrimitive', () => {
     });
     expect(primitive.generate()).toBe('var a = 1, b = 2;');
   });
+
+  it('should generate declaration without type or initializer', () => {
+    const primitive = new VariableStatementPrimitive({
+      kind: 'variable',
+      declarationKind: 'let',
+      declarations: [{ name: 'uninitialized' }],
+    });
+    expect(primitive.generate()).toBe('let uninitialized;');
+  });
 });

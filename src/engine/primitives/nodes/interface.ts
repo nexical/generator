@@ -1,7 +1,8 @@
-import { SourceFile, InterfaceDeclaration, ModuleDeclaration, CodeBlockWriter } from 'ts-morph';
+import { SourceFile, InterfaceDeclaration, ModuleDeclaration } from 'ts-morph';
 import { BasePrimitive } from '../core/base-primitive.js';
 import { type InterfaceConfig } from '../../types.js';
 import { type ValidationResult } from '../contracts.js';
+import { Normalizer } from '../../../utils/normalizer.js';
 
 export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, InterfaceConfig> {
   find(parent: SourceFile | ModuleDeclaration) {
@@ -9,7 +10,7 @@ export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, Inte
   }
 
   create(parent: SourceFile | ModuleDeclaration): InterfaceDeclaration {
-    return parent.addInterface({
+    const node = parent.addInterface({
       name: this.config.name,
       isExported: this.config.isExported,
       extends: this.config.extends,
@@ -19,12 +20,18 @@ export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, Inte
         hasQuestionToken: p.optional,
         isReadonly: p.readonly,
       })),
-      leadingTrivia: this.config.comments
-        ? (writer: CodeBlockWriter) => {
-            this.config.comments?.forEach((c) => writer.writeLine(c));
-          }
-        : undefined,
     });
+
+    if (this.config.comments && this.config.comments.length > 0) {
+      const trivia = this.config.comments.map((c) => `// ${c}`).join('\n') + '\n';
+      // Force rewrite to ensure trivia is captured
+      const name = node.getName();
+      const text = node.getText();
+      node.replaceWithText(`${trivia}${text}`);
+      return (parent as SourceFile | ModuleDeclaration).getInterface(name)!;
+    }
+
+    return node;
   }
 
   update(node: InterfaceDeclaration) {
@@ -71,12 +78,20 @@ export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, Inte
       }
     }
 
-    // Comments / Trivia
-    // Always reconcile trivia for generated nodes to remove stale comments (like eslint-disable)
-    // If config.comments is undefined, we clear it (or set to empty)
-    if (this.config.comments) {
-      const trivia = this.config.comments.map((c) => `// ${c}`).join('\n') + '\n';
-      node.set({ leadingTrivia: trivia });
+    // Comments / Trivia reconciled via replaceWithText to ensure we overwrite correctly.
+    const neuTrivia =
+      this.config.comments && this.config.comments.length > 0
+        ? this.config.comments.map((c) => `// ${c}`).join('\n') + '\n'
+        : '';
+
+    // Only update if trivia changed or we need to clear it
+    // Note: getFullText() includes trivia, getText() doesn't.
+    const currentFullText = node.getFullText();
+    const currentText = node.getText();
+    const currentTrivia = currentFullText.substring(0, currentFullText.indexOf(currentText));
+
+    if (Normalizer.normalize(currentTrivia) !== Normalizer.normalize(neuTrivia)) {
+      node.replaceWithText(`${neuTrivia}${currentText}`);
     }
   }
 

@@ -161,7 +161,12 @@ export class ServiceBuilder extends BaseBuilder {
 
     const hasLogger = methods.some((m) =>
       m.statements?.some((s) => {
-        const text = 'raw' in s ? (s as ParsedStatement).raw : '';
+        const text =
+          typeof s === 'string'
+            ? s
+            : s && typeof s === 'object' && 'raw' in s
+              ? (s as ParsedStatement).raw
+              : '';
         return text.includes('Logger.');
       }),
     );

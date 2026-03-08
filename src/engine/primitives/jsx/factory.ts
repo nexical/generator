@@ -10,6 +10,11 @@ export function tsx(strings: TemplateStringsArray, ...values: unknown[]): Parsed
   return {
     raw,
     getNodes(project: Project): Statement[] {
+      if (!raw.trim()) {
+        throw new Error(
+          'Failed to parse JSX fragment: no return statement found. Ensure your fragment is a valid JSX expression.',
+        );
+      }
       // Wrap in a temporary function to validate JSX and extract the return statement
       const wrapped = `function _render() { return (${raw}); }`;
       const fileName = `__temp_fragment_tsx_${Date.now()}_${Math.random().toString(36).substring(7)}.tsx`;
