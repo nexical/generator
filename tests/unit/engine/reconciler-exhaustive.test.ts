@@ -1,9 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { Project, SourceFile, ModuleDeclaration, Node } from 'ts-morph';
+import { Project } from 'ts-morph';
 import { Reconciler } from '../../../src/engine/reconciler.js';
-import { Normalizer } from '../../../src/utils/normalizer.js';
-import { type FileDefinition, type StatementConfig, type ParsedStatement } from '../../../src/engine/types.js';
+import { type FileDefinition } from '../../../src/engine/types.js';
 
 describe('Reconciler - Exhaustive Coverage', () => {
   it('should handle non-SourceFile (Namespace) path and branches', () => {
@@ -12,7 +11,7 @@ describe('Reconciler - Exhaustive Coverage', () => {
     const ns = file.getModule('M')!;
 
     const definition: FileDefinition = {
-      interfaces: [{ name: 'I' }]
+      interfaces: [{ name: 'I' }],
     };
 
     Reconciler.reconcile(ns, definition);
@@ -21,7 +20,9 @@ describe('Reconciler - Exhaustive Coverage', () => {
 
   it('should cover all pruning branches in GENERATED files', () => {
     const project = new Project();
-    const file = project.createSourceFile('test.ts', `
+    const file = project.createSourceFile(
+      'test.ts',
+      `
       // GENERATED CODE
       class C {}
       interface I {}
@@ -29,7 +30,8 @@ describe('Reconciler - Exhaustive Coverage', () => {
       function f() {}
       type T = string;
       const v = 1;
-    `);
+    `,
+    );
 
     const definition: FileDefinition = {
       header: '// GENERATED CODE',
@@ -38,7 +40,7 @@ describe('Reconciler - Exhaustive Coverage', () => {
       enums: [{ name: 'NewE', members: [] }],
       functions: [{ name: 'NewF' }],
       types: [{ name: 'NewT', type: 'string' }],
-      variables: [{ name: 'NewV', initializer: '1' }]
+      variables: [{ name: 'NewV', initializer: '1' }],
     };
 
     Reconciler.reconcile(file, definition);
@@ -53,28 +55,36 @@ describe('Reconciler - Exhaustive Coverage', () => {
 
   it('should cover remaining branches in reconcile', () => {
     const project = new Project();
-    const file = project.createSourceFile('test.ts', '// INITIAL GENERATED CODE\nimport { X } from "Y";\n');
+    const file = project.createSourceFile(
+      'test.ts',
+      '// INITIAL GENERATED CODE\nimport { X } from "Y";\n',
+    );
 
     const definition: FileDefinition = {
-      header: '// INITIAL GENERATED CODE', 
-      statements: [
-        '', 
-        'import { X } from "Y";', 
-      ] as any[]
+      header: '// INITIAL GENERATED CODE',
+      statements: ['', 'import { X } from "Y";'] as unknown[],
     };
 
     Reconciler.reconcile(file, definition);
     expect(file.getImportDeclarations().length).toBe(1);
-    
-    const genFile = project.createSourceFile('gen.ts', '// GENERATED CODE\nimport { Old } from "old";\n');
-    Reconciler.reconcile(genFile, { header: '// GENERATED CODE', imports: [{ moduleSpecifier: 'new' }] });
+
+    const genFile = project.createSourceFile(
+      'gen.ts',
+      '// GENERATED CODE\nimport { Old } from "old";\n',
+    );
+    Reconciler.reconcile(genFile, {
+      header: '// GENERATED CODE',
+      imports: [{ moduleSpecifier: 'new' }],
+    });
     expect(genFile.getImportDeclarations().length).toBe(1);
     expect(genFile.getImportDeclarations()[0].getModuleSpecifierValue()).toBe('new');
   });
 
   it('should cover validate success and invalid nodes', () => {
     const project = new Project();
-    const file = project.createSourceFile('test.ts', `
+    const file = project.createSourceFile(
+      'test.ts',
+      `
 // HEADER
 import { A } from './a';
 export { B } from './b';
@@ -85,7 +95,8 @@ export const PermissionRegistry = {};
 export enum MyEnum { A }
 export type MyType = string;
 export const myVar = 1;
-    `);
+    `,
+    );
 
     const definition: FileDefinition = {
       header: '// HEADER',
@@ -98,8 +109,8 @@ export const myVar = 1;
       variables: [{ name: 'myVar', initializer: '2' }],
       components: [{ name: 'MyComp', render: { raw: '<div></div>', getNodes: () => [] } }],
       role: { name: 'Admin', definition: { permissions: ['p1'] } },
-      permissions: { 'p1': { description: 'd' } },
-      modules: [{ name: 'M' }]
+      permissions: { p1: { description: 'd' } },
+      modules: [{ name: 'M' }],
     };
 
     const result = Reconciler.validate(file, definition);
@@ -112,18 +123,18 @@ export const myVar = 1;
   it('should cover missing components, roles, and permissions in validate', () => {
     const project = new Project();
     const file = project.createSourceFile('test.ts', '// HEADER\n');
-    
+
     const definition: FileDefinition = {
       header: '// HEADER',
       components: [{ name: 'Comp', render: { raw: '', getNodes: () => [] } }],
       role: { name: 'TestRole', definition: { permissions: [] } },
-      permissions: { 'p': { description: 'd' } },
+      permissions: { p: { description: 'd' } },
       functions: [{ name: 'f' }],
       types: [{ name: 'T', type: 'string' }],
       variables: [{ name: 'v', initializer: '1' }],
       modules: [{ name: 'M' }],
       interfaces: [{ name: 'I' }],
-      enums: [{ name: 'E', members: [] }]
+      enums: [{ name: 'E', members: [] }],
     };
 
     const result = Reconciler.validate(file, definition);
@@ -131,7 +142,7 @@ export const myVar = 1;
     expect(result.valid).toBe(false);
     expect(issues).toContain("Component 'Comp' is missing.");
     expect(issues).toContain("Role 'TestRole' is missing.");
-    expect(issues).toContain("PermissionRegistry is missing.");
+    expect(issues).toContain('PermissionRegistry is missing.');
     expect(issues).toContain("Function 'f' is missing.");
     expect(issues).toContain("Type 'T' is missing.");
     expect(issues).toContain("Variable 'v' is missing.");
@@ -142,11 +153,14 @@ export const myVar = 1;
 
   it('should exhaust signature-based skipping', () => {
     const project = new Project();
-    const file = project.createSourceFile('test.ts', '// GENERATED CODE\nclass C {\n  // user content\n}');
+    const file = project.createSourceFile(
+      'test.ts',
+      '// GENERATED CODE\nclass C {\n  // user content\n}',
+    );
     const definition: FileDefinition = {
       header: '// GENERATED CODE',
-      classes: [{ name: 'C' }], 
-      statements: ['class C {\n  // generator content\n}'] as any[]
+      classes: [{ name: 'C' }],
+      statements: ['class C {\n  // generator content\n}'] as unknown[],
     };
     Reconciler.reconcile(file, definition);
     expect(file.getFullText()).not.toContain('generator content');
@@ -154,7 +168,8 @@ export const myVar = 1;
   });
 
   it('should handle header removal and replacement more thoroughly', () => {
-    const content = '// INITIAL GENERATED CODE\n// GENERATED CODE\n// This file is automatically generated by something\n// Any manual changes will be overwritten\nconst x = 1;';
+    const content =
+      '// INITIAL GENERATED CODE\n// GENERATED CODE\n// This file is automatically generated by something\n// Any manual changes will be overwritten\nconst x = 1;';
     const result = Reconciler.hoistHeader(content, '// NEW HEADER');
     expect(result.replace(/\r/g, '')).toBe('// NEW HEADER\nconst x = 1;');
   });
@@ -170,20 +185,18 @@ export const myVar = 1;
 
   it('should cover static hoistHeader edge cases', () => {
     expect(Reconciler.hoistHeader('const x = 1;', '// HEADER')).toBe('// HEADER\nconst x = 1;');
-    expect(Reconciler.hoistHeader('// HEADER\nconst x = 1;', '// HEADER')).toBe('// HEADER\nconst x = 1;');
+    expect(Reconciler.hoistHeader('// HEADER\nconst x = 1;', '// HEADER')).toBe(
+      '// HEADER\nconst x = 1;',
+    );
   });
 
   it('should handle non-Error instance in catch', () => {
-    const project = new Project();
-    const file = project.createSourceFile('test.ts', '');
-    // Try to trigger GeneratorError with non-Error object
-    // Reconciler.reconcile catches and wraps in GeneratorError(String(error))
-    // We can't easily force an internal throw but we can test the wrapping logic if we could.
-    // However, the test below covers the catch block entry.
     try {
-      Reconciler.reconcile(null as any, {});
-    } catch (e: any) {
-      expect(e.message).toContain('Failed to reconcile file: namespace');
+      const _internalProject = new Project();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Reconciler.reconcile(null as unknown as any, {});
+    } catch (e: unknown) {
+      expect((e as Error).message).toContain('Failed to reconcile file: namespace');
     }
   });
 
@@ -191,7 +204,8 @@ export const myVar = 1;
     const project = new Project();
     const file = project.createSourceFile('test.ts', '');
     const definition: FileDefinition = {
-      statements: [{ notRaw: 'true' } as any]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      statements: [{ notRaw: 'true' } as unknown as { raw: string; getNodes: () => any[] }],
     };
     Reconciler.reconcile(file, definition);
     expect(file.getFullText()).toBe('');
@@ -201,7 +215,8 @@ export const myVar = 1;
     const project = new Project();
     const file = project.createSourceFile('test.ts', 'class C {}');
     const classNode = file.getClass('C')!;
-    Reconciler.reconcile(classNode as any, { statements: ['// x'] as any[] });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Reconciler.reconcile(classNode as unknown as any, { statements: ['// x'] as unknown[] });
   });
 
   it('should handle reconcile with invalid sourceFile', () => {
@@ -213,17 +228,17 @@ export const myVar = 1;
 
   it('should cover Normalizer legacy mappings and SDK paths', () => {
     const project = new Project();
-    const file = project.createSourceFile('test.ts', '// GENERATED CODE\nimport { X } from "@/lib/db.ts";\nimport { Y } from "foo/src/sdk/bar.ts";');
-    
+    const file = project.createSourceFile(
+      'test.ts',
+      '// GENERATED CODE\nimport { X } from "@/lib/db.ts";\nimport { Y } from "foo/src/sdk/bar.ts";',
+    );
+
     // This should hit Normalizer.normalizeImport legacy mappings and SDK paths
     const definition: FileDefinition = {
       header: '// GENERATED CODE',
-      imports: [
-        { moduleSpecifier: '@/lib/db.ts' },
-        { moduleSpecifier: 'foo/src/sdk/bar.ts' }
-      ]
+      imports: [{ moduleSpecifier: '@/lib/db.ts' }, { moduleSpecifier: 'foo/src/sdk/bar.ts' }],
     };
-    
+
     Reconciler.reconcile(file, definition);
     expect(file.getImportDeclarations().length).toBe(2);
   });

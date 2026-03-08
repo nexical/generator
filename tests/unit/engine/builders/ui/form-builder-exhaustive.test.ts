@@ -35,7 +35,7 @@ models:
 
     const builder = new FormBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
-    
+
     expect(project.getSourceFiles().length).toBe(1);
     expect(project.getSourceFiles()[0].getFilePath()).toContain('InFormForm.tsx');
   });
@@ -56,7 +56,8 @@ models:
   it('should handle models without API or not in forms config', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
-      if (String(path).endsWith('ui.yaml')) return 'backend: "user-api"\nforms:\n  ModelWithNoApi: {}\n  OtherModel: {}';
+      if (String(path).endsWith('ui.yaml'))
+        return 'backend: "user-api"\nforms:\n  ModelWithNoApi: {}\n  OtherModel: {}';
       if (String(path).endsWith('models.yaml')) {
         return `
 models:
@@ -75,7 +76,7 @@ models:
 
     const builder = new FormBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
-    // OtherModel is in forms and has API. ModelWithNoApi has no API even if in forms. 
+    // OtherModel is in forms and has API. ModelWithNoApi has no API even if in forms.
     // Wait, OtherModel is in ui.yaml forms, so it should be generated.
     expect(project.getSourceFiles().length).toBe(1);
     expect(project.getSourceFiles()[0].getFilePath()).toContain('OtherModelForm.tsx');
@@ -141,10 +142,30 @@ models:
           name: 'User',
           api: true,
           fields: {
-            role: { type: 'SiteRole', isEnum: true, isRequired: true, attributes: [] } as any,
-            status: { type: 'UserStatus', isEnum: true, isRequired: true, attributes: [] } as any,
+            role: {
+              type: 'SiteRole',
+              isEnum: true,
+              isRequired: true,
+              attributes: [],
+            } as unknown as {
+              type: string;
+              isEnum: boolean;
+              isRequired: boolean;
+              attributes: string[];
+            },
+            status: {
+              type: 'UserStatus',
+              isEnum: true,
+              isRequired: true,
+              attributes: [],
+            } as unknown as {
+              type: string;
+              isEnum: boolean;
+              isRequired: boolean;
+              attributes: string[];
+            },
           },
-        } as any,
+        } as unknown as { name: string; api: boolean; fields: Record<string, unknown> },
       ],
       enums: [],
       config: {},
@@ -161,7 +182,8 @@ models:
   it('should handle model name ending in ModuleTypes for Enum Selects', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
-      if (String(path).endsWith('ui.yaml')) return 'backend: "user-api"\nforms:\n  AuthModuleTypes: {}';
+      if (String(path).endsWith('ui.yaml'))
+        return 'backend: "user-api"\nforms:\n  AuthModuleTypes: {}';
       if (String(path).endsWith('models.yaml')) {
         return `
 enums:

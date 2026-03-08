@@ -44,7 +44,10 @@ describe('UiTestBuilder - Exhaustive Coverage', () => {
       return true;
     });
     vi.mocked(fs.readFileSync).mockReturnValue('backend: "user-api"');
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'user-api', path: 'user-api' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'user-api',
+      path: 'user-api',
+    } as unknown as { name: string; path: string });
 
     const builder = new UiTestBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -58,7 +61,10 @@ describe('UiTestBuilder - Exhaustive Coverage', () => {
       if (String(path).endsWith('models.yaml')) return 'invalid: yaml';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'user-api', path: 'user-api' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'user-api',
+      path: 'user-api',
+    } as unknown as { name: string; path: string });
 
     const builder = new UiTestBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -72,11 +78,14 @@ describe('UiTestBuilder - Exhaustive Coverage', () => {
       if (String(path).endsWith('models.yaml')) return 'models: { M1: { fields: {} } }';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'test-ui', path: 'test-ui' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'test-ui',
+      path: 'test-ui',
+    } as unknown as { name: string; path: string });
 
     const builder = new UiTestBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
-    
+
     expect(project.getSourceFile('src/components/M1Table.test.tsx')).toBeDefined();
     expect(project.getSourceFile('src/components/M1Form.test.tsx')).toBeDefined();
   });

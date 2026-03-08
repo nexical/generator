@@ -1,5 +1,5 @@
 /** @vitest-environment node */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
 import { TestBuilder } from '../../../../src/engine/builders/test-builder.js';
 import { type ModelDef } from '../../../../src/engine/types.js';
@@ -19,27 +19,45 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       list: { type: 'String', isRequired: true, isList: true, api: true, attributes: [] },
       // Required FK
       jobId: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] },
-      job: { 
-        type: 'Job', 
-        isRequired: true, 
-        isList: false, 
-        api: false, 
-        isRelation: true, 
-        attributes: ['@relation(fields: [jobId])'] 
+      job: {
+        type: 'Job',
+        isRequired: true,
+        isList: false,
+        api: false,
+        isRelation: true,
+        attributes: ['@relation(fields: [jobId])'],
       },
       // Unique fields for randomization coverage
-      email: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@unique'] },
-      username: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@unique'] },
-      token: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@unique'] },
+      email: {
+        type: 'String',
+        isRequired: true,
+        isList: false,
+        api: true,
+        attributes: ['@unique'],
+      },
+      username: {
+        type: 'String',
+        isRequired: true,
+        isList: false,
+        api: true,
+        attributes: ['@unique'],
+      },
+      token: {
+        type: 'String',
+        isRequired: true,
+        isList: false,
+        api: true,
+        attributes: ['@unique'],
+      },
       // Actor relation
       actorId: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] },
     },
     test: { actor: 'User' },
-    role: { create: 'admin', list: 'admin', get: 'admin', update: 'admin', delete: 'admin' }
+    role: { create: 'admin', list: 'admin', get: 'admin', update: 'admin', delete: 'admin' },
   };
 
   const roleConfig = {
-    ADMIN: { role: 'admin' }
+    ADMIN: { role: 'admin' },
   };
 
   it('should cover all field types in CREATE', () => {
@@ -48,8 +66,8 @@ describe('TestBuilder - Exhaustive Coverage', () => {
     const sourceFile = project.createSourceFile('test.ts', '');
     builder.ensure(sourceFile);
     const text = sourceFile.getFullText();
-    
-    expect(text).toContain('Factory.create(\'job\'');
+
+    expect(text).toContain("Factory.create('job'");
     expect(text).toContain('"bool":true');
     expect(text).toContain('"int":10');
     expect(text).toContain('"float":10.5');
@@ -63,7 +81,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
     const sourceFile = project.createSourceFile('test.ts', '');
     builder.ensure(sourceFile);
     const text = sourceFile.getFullText();
-    
+
     expect(text).toContain('should filter by bool');
     expect(text).toContain('should filter by int');
     expect(text).toContain('should filter by float');
@@ -78,35 +96,35 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       fields: {
         id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
         userId: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] },
-        user: { 
-          type: 'User', 
-          isRequired: true, 
-          isList: false, 
-          api: false, 
-          isRelation: true, 
-          attributes: ['@relation(fields: [userId])'] 
-        }
+        user: {
+          type: 'User',
+          isRequired: true,
+          isList: false,
+          api: false,
+          isRelation: true,
+          attributes: ['@relation(fields: [userId])'],
+        },
       },
-      test: { actor: 'User' }
+      test: { actor: 'User' },
     };
     const builder = new TestBuilder(authModel, 'AuthTokenApi', 'list', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_auth.ts', '');
     builder.ensure(sourceFile);
     const text = sourceFile.getFullText();
-    
+
     expect(text).toContain('await Factory.prisma.authToken.count({ where: { userId: actor.id } })');
   });
 
   it('should cover dependency setup in GET, UPDATE, DELETE', () => {
     const project = new Project({ useInMemoryFileSystem: true });
-    
+
     for (const op of ['get', 'update', 'delete'] as const) {
       const builder = new TestBuilder(complexModel, 'ComplexApi', op, roleConfig);
       const sourceFile = project.createSourceFile(`test_${op}.ts`, '');
       builder.ensure(sourceFile);
       const text = sourceFile.getFullText();
-      expect(text).toContain('Factory.create(\'job\'');
+      expect(text).toContain("Factory.create('job'");
       if (op === 'update') {
         expect(text).toContain('bool: false');
         expect(text).toContain('int: 20');
@@ -119,8 +137,10 @@ describe('TestBuilder - Exhaustive Coverage', () => {
     const userModel: ModelDef = {
       name: 'User',
       api: true,
-      fields: { id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] } },
-      test: { actor: 'User' }
+      fields: {
+        id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
+      },
+      test: { actor: 'User' },
     };
     for (const op of ['get', 'update', 'delete'] as const) {
       const builder = new TestBuilder(userModel, 'UserApi', op, roleConfig);
@@ -138,15 +158,22 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       fields: {
         id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
         jobId: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] },
-        job: { type: 'Job', isRequired: true, isList: false, api: false, isRelation: true, attributes: ['@relation(fields: [jobId])'] }
+        job: {
+          type: 'Job',
+          isRequired: true,
+          isList: false,
+          api: false,
+          isRelation: true,
+          attributes: ['@relation(fields: [jobId])'],
+        },
       },
-      test: { actor: 'User' }
+      test: { actor: 'User' },
     };
     const builder = new TestBuilder(modelWithJob, 'TaskApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_job.ts', '');
     builder.ensure(sourceFile);
-    expect(sourceFile.getFullText()).toContain('actorType: \'User\'');
+    expect(sourceFile.getFullText()).toContain("actorType: 'User'");
   });
 
   it('should cover space-separated ID field fallback (no @relation)', () => {
@@ -156,9 +183,16 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       fields: {
         id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
         'user Id': { type: 'String', isRequired: true, isList: false, api: true, attributes: [] },
-        user: { type: 'User', isRequired: true, isList: false, api: false, isRelation: true, attributes: [] }
+        user: {
+          type: 'User',
+          isRequired: true,
+          isList: false,
+          api: false,
+          isRelation: true,
+          attributes: [],
+        },
       },
-      test: { actor: 'User' }
+      test: { actor: 'User' },
     };
     const builder = new TestBuilder(modelWithSpaceId, 'ItemApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
@@ -172,23 +206,27 @@ describe('TestBuilder - Exhaustive Coverage', () => {
     const modelNoFk: ModelDef = {
       name: 'Isolated',
       api: true,
-      fields: { id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] } },
-      test: { actor: 'User' }
+      fields: {
+        id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
+      },
+      test: { actor: 'User' },
     };
     const builder = new TestBuilder(modelNoFk, 'IsolatedApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_no_fk.ts', '');
     builder.ensure(sourceFile);
     // Should hit line 107/348 fallback
-    expect(sourceFile.getFullText()).toContain('const actor = await client.as(\'User\', {});');
+    expect(sourceFile.getFullText()).toContain("const actor = await client.as('User', {});");
   });
 
   it('should cover isActorModel in CREATE', () => {
     const userModel: ModelDef = {
       name: 'User',
       api: true,
-      fields: { id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] } },
-      test: { actor: 'User' }
+      fields: {
+        id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
+      },
+      test: { actor: 'User' },
     };
     const builder = new TestBuilder(userModel, 'UserApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
@@ -200,16 +238,16 @@ describe('TestBuilder - Exhaustive Coverage', () => {
 
   it('should cover role-value matching (lines 85-88)', () => {
     const ownerRoleConfig = {
-      OWNER: { role: 'OWNER', some: 'opt' }
+      OWNER: { role: 'OWNER', some: 'opt' },
     };
-    const builder = new TestBuilder(complexModel, 'ComplexApi', 'create', ownerRoleConfig);
+    new TestBuilder(complexModel, 'ComplexApi', 'create', ownerRoleConfig);
     // complexModel.role.create is 'admin'. Uppercase is 'ADMIN'.
     // ownerRoleConfig has key 'OWNER'. Not a match for line 75.
     // val.role is 'OWNER'. Not a match for 'ADMIN' in line 84.
-    
+
     // Let's make it match:
     const matchingRoleConfig = {
-      SOME_KEY: { role: 'ADMIN', extra: true }
+      SOME_KEY: { role: 'ADMIN', extra: true },
     };
     const builder2 = new TestBuilder(complexModel, 'ComplexApi', 'create', matchingRoleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
@@ -224,9 +262,9 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       api: true,
       fields: {
         id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
-        user: { type: 'User', isRequired: true, isList: false, api: true, attributes: [] }
+        user: { type: 'User', isRequired: true, isList: false, api: true, attributes: [] },
       },
-      test: { actor: 'User' }
+      test: { actor: 'User' },
     };
     const builder = new TestBuilder(modelWithUserField, 'ItemApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
@@ -242,15 +280,21 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       api: true,
       fields: {
         id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
-        custom: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@unique'] }
+        custom: {
+          type: 'String',
+          isRequired: true,
+          isList: false,
+          api: true,
+          attributes: ['@unique'],
+        },
       },
-      test: { actor: 'User' }
+      test: { actor: 'User' },
     };
     const builder = new TestBuilder(modelWithUnique, 'UniqueApi', 'list', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_unique.ts', '');
     builder.ensure(sourceFile);
-    expect(sourceFile.getFullText()).toContain('custom: \'list_1_\' + _listSuffix');
+    expect(sourceFile.getFullText()).toContain("custom: 'list_1_' + _listSuffix");
   });
 
   it('should cover userId snippet (line 61)', () => {
@@ -259,9 +303,9 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       api: true,
       fields: {
         id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
-        userId: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] }
+        userId: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] },
       },
-      test: { actor: 'User' }
+      test: { actor: 'User' },
     };
     const getBuilder = new TestBuilder(postModel, 'PostApi', 'get', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
@@ -274,14 +318,18 @@ describe('TestBuilder - Exhaustive Coverage', () => {
     const userModel: ModelDef = {
       name: 'User',
       api: true,
-      fields: { id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] } },
-      test: { actor: 'User' }
+      fields: {
+        id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
+      },
+      test: { actor: 'User' },
     };
     const builder = new TestBuilder(userModel, 'UserApi', 'list', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_user_list_cleanup.ts', '');
     builder.ensure(sourceFile);
-    expect(sourceFile.getFullText()).toContain('await Factory.prisma.user.deleteMany({ where: { id: { not: actor.id } } });');
+    expect(sourceFile.getFullText()).toContain(
+      'await Factory.prisma.user.deleteMany({ where: { id: { not: actor.id } } });',
+    );
   });
 
   it('should cover isAuthResource with actor FK in LIST (line 445)', () => {
@@ -290,16 +338,24 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       api: true,
       fields: {
         id: { type: 'String', isRequired: true, isList: false, api: true, attributes: ['@id'] },
-        userId: { type: 'User', isRequired: true, isList: false, api: true, attributes: ['@relation(fields: [user_id], ...)', 'user_id String'] },
-        user_id: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] }
+        userId: {
+          type: 'User',
+          isRequired: true,
+          isList: false,
+          api: true,
+          attributes: ['@relation(fields: [user_id], ...)', 'user_id String'],
+        },
+        user_id: { type: 'String', isRequired: true, isList: false, api: true, attributes: [] },
       },
-      test: { actor: 'User' }
+      test: { actor: 'User' },
     };
     const builder = new TestBuilder(tokenModel, 'UserTokenApi', 'list', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_token_list.ts', '');
     builder.ensure(sourceFile);
     // shouldPreserve = isActorModel (false) || (true && true) = true
-    expect(sourceFile.getFullText()).toContain('await Factory.prisma.userToken.deleteMany({ where: { user_id: { not: actor.id } } });');
+    expect(sourceFile.getFullText()).toContain(
+      'await Factory.prisma.userToken.deleteMany({ where: { user_id: { not: actor.id } } });',
+    );
   });
 });

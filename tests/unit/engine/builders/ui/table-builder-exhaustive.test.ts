@@ -22,7 +22,10 @@ describe('TableBuilder - Exhaustive Coverage', () => {
   it('should handle no models', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue('backend: "user-api"');
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'user-api', path: 'user-api' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'user-api',
+      path: 'user-api',
+    } as unknown as { name: string; path: string });
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -33,10 +36,14 @@ describe('TableBuilder - Exhaustive Coverage', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (String(path).endsWith('ui.yaml')) return 'tables: { NoApi: {} }';
-      if (String(path).endsWith('models.yaml')) return 'models: { NoApi: { api: false, fields: { name: string } } }';
+      if (String(path).endsWith('models.yaml'))
+        return 'models: { NoApi: { api: false, fields: { name: string } } }';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'test-ui', path: 'test-ui' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'test-ui',
+      path: 'test-ui',
+    } as unknown as { name: string; path: string });
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -47,14 +54,18 @@ describe('TableBuilder - Exhaustive Coverage', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (String(path).endsWith('ui.yaml')) return 'tables: { User: { editMode: "dialog" } }';
-      if (String(path).endsWith('models.yaml')) return 'models: { User: { role: "admin", fields: { name: string } } }';
+      if (String(path).endsWith('models.yaml'))
+        return 'models: { User: { role: "admin", fields: { name: string } } }';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'test-ui', path: 'test-ui' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'test-ui',
+      path: 'test-ui',
+    } as unknown as { name: string; path: string });
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
-    
+
     const file = project.getSourceFile('test-ui/src/components/UserTable.tsx');
     expect(file).toBeDefined();
     const text = file?.getFullText();
@@ -67,7 +78,8 @@ describe('TableBuilder - Exhaustive Coverage', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (String(path).endsWith('ui.yaml')) return 'tables: { User: {} }';
-      if (String(path).endsWith('models.yaml')) return `
+      if (String(path).endsWith('models.yaml'))
+        return `
 models:
   User:
     role: "admin"
@@ -82,11 +94,14 @@ models:
 `;
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'test-ui', path: 'test-ui' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'test-ui',
+      path: 'test-ui',
+    } as unknown as { name: string; path: string });
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
-    
+
     const file = project.getSourceFile('test-ui/src/components/UserTable.tsx');
     expect(file).toBeDefined();
     const text = file?.getFullText();

@@ -44,7 +44,10 @@ describe('StoryBuilder - Exhaustive Coverage', () => {
       return true;
     });
     vi.mocked(fs.readFileSync).mockReturnValue('backend: "user-api"');
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'user-api', path: 'user-api' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'user-api',
+      path: 'user-api',
+    } as unknown as { name: string; path: string });
 
     const builder = new StoryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -58,7 +61,10 @@ describe('StoryBuilder - Exhaustive Coverage', () => {
       if (String(path).endsWith('models.yaml')) return 'invalid: yaml';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'user-api', path: 'user-api' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'user-api',
+      path: 'user-api',
+    } as unknown as { name: string; path: string });
 
     const builder = new StoryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -69,14 +75,18 @@ describe('StoryBuilder - Exhaustive Coverage', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
       if (String(path).endsWith('ui.yaml')) return 'prefix: "test"';
-      if (String(path).endsWith('models.yaml')) return 'models: { M1: { fields: {} }, M2: { fields: {} } }';
+      if (String(path).endsWith('models.yaml'))
+        return 'models: { M1: { fields: {} }, M2: { fields: {} } }';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({ name: 'test-ui', path: 'test-ui' } as any);
+    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
+      name: 'test-ui',
+      path: 'test-ui',
+    } as unknown as { name: string; path: string });
 
     const builder = new StoryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
-    
+
     expect(project.getSourceFile('src/components/M1Table.stories.tsx')).toBeDefined();
     expect(project.getSourceFile('src/components/M1Form.stories.tsx')).toBeDefined();
     expect(project.getSourceFile('src/components/M2Table.stories.tsx')).toBeDefined();
