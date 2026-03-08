@@ -36,6 +36,9 @@ import { PermissionPrimitive } from './primitives/nodes/permission.js';
 import { Normalizer } from '../utils/normalizer.js';
 import { toPascalCase } from '../utils/string.js';
 
+const isRealNode = (node: unknown): node is Node =>
+  node != null && typeof (node as any).getKind === 'function';
+
 export class Reconciler {
   static reconcile(sourceFile: NodeContainer, definition: FileDefinition): void {
     let filePath = 'namespace';
@@ -55,7 +58,8 @@ export class Reconciler {
         // 1b. Prune imports that are no longer in the definition
         // We only prune if it's a GENERATED file (has our marker) to be safe,
         // or if we're in a strictly-managed part of the definition.
-        const sourceText = Node.isSourceFile(source) ? source.getFullText() : '';
+        const sourceText =
+          isRealNode(source) && Node.isSourceFile(source) ? source.getFullText() : '';
         if (sourceText.includes('GENERATED CODE')) {
           source.getImportDeclarations().forEach((decl) => {
             const specifier = decl.getModuleSpecifierValue();
@@ -76,8 +80,9 @@ export class Reconciler {
 
       // --- Pruning Pass (Only for GENERATED files) ---
       const sourceText =
-        Node.isSourceFile(sourceFile) || Node.isModuleDeclaration(sourceFile)
-          ? sourceFile.getFullText()
+        isRealNode(sourceFile) &&
+        (Node.isSourceFile(sourceFile) || Node.isModuleDeclaration(sourceFile))
+          ? (sourceFile as Node).getFullText()
           : '';
       const isGenerated = sourceText.includes('GENERATED CODE');
 
@@ -248,7 +253,10 @@ export class Reconciler {
         });
 
         if ('addStatements' in sourceFile) {
-          const sourceText = Node.isNode(sourceFile) ? (sourceFile as Node).getFullText() : '';
+          const sourceText =
+            isRealNode(sourceFile) && Node.isNode(sourceFile)
+              ? (sourceFile as Node).getFullText()
+              : '';
           const normalizedExisting = Normalizer.normalize(sourceText);
 
           const uniqueStmts: string[] = [];
@@ -310,8 +318,8 @@ export class Reconciler {
       // don't push the header down.
       if (definition.header && 'insertStatements' in sourceFile) {
         const sourceFileNode = sourceFile as SourceFile;
-        const isSourceFile = Node.isSourceFile(sourceFileNode);
-        const sourceText = Node.isSourceFile(sourceFileNode) ? sourceFileNode.getFullText() : '';
+        const isSourceFile = isRealNode(sourceFileNode) && Node.isSourceFile(sourceFileNode);
+        const sourceText = isSourceFile ? sourceFileNode.getFullText() : '';
 
         // Regex to match ANY line starting with // GENERATED CODE or INITIAL GENERATED CODE
         // This ensures old headers are replaced by the new version in the definition.
@@ -387,9 +395,10 @@ export class Reconciler {
     // 0. Header
     if (definition.header && 'insertStatements' in sourceFile) {
       const headerTrimmed = definition.header.trim();
-      const sourceText = Node.isSourceFile(sourceFile)
-        ? (sourceFile as SourceFile).getFullText().trimStart()
-        : '';
+      const sourceText =
+        isRealNode(sourceFile) && Node.isSourceFile(sourceFile)
+          ? (sourceFile as SourceFile).getFullText().trimStart()
+          : '';
       if (!sourceText.startsWith(headerTrimmed)) {
         issues.push('File header mismatch or missing.');
       }
