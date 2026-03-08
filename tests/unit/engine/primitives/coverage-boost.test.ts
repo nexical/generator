@@ -6,7 +6,7 @@ import { VariablePrimitive } from '../../../../src/engine/primitives/nodes/varia
 describe('Coverage Boost Primitives', { timeout: 60000 }, () => {
   describe('InterfacePrimitive', () => {
     it('should update extends and properties', () => {
-      const project = new Project();
+      const project = new Project({ useInMemoryFileSystem: true });
       const sf = project.createSourceFile(
         'test-primitive.ts',
         'export interface I extends A { p1: string; }',
@@ -30,7 +30,7 @@ describe('Coverage Boost Primitives', { timeout: 60000 }, () => {
     });
 
     it('should validate interface properties', () => {
-      const project = new Project();
+      const project = new Project({ useInMemoryFileSystem: true });
       const sf = project.createSourceFile('test-val.ts', 'interface I { p1: string; }');
       const node = sf.getInterface('I')!;
 
@@ -50,7 +50,7 @@ describe('Coverage Boost Primitives', { timeout: 60000 }, () => {
 
   describe('VariablePrimitive', () => {
     it('should update export and declaration kind', () => {
-      const project = new Project();
+      const project = new Project({ useInMemoryFileSystem: true });
       const sf = project.createSourceFile('test-var.ts', 'const x = 1;');
       const node = sf.getVariableStatement('x')!;
 
@@ -69,7 +69,7 @@ describe('Coverage Boost Primitives', { timeout: 60000 }, () => {
     });
 
     it('should validate variable statements', () => {
-      const project = new Project();
+      const project = new Project({ useInMemoryFileSystem: true });
       const sf = project.createSourceFile('test-var-val.ts', 'const x = 1;');
       const node = sf.getVariableStatement('x')!;
 

@@ -258,4 +258,25 @@ describe('Reconciler', () => {
     const secondCount = sourceFile.getFullText().split('export enum TestEnum').length - 1;
     expect(secondCount).toBe(1); // Should still be 1
   });
+
+  it('should hoist header and preserve empty lines', () => {
+    const content = `// GENERATED CODE - DO NOT MODIFY
+
+import { foo } from 'bar';
+
+export class A {
+  foo() {
+    
+  }
+}
+`;
+    // Simulate formatting moving the header, or adding boilerplates
+    const header = '// GENERATED CODE - DO NOT MODIFY';
+    const result = Reconciler.hoistHeader(content, header);
+
+    // Check if empty lines are preserved
+    expect(result).toContain('import { foo }');
+    expect(result).toMatch(/\n\nexport class A/);
+    expect(result.endsWith('}\n')).toBe(true);
+  });
 });

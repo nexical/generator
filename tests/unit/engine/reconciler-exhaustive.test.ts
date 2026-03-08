@@ -6,7 +6,7 @@ import { type FileDefinition } from '../../../src/engine/types.js';
 
 describe('Reconciler - Exhaustive Coverage', () => {
   it('should handle non-SourceFile (Namespace) path and branches', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile('test.ts', 'namespace M {}');
     const ns = file.getModule('M')!;
 
@@ -19,7 +19,7 @@ describe('Reconciler - Exhaustive Coverage', () => {
   });
 
   it('should cover all pruning branches in GENERATED files', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile(
       'test.ts',
       `
@@ -54,7 +54,7 @@ describe('Reconciler - Exhaustive Coverage', () => {
   });
 
   it('should cover remaining branches in reconcile', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile(
       'test.ts',
       '// INITIAL GENERATED CODE\nimport { X } from "Y";\n',
@@ -81,7 +81,7 @@ describe('Reconciler - Exhaustive Coverage', () => {
   });
 
   it('should cover validate success and invalid nodes', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile(
       'test.ts',
       `
@@ -121,7 +121,7 @@ export const myVar = 1;
   });
 
   it('should cover missing components, roles, and permissions in validate', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile('test.ts', '// HEADER\n');
 
     const definition: FileDefinition = {
@@ -152,7 +152,7 @@ export const myVar = 1;
   });
 
   it('should exhaust signature-based skipping', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile(
       'test.ts',
       '// GENERATED CODE\nclass C {\n  // user content\n}',
@@ -175,7 +175,7 @@ export const myVar = 1;
   });
 
   it('should handle non-SourceFile header insertion (line 337)', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile('test.ts', 'namespace M { const x = 1; }');
     const ns = file.getModule('M')!;
     const definition: FileDefinition = { header: '// HEADER' };
@@ -201,7 +201,7 @@ export const myVar = 1;
   });
 
   it('should cover branch for non-raw StatementConfig (line 248)', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile('test.ts', '');
     const definition: FileDefinition = {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -212,7 +212,7 @@ export const myVar = 1;
   });
 
   it('should handle reconcile without addStatements capability', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile('test.ts', 'class C {}');
     const classNode = file.getClass('C')!;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -227,7 +227,7 @@ export const myVar = 1;
   });
 
   it('should cover Normalizer legacy mappings and SDK paths', () => {
-    const project = new Project();
+    const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile(
       'test.ts',
       '// GENERATED CODE\nimport { X } from "@/lib/db.ts";\nimport { Y } from "foo/src/sdk/bar.ts";',

@@ -371,7 +371,7 @@ export class Reconciler {
     const lines = content.split(/\r?\n/);
     const filteredLines = lines.filter((line) => {
       const normalized = line.trim().toLowerCase().replace(/\s+/g, '');
-      if (!normalized) return false;
+      if (!normalized) return true;
 
       // Match header or boilerplates using whitespace-agnostic substring
       if (normalized.includes(headerTrimmed)) return false;
