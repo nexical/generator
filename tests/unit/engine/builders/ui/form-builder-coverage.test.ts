@@ -84,11 +84,14 @@ forms:
       role: { type: 'Role', isEnum: true, enumValues: ['ADMIN', 'USER'] },
     });
 
-    const config: ModuleConfig = { name: 'test-ui' } as any;
+    const config: ModuleConfig = { name: 'test-ui' } as unknown as ModuleConfig;
     fs.writeFileSync(path.join(modulePath, 'ui.yaml'), 'forms: { User: { role: {} } }');
 
     const builder = new FormBuilder('test-ui', config, modulePath);
-    vi.spyOn(builder as any, 'resolveModels').mockReturnValue([model]);
+    vi.spyOn(
+      builder as unknown as { resolveModels: () => ModelDef[] },
+      'resolveModels',
+    ).mockReturnValue([model]);
 
     const project = new Project();
     await builder.build(project, undefined);
@@ -105,7 +108,7 @@ forms:
       bio: { type: 'String' },
     });
 
-    const config: ModuleConfig = { name: 'test-ui' } as any;
+    const config: ModuleConfig = { name: 'test-ui' } as unknown as ModuleConfig;
     fs.writeFileSync(
       path.join(modulePath, 'ui.yaml'),
       `
@@ -119,7 +122,10 @@ forms:
     );
 
     const builder = new FormBuilder('test-ui', config, modulePath);
-    vi.spyOn(builder as any, 'resolveModels').mockReturnValue([model]);
+    vi.spyOn(
+      builder as unknown as { resolveModels: () => ModelDef[] },
+      'resolveModels',
+    ).mockReturnValue([model]);
 
     const project = new Project();
     await builder.build(project, undefined);
@@ -137,14 +143,17 @@ forms:
       name: { type: 'String' },
     });
 
-    const config: ModuleConfig = { name: 'test-ui' } as any;
+    const config: ModuleConfig = { name: 'test-ui' } as unknown as ModuleConfig;
     fs.writeFileSync(
       path.join(modulePath, 'ui.yaml'),
       'forms: { User: { name: {}, id: {}, emailVerified: {} } }',
     );
 
     const builder = new FormBuilder('test-ui', config, modulePath);
-    vi.spyOn(builder as any, 'resolveModels').mockReturnValue([model]);
+    vi.spyOn(
+      builder as unknown as { resolveModels: () => ModelDef[] },
+      'resolveModels',
+    ).mockReturnValue([model]);
 
     const project = new Project();
     await builder.build(project, undefined);

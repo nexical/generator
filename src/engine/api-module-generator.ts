@@ -371,67 +371,18 @@ export class ApiModuleGenerator extends ModuleGenerator {
       // 9a. Generate Role Files
       if (accessConfig.roles) {
         // Ensure BaseRole exists
-        const baseRoleText = `// GENERATED CODE - DO NOT MODIFY
-import type { APIContext } from 'astro';
-import { db } from '@/lib/core/db';
-import type { ApiActor } from '@/lib/api/api-docs';
-import { roleRegistry } from '@/lib/registries/role-registry';
-
-export abstract class BaseRole implements RolePolicy {
-  abstract readonly name: string;
-  protected readonly compatibleRoles: string[] = [];
-
-  public async check(
-    context: APIContext,
-    input: Record<string, unknown> = {},
-    data?: unknown,
-  ): Promise<void> {
-    const actor = context.locals.actor as ApiActor;
-    if (!actor) {
-      throw new Error('Unauthorized: No actor found');
-    }
-
-    const { role: actorRole } = actor as { role: string };
-    const normalizeRole = (r: unknown) => String(r).toUpperCase().replace(/-/g, '_');
-    
-    // Site Admin Bypass
-    if (normalizeRole(actorRole) === 'USER_ADMIN') return;
-    
-    const normalizedActorRole = normalizeRole(actorRole);
-    const normalizedRequiredRole = normalizeRole(this.name);
-
-    if (normalizedActorRole === normalizedRequiredRole) return;
-    if (this.compatibleRoles?.includes(normalizedActorRole)) return;
-
-    // Inheritance Check
-    const checkInheritance = (roleName: string, targetRole: string): boolean => {
-      const policy = roleRegistry.get(roleName);
-      if (!policy || !('inherits' in policy)) return false;
-      const inherits = (policy as any).inherits as string[];
-      if (inherits.includes(targetRole)) return true;
-      for (const parent of inherits) {
-        if (checkInheritance(parent, targetRole)) return true;
-      }
-      return false;
-    };
-
-    if (checkInheritance(normalizedActorRole, normalizedRequiredRole)) return;
-
-    throw new Error(\`Forbidden: required role \${this.name}\`);
-  }
-}
-`;
-        fs.writeFileSync(path.join(this.modulePath, 'src/roles/base-role.ts'), baseRoleText);
+        const baseRoleFile = this.getOrCreateFile(path.join('src', 'roles', 'base-role.ts'));
+        baseRoleFile.replaceWithText(this.debugBaseRoleText(accessConfig));
 
         for (const [roleName, roleDef] of Object.entries(accessConfig.roles)) {
           logger.info(`[ModuleGenerator] Generating Role: ${roleName}`);
-          const pascalName = roleName.charAt(0).toUpperCase() + roleName.slice(1).toLowerCase();
-          const roleFile = this.getOrCreateFile(`src/roles/${pascalName.toLowerCase()}.ts`);
+          const roleFile = this.getOrCreateFile(`src/roles/${roleName.toLowerCase()}.ts`);
 
           // Extract compatible roles from config.test.roles
           const compatibleRoles: string[] = [];
-          const testRoles = (config as { test?: { roles?: Record<string, { role?: string }> } })
-            .test?.roles;
+          const testRoles = (
+            this as unknown as { config: { test?: { roles?: Record<string, { role?: string }> } } }
+          ).config?.test?.roles;
           if (testRoles) {
             for (const [testRole, mapping] of Object.entries(testRoles)) {
               if (testRole === roleName && mapping?.role) {
@@ -478,8 +429,63 @@ export abstract class BaseRole implements RolePolicy {
     if (fs.existsSync(oldActorTypes)) fs.unlinkSync(oldActorTypes);
 
     // 10. Run Custom Builders
-    await this.runCustomBuilders({ models, customRoutes, accessConfig, roles });
+    await this.runCustomBuilders({ models, customRoutes, accessConfig });
 
     await this.saveAll();
+
+    logger.info(`[ModuleGenerator] API Generation for ${this.moduleName} complete.`);
+  }
+
+  /** @internal */
+  public debugBaseRoleText(accessConfig: AccessConfig): string {
+    return `// GENERATED CODE - DO NOT MODIFY
+import type { APIContext } from 'astro';
+import type { ApiActor } from '@/lib/api/api-docs';
+import { roleRegistry } from '@/lib/registries/role-registry';
+
+export abstract class BaseRole implements RolePolicy {
+  abstract readonly name: string;
+  protected readonly compatibleRoles: string[] = [];
+
+  public async check(
+    context: APIContext,
+    input: Record<string, unknown> = {},
+    data?: unknown,
+  ): Promise<void> {
+    const actor = context.locals.actor as ApiActor;
+    if (!actor) {
+      throw new Error('Unauthorized: No actor found');
+    }
+
+    const { role: actorRole } = actor as { role: string };
+    const normalizeRole = (r: unknown) => String(r).toUpperCase().replace(/-/g, '_');
+    
+    // Site Admin Bypass
+    if (normalizeRole(actorRole) === 'USER_ADMIN') return;
+    
+    const normalizedActorRole = normalizeRole(actorRole);
+    const normalizedRequiredRole = normalizeRole(this.name);
+
+    if (normalizedActorRole === normalizedRequiredRole) return;
+    if (this.compatibleRoles?.includes(normalizedActorRole)) return;
+
+    // Inheritance Check
+    const checkInheritance = (roleName: string, targetRole: string): boolean => {
+      const policy = roleRegistry.get(roleName);
+      if (!policy || !('inherits' in policy)) return false;
+      const inherits = (policy as { inherits: string[] }).inherits as string[];
+      if (inherits.includes(targetRole)) return true;
+      for (const parent of inherits) {
+        if (checkInheritance(parent, targetRole)) return true;
+      }
+      return false;
+    };
+
+    if (checkInheritance(normalizedActorRole, normalizedRequiredRole)) return;
+
+    throw new Error(\`Forbidden: required role \${this.name}\`);
+  }
+}
+`;
   }
 }

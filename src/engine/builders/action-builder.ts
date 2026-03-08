@@ -4,7 +4,6 @@ import {
   type MethodConfig,
   type ImportConfig,
   type NodeContainer,
-  type StatementConfig,
   type ParsedStatement,
 } from '../types.js';
 import { BaseBuilder } from './base-builder.js';
@@ -20,32 +19,36 @@ export class ActionBuilder extends BaseBuilder {
     super();
   }
 
-  protected getSchema(node?: NodeContainer): FileDefinition {
-    const capturedReturnType = `Promise<ServiceResponse<${this.outputType}>>`;
-    let existingStatements: StatementConfig[] | undefined;
-
-    if (node && 'getClass' in node) {
-      const cls = node.getClass(this.actionName);
-      if (cls) {
-        console.info(`[ActionBuilder] Found existing class ${this.actionName}`);
-        const method = cls.getMethod('run') || cls.getStaticMethod('run');
-        if (method) {
-          console.info(
-            `[ActionBuilder] Found existing method 'run' (static: ${method.isStatic()}) in ${this.actionName}`,
-          );
-          const body = method.getBodyText();
-          if (body) {
-            // Automated cleanup for common linting issues during regeneration
-            const cleanedBody = body.replace(/error:\s*any\b/g, 'error: unknown');
-            existingStatements = [ts`${cleanedBody}`];
+  override ensure(sourceFile: import('ts-morph').SourceFile): void {
+    const cls = sourceFile.getClass(this.actionName);
+    if (cls) {
+      const method = cls.getMethod('run') || cls.getStaticMethod('run');
+      if (method) {
+        const body = method.getBodyText();
+        if (body && (body.includes('error: any') || body.includes('as any'))) {
+          const cleaned = this.cleanBody(body);
+          if (cleaned !== body) {
+            method.setBodyText(cleaned);
           }
-        } else {
-          console.info(`[ActionBuilder] Method 'run' NOT found in ${this.actionName}`);
         }
-      } else {
-        console.info(`[ActionBuilder] Class ${this.actionName} NOT found in file`);
       }
     }
+    super.ensure(sourceFile);
+  }
+
+  private cleanBody(body: string): string {
+    return body
+      .replace(/error:\s*any/g, 'error: unknown')
+      .replace(/undefined\s+as\s+any/g, `{} as unknown as ${this.outputType}`)
+      .replace(/}\s+as\s+any/g, `} as unknown as ${this.outputType}`);
+  }
+
+  protected getSchema(node?: NodeContainer): FileDefinition {
+    const capturedReturnType = `Promise<ServiceResponse<${this.outputType}>>`;
+    const cls = node && 'getClass' in node ? node.getClass(this.actionName) : undefined;
+    const method = cls ? cls.getMethod('run') || cls.getStaticMethod('run') : undefined;
+    const body = method?.getBodyText();
+    const existingStatements = body ? [ts`${this.cleanBody(body)}`] : undefined;
 
     const runMethod: MethodConfig = {
       name: 'run',
@@ -123,7 +126,9 @@ export class ActionBuilder extends BaseBuilder {
       });
     }
 
-    const hasApiActor = sourceText.split('\n').some(line => !line.trim().startsWith('import') && line.includes('ApiActor'));
+    const hasApiActor = sourceText
+      .split('\n')
+      .some((line) => !line.trim().startsWith('import') && line.includes('ApiActor'));
     if (hasApiActor) {
       imports.push({
         moduleSpecifier: '@/lib/api/api-docs',
@@ -169,8 +174,14 @@ export class ActionBuilder extends BaseBuilder {
       });
     }
 
-    const hasDb = sourceText.includes('db.') || sourceText.includes(' db ');
-    if (hasDb) {
+    const cleanBodyText = sourceText
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('import'))
+      .join('\n');
+    const hasDb = cleanBodyText.includes('db.') || cleanBodyText.includes(' db ');
+    const alreadyImportsDb = sourceText.includes('@/lib/core/db');
+
+    if (hasDb && !alreadyImportsDb) {
       imports.push({
         moduleSpecifier: '@/lib/core/db',
         namedImports: ['db'],

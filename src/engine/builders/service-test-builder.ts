@@ -57,17 +57,12 @@ export class ServiceTestBuilder extends BaseBuilder {
     const normalize = (t: string) =>
       t.replace('[]', '').replace('Array<', '').replace('>', '').trim();
 
+    // Only import the input type — the output/response DTO is never referenced in the
+    // generated test body (only in the skipped boilerplate), so importing it would be unused.
     if (this.inputType !== 'void') {
       const inputBase = normalize(this.inputType);
       if (!['string', 'number', 'boolean', 'unknown', 'any'].includes(inputBase.toLowerCase())) {
         typesToImport.add(inputBase);
-      }
-    }
-
-    if (this.outputType && this.outputType !== 'void') {
-      const outputBase = normalize(this.outputType);
-      if (!['string', 'number', 'boolean', 'unknown', 'any'].includes(outputBase.toLowerCase())) {
-        typesToImport.add(outputBase);
       }
     }
 

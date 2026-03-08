@@ -65,6 +65,10 @@ export class RoleBuilder extends BaseBuilder {
         moduleSpecifier: './base-role',
         namedImports: ['BaseRole'],
       },
+      {
+        moduleSpecifier: '@/lib/registries/role-registry',
+        namedImports: ['roleRegistry'],
+      },
     ];
 
     // Preserve existing manual imports
@@ -93,6 +97,12 @@ export class RoleBuilder extends BaseBuilder {
         '// GENERATED CODE - THE SIGNATURE IS MANAGED BY THE GENERATOR. YOU MAY MODIFY THE IMPLEMENTATION AND ADD CUSTOM IMPORTS.',
       imports: Array.from(importMap.values()),
       classes: [roleClass],
+      statements: [
+        {
+          raw: `roleRegistry.register(new ${className}());`,
+          getNodes: () => [], // Not needed for simple strings
+        },
+      ],
     };
   }
 }

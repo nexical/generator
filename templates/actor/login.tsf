@@ -11,6 +11,7 @@ declare const secretField: string;
 declare const modelName: string;
 declare const actorName: string;
 declare const idField: string;
+declare const roleCleanup: string;
 
 export default fragment/* ts */`async (client: ApiClient, params: Record<string, unknown> = {}) => {
     const password = params.${secretField} || 'Password123!';
@@ -26,7 +27,7 @@ export default fragment/* ts */`async (client: ApiClient, params: Record<string,
     if (!actor) {
             const factoryParams = { ...params };
             if (factoryParams.password) delete factoryParams.password; 
-            if (factoryParams.role) delete factoryParams.role; 
+            ${roleCleanup}
             if (factoryParams.strategy) delete factoryParams.strategy; 
             
         actor = await Factory.create('${actorName}', {

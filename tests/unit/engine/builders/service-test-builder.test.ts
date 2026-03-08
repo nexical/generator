@@ -17,9 +17,9 @@ describe('ServiceTestBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    // It should import Job, not Job[]
-    expect(text).toContain('import type { PollJobsDTO, Job }');
-    expect(text).not.toContain('import type { PollJobsDTO, Job[] }');
+    // It should import PollJobsDTO, but NOT Job (as it is unused in the generated test body)
+    expect(text).toContain('import type { PollJobsDTO } from "../../../src/sdk"');
+    expect(text).not.toContain('Job } from "../../../src/sdk"');
   });
 
   it('should handle void types correctly', () => {

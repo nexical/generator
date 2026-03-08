@@ -112,7 +112,7 @@ const oldVar = 1;
       statements: [
         "describe('test suite', () => { console.log('extra'); });",
         "it('new test', () => {});",
-      ] as any,
+      ] as unknown as import('../../../src/engine/types.js').StatementConfig[],
     };
 
     Reconciler.reconcile(file, definition);

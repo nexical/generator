@@ -92,6 +92,31 @@ describe('BaseCommand', () => {
     expect(helpStr).toContain('Examples');
     expect(helpStr).toContain('adv my-run');
     expect(helpStr).toContain('Troubleshooting');
+    expect(helpStr).toContain('Troubleshooting');
     expect(helpStr).toContain('restart standard flow');
+  });
+
+  it('should handle partial help metadata and no description/usage', () => {
+    class BareCommand extends BaseCommand {
+      async run() {}
+    }
+    // @ts-expect-error - testing missing static props
+    BareCommand.usage = undefined;
+    // @ts-expect-error - testing missing static props
+    BareCommand.description = undefined;
+
+    const partial = new BareCommand({
+      helpMetadata: { examples: ['only examples'] },
+    });
+    const helpStr = partial.getCommand().helpInformation();
+    expect(helpStr).toContain('Examples');
+    expect(helpStr).not.toContain('Troubleshooting');
+
+    const empty = new BareCommand({
+      helpMetadata: { troubleshooting: ['only trouble'] },
+    });
+    const helpStrEmpty = empty.getCommand().helpInformation();
+    expect(helpStrEmpty).toContain('Troubleshooting');
+    expect(helpStrEmpty).not.toContain('Examples');
   });
 });

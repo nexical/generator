@@ -6,9 +6,9 @@
 import { fragment } from '@nexical/generator';
 // Phantom Declarations
 declare const title: string;
-declare const Card: any;
-declare const CardHeader: any;
-declare const CardContent: any;
+declare const Card: unknown;
+declare const CardHeader: unknown;
+declare const CardContent: unknown;
 
 export default fragment/* tsx */`
   <Card>

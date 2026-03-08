@@ -7,8 +7,10 @@ describe('SdkIndexBuilder - Coverage Boost', () => {
   it('should handle module name without -api suffix', () => {
     const models: ModelDef[] = [];
     const builder = new SdkIndexBuilder(models, 'user');
-    const schema = (builder as unknown as { getSchema(): Record<string, any> }).getSchema();
-    expect(schema.classes[0].name).toBe('UserModule');
+    const schema = (builder as unknown as { getSchema(): Record<string, unknown> }).getSchema();
+    expect(schema.classes instanceof Array && (schema.classes[0] as { name: string }).name).toBe(
+      'UserModule',
+    );
   });
 
   it('should handle default model for SDK extension', () => {
@@ -35,7 +37,7 @@ describe('SdkIndexBuilder - Coverage Boost', () => {
   it('should handle multiple roles and complex role names', () => {
     const roles = ['admin', 'team-member', 'project-viewer'];
     const builder = new SdkIndexBuilder([], 'test-api', roles);
-    const schema = (builder as unknown as { getSchema(): any }).getSchema();
+    const schema = (builder as unknown as { getSchema(): Record<string, unknown> }).getSchema();
 
     const rolesInit = (
       (
@@ -67,9 +69,10 @@ describe('SdkIndexBuilder - Coverage Boost', () => {
       { name: 'Team', api: true, extended: true, fields: {} } as unknown as ModelDef,
     ];
     const builder = new SdkIndexBuilder(models, 'user-api');
-    const schema = (builder as unknown as { getSchema(): any }).getSchema();
+    const schema = (builder as unknown as { getSchema(): Record<string, unknown> }).getSchema();
 
-    expect(schema.classes[0].properties.length).toBe(1); // Only 'roles' property remains
-    expect(schema.imports.length).toBe(2); // sdk-core + UserSDK
+    expect((schema.classes as unknown[]).length).toBe(1);
+    expect((schema.classes as { properties: unknown[] }[])[0].properties.length).toBe(1); // Only 'roles' property remains
+    expect((schema.imports as unknown[]).length).toBe(2); // sdk-core + UserSDK
   });
 });

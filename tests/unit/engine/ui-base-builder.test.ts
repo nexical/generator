@@ -47,7 +47,7 @@ describe('UiBaseBuilder', () => {
     fs.writeFileSync(path.join(modulePath, 'ui.yaml'), 'invalid: yaml: :');
     const builder = new TestUiBuilder('test-ui', {}, modulePath);
     builder.exposeLoadUiConfig();
-    expect((builder as any).uiConfig).toEqual({});
+    expect((builder as unknown as { uiConfig: Record<string, unknown> }).uiConfig).toEqual({});
   });
 
   it('should handle missing models.yaml in resolveModels', () => {

@@ -41,6 +41,9 @@ export class ActorBuilder extends BaseBuilder {
       const actorName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
 
       let body = '';
+      const roleCleanup = !model.fields.role
+        ? 'if (factoryParams.role) delete factoryParams.role;'
+        : '';
 
       if (config.strategy === 'login') {
         const idField = config.fields?.identifier || 'email';
@@ -51,7 +54,7 @@ export class ActorBuilder extends BaseBuilder {
           modelName: model.name,
           actorName,
           idField,
-          hasRoleField: String(!!model.fields.role),
+          roleCleanup,
         }).raw;
       } else if (config.strategy === 'api-key') {
         const keyModel = config.fields?.keyModel;
@@ -70,7 +73,7 @@ export class ActorBuilder extends BaseBuilder {
           actorName,
           keyModelProp,
           ownerField,
-          hasRoleField: String(!!model.fields.role),
+          roleCleanup,
         }).raw;
       } else if (config.strategy === 'bearer') {
         const tokenModel = config.fields?.tokenModel || model.name;
@@ -114,7 +117,7 @@ export class ActorBuilder extends BaseBuilder {
           keyField,
           hashLogic,
           role: model.actor.role || actorName.toUpperCase(),
-          hasRoleField: String(!!model.fields.role),
+          roleCleanup,
         }).raw;
       }
 

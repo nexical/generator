@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { auditAgentModule } from '../../../src/lib/audit-agent.js';
 import { ModuleLocator } from '../../../src/lib/module-locator.js';
+import { type BaseCommand } from '@nexical/cli-core';
 import fs from 'node:fs';
 import YAML from 'yaml';
 
@@ -17,8 +18,15 @@ vi.mock('../../../src/lib/module-locator.js', () => ({
   },
 }));
 
+interface MockCommand {
+  info: ReturnType<typeof vi.fn>;
+  success: ReturnType<typeof vi.fn>;
+  warn: ReturnType<typeof vi.fn>;
+  error: ReturnType<typeof vi.fn>;
+}
+
 describe('auditAgentModule Unit', () => {
-  let command: Record<string, unknown>;
+  let command: MockCommand;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -27,7 +35,7 @@ describe('auditAgentModule Unit', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    } as unknown as Record<string, unknown>;
+    } as unknown as MockCommand;
   });
 
   it('should pass for valid agents.yaml', async () => {
@@ -42,7 +50,7 @@ describe('auditAgentModule Unit', () => {
       return 'class TestAgent extends JobProcessor { process() {} }';
     });
 
-    await auditAgentModule(command as any, 'test-api', {});
+    await auditAgentModule(command as unknown as BaseCommand, 'test-api', {});
 
     expect(command.success).toHaveBeenCalledWith(expect.stringContaining('Audit passed'));
   });
@@ -53,7 +61,7 @@ describe('auditAgentModule Unit', () => {
     ]);
     vi.mocked(fs.existsSync).mockReturnValue(false);
 
-    await auditAgentModule(command as any, 'test-api', {});
+    await auditAgentModule(command as unknown as BaseCommand, 'test-api', {});
 
     expect(command.error).toHaveBeenCalledWith(expect.stringContaining('Audit failed'));
   });
@@ -69,7 +77,7 @@ describe('auditAgentModule Unit', () => {
       }),
     );
 
-    await auditAgentModule(command as any, 'test-api', {});
+    await auditAgentModule(command as unknown as BaseCommand, 'test-api', {});
 
     expect(command.info).toHaveBeenCalledWith(expect.stringContaining('Schema validation issues'));
   });
@@ -85,7 +93,7 @@ describe('auditAgentModule Unit', () => {
       }),
     );
 
-    await auditAgentModule(command as any, 'test-api', {});
+    await auditAgentModule(command as unknown as BaseCommand, 'test-api', {});
 
     expect(command.warn).toHaveBeenCalledWith(expect.stringContaining('Missing: src/agent'));
   });
@@ -102,7 +110,7 @@ describe('auditAgentModule Unit', () => {
       return 'invalid content';
     });
 
-    await auditAgentModule(command as any, 'test-api', {});
+    await auditAgentModule(command as unknown as BaseCommand, 'test-api', {});
 
     expect(command.error).toHaveBeenCalledWith(
       expect.stringContaining('Invalid PersistentAgent implementation'),
@@ -116,7 +124,7 @@ describe('auditAgentModule Unit', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue('invalid: yaml: :');
 
-    await auditAgentModule(command as any, 'test-api', {});
+    await auditAgentModule(command as unknown as BaseCommand, 'test-api', {});
 
     expect(command.error).toHaveBeenCalledWith(expect.stringContaining('Parse error'));
   });
@@ -133,7 +141,7 @@ describe('auditAgentModule Unit', () => {
       return 'class MyObjAgent extends JobProcessor { process() {} }';
     });
 
-    await auditAgentModule(command as any, 'test-api', { schema: true });
+    await auditAgentModule(command as unknown as BaseCommand, 'test-api', { schema: true });
 
     expect(command.success).toHaveBeenCalledWith(
       expect.stringContaining('Schema valid (1 agents)'),
@@ -152,7 +160,7 @@ describe('auditAgentModule Unit', () => {
       return 'invalid content';
     });
 
-    await auditAgentModule(command as any, 'test-api', {});
+    await auditAgentModule(command as unknown as BaseCommand, 'test-api', {});
 
     expect(command.error).toHaveBeenCalledWith(
       expect.stringContaining('Invalid JobProcessor implementation'),

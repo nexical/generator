@@ -70,7 +70,7 @@ describe('AuditAgent - Coverage Boost', () => {
     vi.mocked(ModuleLocator.expand).mockResolvedValue([
       { name: 'test-api', path: '/test-api', app: 'backend' },
     ]);
-    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => {
       if (String(p).endsWith('agents.yaml')) return true;
       if (String(p).includes('src/agent/MyJob.ts')) return true;
       return false;
@@ -79,7 +79,7 @@ describe('AuditAgent - Coverage Boost', () => {
     const yaml = YAML.stringify({
       agents: [{ name: 'MyJob', type: 'job' }],
     });
-    vi.mocked(fs.readFileSync).mockImplementation((p: any) => {
+    vi.mocked(fs.readFileSync).mockImplementation((p: unknown) => {
       if (String(p).endsWith('agents.yaml')) return yaml;
       return 'class MyJob { /* missing JobProcessor */ }';
     });
@@ -94,7 +94,7 @@ describe('AuditAgent - Coverage Boost', () => {
     vi.mocked(ModuleLocator.expand).mockResolvedValue([
       { name: 'test-api', path: '/test-api', app: 'backend' },
     ]);
-    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => {
       if (String(p).endsWith('agents.yaml')) return true;
       if (String(p).includes('src/agent/MyPersistent.ts')) return true;
       return false;
@@ -103,7 +103,7 @@ describe('AuditAgent - Coverage Boost', () => {
     const yaml = YAML.stringify({
       agents: [{ name: 'MyPersistent', type: 'persistent' }],
     });
-    vi.mocked(fs.readFileSync).mockImplementation((p: any) => {
+    vi.mocked(fs.readFileSync).mockImplementation((p: unknown) => {
       if (String(p).endsWith('agents.yaml')) return yaml;
       return 'class MyPersistent extends PersistentAgent { run() {} }'; // Valid
     });

@@ -491,7 +491,7 @@ describe('Coverage Gap Sweeper', () => {
       const schema = (builder as any).getSchema(mockNode);
       expect(schema.classes[0].name).toBe('SuperAdminRole');
       expect(schema.classes[0].docs).toEqual([]);
-      expect(schema.imports.length).toBe(1); // Merged
+      expect(schema.imports.length).toBe(2); // Merged + New registry import
     });
   });
 

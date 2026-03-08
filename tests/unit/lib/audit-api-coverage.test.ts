@@ -23,8 +23,8 @@ describe('AuditApi - Coverage Boost', () => {
       success: vi.fn(),
     } as unknown as BaseCommand;
     // Default path mocks
-    vi.mocked(path.join).mockImplementation((...args: any[]) => args.join('/'));
-    vi.mocked(path.basename).mockImplementation((p: any) => String(p).split('/').pop() || '');
+    vi.mocked(path.join).mockImplementation((...args: unknown[]) => args.join('/'));
+    vi.mocked(path.basename).mockImplementation((p: unknown) => String(p).split('/').pop() || '');
   });
 
   it('should report error if models.yaml is missing', async () => {
@@ -38,7 +38,7 @@ describe('AuditApi - Coverage Boost', () => {
   });
 
   it('should report error if models.yaml fail to parse', async () => {
-    vi.mocked(fs.existsSync).mockImplementation((p: any) => String(p).endsWith('models.yaml'));
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => String(p).endsWith('models.yaml'));
     vi.mocked(fs.readFileSync).mockReturnValue('invalid: yaml: :');
     const issues = await auditModule(
       mockCommand,
@@ -49,7 +49,7 @@ describe('AuditApi - Coverage Boost', () => {
   });
 
   it('should validate models.yaml against Zod schema', async () => {
-    vi.mocked(fs.existsSync).mockImplementation((p: any) => String(p).endsWith('models.yaml'));
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => String(p).endsWith('models.yaml'));
     // PrismaModelSchema requires 'fields'
     vi.mocked(fs.readFileSync).mockReturnValue('models: { User: {} }');
     const issues = await auditModule(
@@ -61,7 +61,7 @@ describe('AuditApi - Coverage Boost', () => {
   });
 
   it('should report unknown types and roles in semantics check', async () => {
-    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => {
       if (String(p).endsWith('models.yaml')) return true;
       if (String(p).includes('/src/roles')) return false; // skip role scan for now
       return false;
@@ -91,7 +91,7 @@ describe('AuditApi - Coverage Boost', () => {
   });
 
   it('should validate api.yaml semantics', async () => {
-    vi.mocked(fs.existsSync).mockImplementation((p: any) => {
+    vi.mocked(fs.existsSync).mockImplementation((p: unknown) => {
       if (String(p).endsWith('models.yaml')) return true;
       if (String(p).endsWith('api.yaml')) return true;
       return false;
@@ -102,7 +102,7 @@ describe('AuditApi - Coverage Boost', () => {
       User: [{ path: '/test', method: 'GET', verb: 'GET', input: 'UnknownInput' }],
     };
 
-    vi.mocked(fs.readFileSync).mockImplementation((p: any) => {
+    vi.mocked(fs.readFileSync).mockImplementation((p: unknown) => {
       if (String(p).endsWith('models.yaml')) return YAML.stringify(models);
       if (String(p).endsWith('api.yaml')) return YAML.stringify(api);
       return '';
@@ -129,7 +129,7 @@ describe('AuditApi - Coverage Boost', () => {
     ]);
 
     vi.mocked(fs.existsSync).mockImplementation(
-      (p: any) => String(p).includes('api-1') && String(p).endsWith('models.yaml'),
+      (p: unknown) => String(p).includes('api-1') && String(p).endsWith('models.yaml'),
     );
     vi.mocked(fs.readFileSync).mockReturnValue('models: {}');
 
