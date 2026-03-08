@@ -3,17 +3,17 @@ import path from 'node:path';
 import { logger } from '@nexical/cli-core';
 
 export class Formatter {
-  private static configCache: prettier.Options | null = null;
-  private static hasCheckedConfig = false;
+  private static configCache = new Map<string, prettier.Options | null>();
 
   static async format(content: string, filePath: string): Promise<string> {
-    if (!this.hasCheckedConfig) {
-      // Try to resolve config from the project root or generator root
-      const configFile = await prettier.resolveConfigFile(filePath);
-      if (configFile) {
-        this.configCache = await prettier.resolveConfig(configFile);
+    const configFile = await prettier.resolveConfigFile(filePath);
+    let config: prettier.Options | null = null;
+
+    if (configFile) {
+      if (!this.configCache.has(configFile)) {
+        this.configCache.set(configFile, await prettier.resolveConfig(configFile));
       }
-      this.hasCheckedConfig = true;
+      config = this.configCache.get(configFile) || null;
     }
 
     try {
@@ -27,9 +27,9 @@ export class Formatter {
 
       // Allow prettier to infer if it can
       const options: prettier.Options = {
-        ...this.configCache,
+        ...config,
         filepath: filePath,
-        parser: this.configCache?.parser || parser,
+        parser: config?.parser || parser,
       };
 
       return await prettier.format(content, options);

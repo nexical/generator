@@ -27,10 +27,7 @@ describe('Formatter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset the static cache state specifically
-    // @ts-expect-error - testing invalid assignment
-    Formatter.hasCheckedConfig = false;
-    // @ts-expect-error - testing invalid assignment
-    Formatter.configCache = null;
+    (Formatter as unknown as { configCache: Map<string, unknown> }).configCache.clear();
   });
 
   it('should format code with resolved config', async () => {
@@ -68,18 +65,17 @@ describe('Formatter', () => {
   it('should reuse config cache once loaded', async () => {
     // Clear mocks before this test to avoid carryover from previous tests in same file
     vi.mocked(prettier.resolveConfigFile).mockClear();
-    vi.mocked(prettier.resolveConfigFile).mockResolvedValue(null);
+    vi.mocked(prettier.resolveConfigFile).mockResolvedValue('/path/to/.prettierrc');
+    vi.mocked(prettier.resolveConfig).mockResolvedValue({ semi: false });
     vi.mocked(prettier.format).mockResolvedValue('ok');
 
     // Reset state before this specific test case to be sure
-    // @ts-expect-error - testing invalid assignment
-    Formatter.hasCheckedConfig = false;
+    (Formatter as unknown as { configCache: Map<string, unknown> }).configCache.clear();
 
     await Formatter.format('c1', 'f1.ts');
-    // @ts-expect-error - testing invalid assignment
-    Formatter.hasCheckedConfig = true; // explicitly set it for the 2nd call to be absolutely sure
     await Formatter.format('c2', 'f2.ts');
 
-    expect(prettier.resolveConfigFile).toHaveBeenCalledTimes(1);
+    expect(prettier.resolveConfigFile).toHaveBeenCalledTimes(2);
+    expect(prettier.resolveConfig).toHaveBeenCalledTimes(1);
   });
 });

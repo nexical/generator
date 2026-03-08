@@ -37,7 +37,9 @@ import { Normalizer } from '../utils/normalizer.js';
 import { toPascalCase } from '../utils/string.js';
 
 const isRealNode = (node: unknown): node is Node =>
-  node != null && typeof (node as any).getKind === 'function';
+  node != null &&
+  typeof node === 'object' &&
+  typeof (node as Record<string, unknown>).getKind === 'function';
 
 export class Reconciler {
   static reconcile(sourceFile: NodeContainer, definition: FileDefinition): void {
