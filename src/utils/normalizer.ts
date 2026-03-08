@@ -10,8 +10,8 @@ export class Normalizer {
     return code
       .replace(/['`]/g, '"')
       .replace(/\s+/g, ' ')
-      .replace(/\{\s+/g, '{')
-      .replace(/\s+\}/g, '}')
+      .replace(/\s*\{\s*/g, '{')
+      .replace(/\s*\}\s*/g, '}')
       .trim();
   }
 
