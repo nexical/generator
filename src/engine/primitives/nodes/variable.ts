@@ -32,7 +32,9 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
       ],
       leadingTrivia: this.config.comments
         ? (writer: CodeBlockWriter) => {
-            this.config.comments?.forEach((c) => writer.writeLine(`// ${c}`));
+            this.config.comments?.forEach((c) =>
+              writer.writeLine(c.startsWith('//') ? c : `// ${c}`),
+            );
           }
         : undefined,
     });
@@ -68,10 +70,20 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
     }
 
     // Comments / Trivia
-    if (this.config.comments) {
-      const trivia = this.config.comments.map((c) => `// ${c}`).join('\n') + '\n';
-      if (node.getLeadingCommentRanges().length === 0) {
-        node.replaceWithText(trivia + node.getText());
+    if (this.config.comments && this.config.comments.length > 0) {
+      const currentFullText = node.getFullText();
+      const currentText = node.getText();
+      const currentTrivia = currentFullText.substring(0, currentFullText.indexOf(currentText));
+
+      const missingComments = this.config.comments.filter((c) => {
+        const formatted = c.startsWith('//') ? c : `// ${c}`;
+        return !currentTrivia.includes(formatted);
+      });
+
+      if (missingComments.length > 0) {
+        const newTrivia =
+          missingComments.map((c) => (c.startsWith('//') ? c : `// ${c}`)).join('\n') + '\n';
+        node.replaceWithText(`${newTrivia}${currentText}`);
       }
     }
   }

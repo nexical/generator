@@ -2,7 +2,6 @@ import { SourceFile, InterfaceDeclaration, ModuleDeclaration } from 'ts-morph';
 import { BasePrimitive } from '../core/base-primitive.js';
 import { type InterfaceConfig } from '../../types.js';
 import { type ValidationResult } from '../contracts.js';
-import { Normalizer } from '../../../utils/normalizer.js';
 
 export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, InterfaceConfig> {
   find(parent: SourceFile | ModuleDeclaration) {
@@ -23,7 +22,8 @@ export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, Inte
     });
 
     if (this.config.comments && this.config.comments.length > 0) {
-      const trivia = this.config.comments.map((c) => `// ${c}`).join('\n') + '\n';
+      const trivia =
+        this.config.comments.map((c) => (c.startsWith('//') ? c : `// ${c}`)).join('\n') + '\n';
       // Force rewrite to ensure trivia is captured
       const name = node.getName();
       const text = node.getText();
@@ -78,20 +78,22 @@ export class InterfacePrimitive extends BasePrimitive<InterfaceDeclaration, Inte
       }
     }
 
-    // Comments / Trivia reconciled via replaceWithText to ensure we overwrite correctly.
-    const neuTrivia =
-      this.config.comments && this.config.comments.length > 0
-        ? this.config.comments.map((c) => `// ${c}`).join('\n') + '\n'
-        : '';
+    // Comments / Trivia reconciled via replaceWithText.
+    if (this.config.comments && this.config.comments.length > 0) {
+      const currentFullText = node.getFullText();
+      const currentText = node.getText();
+      const currentTrivia = currentFullText.substring(0, currentFullText.indexOf(currentText));
 
-    // Only update if trivia changed or we need to clear it
-    // Note: getFullText() includes trivia, getText() doesn't.
-    const currentFullText = node.getFullText();
-    const currentText = node.getText();
-    const currentTrivia = currentFullText.substring(0, currentFullText.indexOf(currentText));
+      const missingComments = this.config.comments.filter((c) => {
+        const formatted = c.startsWith('//') ? c : `// ${c}`;
+        return !currentTrivia.includes(formatted);
+      });
 
-    if (Normalizer.normalize(currentTrivia) !== Normalizer.normalize(neuTrivia)) {
-      node.replaceWithText(`${neuTrivia}${currentText}`);
+      if (missingComments.length > 0) {
+        const newTrivia =
+          missingComments.map((c) => (c.startsWith('//') ? c : `// ${c}`)).join('\n') + '\n';
+        node.replaceWithText(`${newTrivia}${currentText}`);
+      }
     }
   }
 
