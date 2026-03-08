@@ -21,7 +21,7 @@ import { auditAgentModule } from '../../../src/lib/audit-agent.js';
 const VALID_AGENTS_YAML = `
 agents:
   - name: CrawlerAgent
-    type: tick
+    type: persistent
     interval: 60
     description: "Crawl web content"
 `;
