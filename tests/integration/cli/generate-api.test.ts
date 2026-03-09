@@ -25,6 +25,8 @@ import { ApiModuleGenerator } from '../../../src/engine/api-module-generator.js'
 const MINIMAL_MODELS_YAML = `
 models:
   Widget:
+    test:
+      actor: user
     fields:
       id:
         type: String

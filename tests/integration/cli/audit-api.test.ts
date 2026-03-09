@@ -22,6 +22,8 @@ import { generateApiModule } from '../../../src/lib/generate-api.js';
 const MINIMAL_MODELS_YAML = `
 models:
   Widget:
+    test:
+      actor: user
     fields:
       id:
         type: String

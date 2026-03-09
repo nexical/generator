@@ -33,9 +33,6 @@ export class TestBuilder extends BaseBuilder {
     const testConfig = this.model.test;
     const actor = testConfig?.actor;
     if (!actor) {
-      console.warn(
-        `[TestBuilder] Warning: Model [${this.model.name}] is missing 'test.actor' config. Falling back to 'user'.`,
-      );
       return 'user';
     }
     return actor;

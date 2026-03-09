@@ -107,9 +107,27 @@ export class TemplateLoader {
             try {
               // Unescape backticks and interpolations for evaluation
               const evalExpression = expression.replace(/\\`/g, '`').replace(/\\\$/g, '$');
-              // Evaluate only this specific expression
-              const fn = new Function(...keys, `return (${evalExpression});`);
-              result += String(fn(...values));
+              // Heuristic: If this was escaped, only evaluate if it references at least one variable
+              // from the variables map. This prevents premature evaluation of things like ${this.name}
+              // or ${crypto.randomUUID()} which are valid JS in the generator context.
+              let shouldEvaluate = !isEscaped;
+              if (isEscaped && keys.length > 0) {
+                const varPattern = new RegExp(
+                  `\\b(${keys.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`,
+                );
+                if (varPattern.test(evalExpression)) {
+                  shouldEvaluate = true;
+                }
+              }
+
+              if (shouldEvaluate) {
+                // Use strict mode to prevent accidental 'this' access
+                const fn = new Function(...keys, `"use strict"; return (${evalExpression});`);
+                result += String(fn(...values));
+              } else {
+                // Keep as literal if it's escaped and doesn't reference our variables
+                result += `\${${expression}}`;
+              }
             } catch (evalError) {
               if (!isEscaped) {
                 console.warn(
