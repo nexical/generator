@@ -78,4 +78,48 @@ describe('TemplateLoader', () => {
     const res2 = TemplateLoader.load('cache.tsf');
     expect(res2.raw).toBe(res1.raw);
   });
+
+  it('should handle escaped interpolations', () => {
+    const templatePath = path.join(tmpDir, 'escaped.tsf');
+    fs.writeFileSync(
+      templatePath,
+      'export default fragment`const x = \\${target.id}; const y = \\`backtick\\`;`;',
+    );
+    (TemplateLoader as unknown as { templatesDir: string }).templatesDir = tmpDir;
+
+    const result = TemplateLoader.load('escaped.tsf', { key: 'val' });
+    expect(result.raw).toContain('const x = ${target.id};');
+    expect(result.raw).toContain('const y = `backtick`;');
+  });
+
+  it('should interpolate escaped variables if they exist in variables map', () => {
+    const templatePath = path.join(tmpDir, 'escaped-vars.tsf');
+    fs.writeFileSync(templatePath, 'export default fragment`const ${key} = "\\${value}";`;');
+    (TemplateLoader as unknown as { templatesDir: string }).templatesDir = tmpDir;
+
+    const result = TemplateLoader.load('escaped-vars.tsf', { key: 'myVar', value: 'myValue' });
+    expect(result.raw).toContain('const myVar = "myValue"');
+  });
+
+  it('should fallback to literal ${} for missing variables', () => {
+    const templatePath = path.join(tmpDir, 'missing.tsf');
+    fs.writeFileSync(templatePath, 'export default fragment`const x = ${missing};`;');
+    (TemplateLoader as unknown as { templatesDir: string }).templatesDir = tmpDir;
+
+    // This should warn in console but return literal
+    const result = TemplateLoader.load('missing.tsf', {});
+    expect(result.raw).toContain('const x = ${missing};');
+  });
+
+  it('should handle complex expressions with escaped backticks', () => {
+    const templatePath = path.join(tmpDir, 'complex.tsf');
+    fs.writeFileSync(
+      templatePath,
+      'export default fragment`const x = \\${mode === "a" ? \\`valA\\` : \\`valB\\`};`;',
+    );
+    (TemplateLoader as unknown as { templatesDir: string }).templatesDir = tmpDir;
+
+    const result = TemplateLoader.load('complex.tsf', { mode: 'a' });
+    expect(result.raw).toContain('const x = valA;');
+  });
 });

@@ -67,9 +67,6 @@ export class TemplateLoader {
         : undefined;
     let innerContent = afterExport.substring(firstBacktick + 1, lastBacktick);
 
-    // Unescape backticks (since we captured raw text from file, and they are escaped in the source to be valid JS)
-    innerContent = innerContent.replace(/\\`/g, '`').replace(/\\\${/g, '${');
-
     // Variable interpolation using JS evaluation to support expressions (ternaries, etc.)
     const keys = Object.keys(variables);
     const values = Object.values(variables);
@@ -78,11 +75,15 @@ export class TemplateLoader {
       let result = '';
       let i = 0;
       while (i < innerContent.length) {
+        let isEscaped = false;
         // Handle escaped characters: \${ and \`
         if (innerContent[i] === '\\' && i + 1 < innerContent.length) {
           const next = innerContent[i + 1];
-          if (next === '$' || next === '`') {
-            result += next;
+          if (next === '$') {
+            isEscaped = true;
+            i++; // Move to '$' and proceed to interpolation check
+          } else if (next === '`') {
+            result += '`';
             i += 2;
             continue;
           }
@@ -104,14 +105,18 @@ export class TemplateLoader {
           if (depth === 0) {
             const expression = innerContent.substring(start, end - 1);
             try {
+              // Unescape backticks and interpolations for evaluation
+              const evalExpression = expression.replace(/\\`/g, '`').replace(/\\\$/g, '$');
               // Evaluate only this specific expression
-              const fn = new Function(...keys, `return (${expression});`);
+              const fn = new Function(...keys, `return (${evalExpression});`);
               result += String(fn(...values));
             } catch (evalError) {
-              console.warn(
-                `[TemplateLoader] Failed to evaluate expression "${expression}" in ${path}:`,
-                evalError,
-              );
+              if (!isEscaped) {
+                console.warn(
+                  `[TemplateLoader] Failed to evaluate expression "${expression}" in ${path}:`,
+                  evalError,
+                );
+              }
               // Fallback to literal if evaluation fails
               result += `\${${expression}}`;
             }
