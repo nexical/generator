@@ -326,14 +326,12 @@ export class Reconciler {
 
           // Only replace if header is missing or different
           const headerText = definition.header.trim() + '\n';
-          const headerMarker = '// GENERATED CODE';
 
-          if (!currentText.includes(headerMarker)) {
+          if (!headerRegex.test(currentText)) {
             // New file or missing header, just insert at 0
             sourceFileNode.insertStatements(0, headerText);
           } else {
-            // Header exists, use more surgical replacement if possible
-            // but for now, the replaceWithText is okay IF we use the LATEST currentText
+            // Header exists, use more surgical replacement
             const cleanText = currentText.replace(headerRegex, '').trimStart();
             sourceFileNode.replaceWithText(headerText + cleanText);
           }
