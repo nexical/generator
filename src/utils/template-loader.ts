@@ -73,25 +73,63 @@ export class TemplateLoader {
     // Variable interpolation using JS evaluation to support expressions (ternaries, etc.)
     const keys = Object.keys(variables);
     const values = Object.values(variables);
+
     try {
-      // Use Function constructor to evaluate template literal string with provided variables as arguments
-      // We wrap innerContent in another backtick layer, so we need to escape backticks and ${ inside it
-      const escapedContent = innerContent.replace(/`/g, '\\`').replace(/\${/g, '\\${');
+      let result = '';
+      let i = 0;
+      while (i < innerContent.length) {
+        // Handle escaped characters: \${ and \`
+        if (innerContent[i] === '\\' && i + 1 < innerContent.length) {
+          const next = innerContent[i + 1];
+          if (next === '$' || next === '`') {
+            result += next;
+            i += 2;
+            continue;
+          }
+        }
 
-      // But wait! We WANT the variables in 'keys' to be interpolated.
-      // So we need to selective UNESCAPE ${key} for each key in keys.
-      let finalContent = escapedContent;
-      for (const key of keys) {
-        finalContent = finalContent.replace(new RegExp(`\\\\\\$\\{${key}\\}`, 'g'), `\${${key}}`);
+        // Handle interpolation: ${ ... }
+        if (innerContent[i] === '$' && innerContent[i + 1] === '{') {
+          const start = i + 2;
+          let depth = 1;
+          let end = start;
+
+          // Find matching closing brace, handling nested ones
+          while (end < innerContent.length && depth > 0) {
+            if (innerContent[end] === '{') depth++;
+            else if (innerContent[end] === '}') depth--;
+            end++;
+          }
+
+          if (depth === 0) {
+            const expression = innerContent.substring(start, end - 1);
+            try {
+              // Evaluate only this specific expression
+              const fn = new Function(...keys, `return (${expression});`);
+              result += String(fn(...values));
+            } catch (evalError) {
+              console.warn(
+                `[TemplateLoader] Failed to evaluate expression "${expression}" in ${path}:`,
+                evalError,
+              );
+              // Fallback to literal if evaluation fails
+              result += `\${${expression}}`;
+            }
+            i = end;
+            continue;
+          }
+        }
+
+        // Regular character
+        result += innerContent[i];
+        i++;
       }
-
-      const fn = new Function(...keys, `return \`${finalContent}\`;`);
-      innerContent = fn(...values);
+      innerContent = result;
     } catch (error) {
       console.warn(
-        `[TemplateLoader] Failed to evaluate template as JS expression, falling back to simple replacement: ${error instanceof Error ? error.message : String(error)}`,
+        `[TemplateLoader] Failed to process template ${path}: ${error instanceof Error ? error.message : String(error)}`,
       );
-      // Fallback to simple replacement for basic cases if evaluation fails
+      // Fallback to simple replacement for basic cases if holistic processing fails
       for (const [key, value] of Object.entries(variables)) {
         innerContent = innerContent.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), String(value));
       }
