@@ -75,7 +75,17 @@ export class TemplateLoader {
     const values = Object.values(variables);
     try {
       // Use Function constructor to evaluate template literal string with provided variables as arguments
-      const fn = new Function(...keys, `return \`${innerContent}\`;`);
+      // We wrap innerContent in another backtick layer, so we need to escape backticks and ${ inside it
+      const escapedContent = innerContent.replace(/`/g, '\\`').replace(/\${/g, '\\${');
+
+      // But wait! We WANT the variables in 'keys' to be interpolated.
+      // So we need to selective UNESCAPE ${key} for each key in keys.
+      let finalContent = escapedContent;
+      for (const key of keys) {
+        finalContent = finalContent.replace(new RegExp(`\\\\\\$\\{${key}\\}`, 'g'), `\${${key}}`);
+      }
+
+      const fn = new Function(...keys, `return \`${finalContent}\`;`);
       innerContent = fn(...values);
     } catch (error) {
       console.warn(

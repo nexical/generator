@@ -271,7 +271,9 @@ export class ApiBuilder extends BaseBuilder {
             }
         }
     }`,
-        protectedStatus: ['anonymous', 'public'].includes(listRole) ? 'protected: false,' : '',
+        protectedStatus: ['anonymous', 'public'].includes(listRole)
+          ? ',\n        protected: false'
+          : '',
       }).raw;
 
       variables.push({
@@ -415,7 +417,9 @@ export class ApiBuilder extends BaseBuilder {
             }
         }
     }`,
-        protectedStatus: ['anonymous', 'public'].includes(getRole) ? 'protected: false,' : '',
+        protectedStatus: ['anonymous', 'public'].includes(getRole)
+          ? ',\n        protected: false'
+          : '',
       }).raw;
 
       variables.push({
@@ -454,7 +458,9 @@ export class ApiBuilder extends BaseBuilder {
             }
         }
     }`,
-        protectedStatus: ['anonymous', 'public'].includes(updateRole) ? 'protected: false,' : '',
+        protectedStatus: ['anonymous', 'public'].includes(updateRole)
+          ? ',\n        protected: false'
+          : '',
       }).raw;
 
       variables.push({
@@ -493,7 +499,9 @@ export class ApiBuilder extends BaseBuilder {
             }
         }
     }`,
-        protectedStatus: ['anonymous', 'public'].includes(deleteRole) ? 'protected: false,' : '',
+        protectedStatus: ['anonymous', 'public'].includes(deleteRole)
+          ? ',\n        protected: false'
+          : '',
       }).raw;
 
       variables.push({
@@ -700,7 +708,9 @@ export class ApiBuilder extends BaseBuilder {
             }
         }
     }`,
-        protectedStatus: ['anonymous', 'public'].includes(role || '') ? 'protected: false,' : '',
+        protectedStatus: ['anonymous', 'public'].includes(role || '')
+          ? ',\n        protected: false'
+          : '',
       }).raw;
       const bodyLoader = verb === 'GET' ? '{}' : 'await context.request.json()';
 
@@ -725,10 +735,9 @@ export class ApiBuilder extends BaseBuilder {
       });
     }
 
-    const sourceText =
-      variables
-        .map((v) => (typeof v.initializer === 'string' ? v.initializer : v.initializer?.raw || ''))
-        .join('\n') + this.model.name;
+    const sourceText = variables
+      .map((v) => (typeof v.initializer === 'string' ? v.initializer : v.initializer?.raw || ''))
+      .join('\n');
 
     const finalImports: ImportConfig[] = [
       { moduleSpecifier: '@/lib/api/api-docs', namedImports: ['defineApi'] },
