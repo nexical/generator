@@ -1,7 +1,8 @@
 /** @vitest-environment node */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Project } from 'ts-morph';
 import { EmailBuilder } from '../../../../src/engine/builders/email-builder.js';
+import { TemplateLoader } from '../../../../src/utils/template-loader.js';
 import * as fs from 'node:fs';
 
 vi.mock('node:fs');
@@ -9,9 +10,15 @@ vi.mock('node:fs');
 describe('EmailBuilder', () => {
   let project: Project;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     project = new Project({ useInMemoryFileSystem: true });
     vi.resetAllMocks();
+    const realFs = await vi.importActual<typeof fs>('node:fs');
+    TemplateLoader.setFileSystem(realFs);
+  });
+
+  afterEach(() => {
+    TemplateLoader.restoreDefaultFileSystem();
   });
 
   it('should generate email templates and init file', async () => {

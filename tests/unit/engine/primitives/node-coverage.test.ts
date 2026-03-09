@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { ImportPrimitive } from '@nexical/generator/engine/primitives/core/import-manager';
-import { ExportPrimitive } from '@nexical/generator/engine/primitives/core/export-manager';
+import { ImportPrimitive } from '@nexical/generator/engine/primitives/core/import-manager.js';
+import { ExportPrimitive } from '@nexical/generator/engine/primitives/core/export-manager.js';
 
 describe('Node Coverage - Core Primitives', () => {
   describe('ImportPrimitive', () => {

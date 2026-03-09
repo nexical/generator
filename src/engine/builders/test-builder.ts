@@ -414,28 +414,18 @@ export class TestBuilder extends BaseBuilder {
         }
 
         // Note: Template literal inside loop string generation
-        return `
-  it('should filter by ${field}', async () => {
-    // Wait to avoid collisions
-    await new Promise(r => setTimeout(r, 10));
-    // Reuse getActorStatement to ensure correct actor context
-    ${this.getActorStatement('list', !!this.getActorRelationSnippet())}
-    ${this.model.test?.actor === 'user' && this.model.role && typeof this.model.role === 'object' && this.model.role.list !== 'admin' ? `// Note: Ensure role allows filtering if restricted` : ''}
-
-    const val1 = ${val1Str};
-    const val2 = ${val2Str};
-
-    const data1 = { ...baseData, ${field}: val1${uniqueInjectionA} };
-    const data2 = { ...baseData, ${field}: val2${uniqueInjectionB} };
-
-    await Factory.create('${camelEntity}', { ...data1${this.getActorRelationSnippet()} });
-    await Factory.create('${camelEntity}', { ...data2${this.getActorRelationSnippet()} });
-
-    const res = await client.get('/api/${kebabEntity}?${field}=' + val1);
-    expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(1);
-    ${assertion1}
-  });`;
+        return TemplateLoader.load('test/shared/filter-test.tsf', {
+          field,
+          actorStatement: this.getActorStatement('list', !!this.getActorRelationSnippet()),
+          camelEntity,
+          kebabEntity,
+          val1Str,
+          val2Str,
+          uniqueInjectionA,
+          uniqueInjectionB,
+          assertion1,
+          actorRelationSnippet: this.getActorRelationSnippet(),
+        }).raw;
       })
       .join('\n');
 

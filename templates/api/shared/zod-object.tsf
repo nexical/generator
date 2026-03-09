@@ -1,0 +1,13 @@
+/** @fragment-contract
+ * @description Zod object schema fragment
+ * @input {string} fields
+ */
+import { fragment } from '@nexical/generator';
+
+declare const fields: string;
+
+export default fragment/* ts */`
+z.object({
+    \${fields}
+})
+`;

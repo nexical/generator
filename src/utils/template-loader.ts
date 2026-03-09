@@ -7,9 +7,23 @@ import { tsx } from '../engine/primitives/jsx/factory.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+export type TemplateFileSystem = {
+  readFileSync(path: string, encoding: 'utf-8'): string;
+  existsSync(path: string): boolean;
+};
+
 export class TemplateLoader {
   private static templatesDir = resolve(__dirname, '../../templates');
   private static activeModulePath: string | undefined;
+  private static fs: TemplateFileSystem = { readFileSync, existsSync };
+
+  static setFileSystem(fs: TemplateFileSystem) {
+    this.fs = fs;
+  }
+
+  static restoreDefaultFileSystem() {
+    this.fs = { readFileSync, existsSync };
+  }
 
   static setModulePath(modulePath: string | undefined) {
     this.activeModulePath = modulePath;
@@ -20,35 +34,57 @@ export class TemplateLoader {
     // If an active module path is set, check if it has an override for this template
     if (this.activeModulePath) {
       const overridePath = join(this.activeModulePath, 'generator/templates', path);
-      if (existsSync(overridePath)) {
+      if (this.fs.existsSync(overridePath)) {
         fullPath = overridePath;
       }
     }
-    const fileContent = readFileSync(fullPath, 'utf-8');
+    const fileContent = this.fs.readFileSync(fullPath, 'utf-8').trim();
     const ext = extname(path);
 
-    // Regex to capture content inside: export default fragment`...`;
-    // Supports optional /* ts */ or /* tsx */ comment
-    // const regex = /export\s+default\s+fragment(?:\/\*\s*(ts|tsx)?\s*\*\/\s*)?`([\s\S]*)`;?\s*$/;
-    // Updated regex to explicitly capture tag if present
-    const regex =
-      /export\s+default\s+fragment\s*(?:\/\*\s*(ts|tsx)\s*\*\/\s*)?`([\s\S]*)`\s*;?\s*$/;
-
-    const match = fileContent.match(regex);
-    if (!match) {
+    const startMatch = fileContent.match(/export\s+default\s+fragment/);
+    if (!startMatch || startMatch.index === undefined) {
       throw new Error(`Invalid template format in ${path}. Must export default fragment\`...\``);
     }
+    const startIndex = startMatch.index;
+    const exportTag = startMatch[0];
 
-    const explicitTag = match[1];
-    let innerContent = match[2].trim();
+    const afterExport = fileContent.substring(startIndex + exportTag.length);
+    const firstBacktick = afterExport.indexOf('`');
+    if (firstBacktick === -1) {
+      throw new Error(`Invalid template format in ${path}. Missing opening backtick.`);
+    }
+
+    const lastBacktick = afterExport.lastIndexOf('`');
+    if (lastBacktick === -1 || lastBacktick === firstBacktick) {
+      throw new Error(`Invalid template format in ${path}. Missing closing backtick.`);
+    }
+
+    const tagContent = afterExport.substring(0, firstBacktick);
+    const explicitTag = tagContent.includes('tsx')
+      ? 'tsx'
+      : tagContent.includes('ts')
+        ? 'ts'
+        : undefined;
+    let innerContent = afterExport.substring(firstBacktick + 1, lastBacktick);
 
     // Unescape backticks (since we captured raw text from file, and they are escaped in the source to be valid JS)
     innerContent = innerContent.replace(/\\`/g, '`').replace(/\\\${/g, '${');
 
-    // Variable interpolation
-    for (const [key, value] of Object.entries(variables)) {
-      // Replace ${key} with value
-      innerContent = innerContent.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value);
+    // Variable interpolation using JS evaluation to support expressions (ternaries, etc.)
+    const keys = Object.keys(variables);
+    const values = Object.values(variables);
+    try {
+      // Use Function constructor to evaluate template literal string with provided variables as arguments
+      const fn = new Function(...keys, `return \`${innerContent}\`;`);
+      innerContent = fn(...values);
+    } catch (error) {
+      console.warn(
+        `[TemplateLoader] Failed to evaluate template as JS expression, falling back to simple replacement: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      // Fallback to simple replacement for basic cases if evaluation fails
+      for (const [key, value] of Object.entries(variables)) {
+        innerContent = innerContent.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), String(value));
+      }
     }
 
     const substrings = [innerContent];

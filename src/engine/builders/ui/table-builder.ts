@@ -11,6 +11,7 @@ import {
 import { Reconciler } from '../../reconciler.js';
 import { toKebabCase, toPascalCase } from '../../../utils/string.js';
 import { LocaleRegistry } from '../../locales/locale-registry.js';
+import { TemplateLoader } from '../../../utils/template-loader.js';
 
 export class TableBuilder extends UiBaseBuilder {
   constructor(
@@ -250,8 +251,8 @@ export class TableBuilder extends UiBaseBuilder {
     ];
 
     // Define columns
-    const columnsDefinition = `[
-      ${columns
+    const columnsDefinition = TemplateLoader.load('ui/table/columns.tsf', {
+      columns: columns
         .map(
           (col) => `{
         accessorKey: '${col}',
@@ -261,43 +262,14 @@ export class TableBuilder extends UiBaseBuilder {
         cell: ({ row }) => <div className="text-body-sm">{String(row.getValue('${col}') || '')}</div>,
       }`,
         )
-        .join(',\n')},
-      {
-        id: 'actions',
-        cell: ({ row }) => {
-          const item = row.original;
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="btn-icon-sm btn-ghost">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="icon-sm" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[160px]">
-                <DropdownMenuLabel className="text-subtle-xs uppercase">{t('${keys.actionsLabel}')}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {canUpdate && (
-                  <DropdownMenuItem onClick={() => setEditingItem(item)} className="gap-2 cursor-pointer">
-                    <Pencil className="icon-xs text-muted-foreground" />
-                    {t('${keys.editAction}')}
-                  </DropdownMenuItem>
-                )}
-                {canDelete && (
-                  <DropdownMenuItem
-                    className="gap-2 text-destructive focus:text-destructive cursor-pointer"
-                    onClick={() => setDeletingItem(item)}
-                  >
-                    <Trash className="icon-xs" />
-                    {t('${keys.deleteAction}')}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
-      },
-    ]`;
+        .join(',\n'),
+      actionsLabel: keys.actionsLabel,
+      editAction: keys.editAction,
+      deleteAction: keys.deleteAction,
+      lowerModelName,
+      modelName,
+      getModuleTypeName: this.getModuleTypeName(),
+    }).raw;
 
     statements.push({
       kind: 'variable',
@@ -312,40 +284,12 @@ export class TableBuilder extends UiBaseBuilder {
     });
 
     // Helper to generate Edit Container (Sheet or Dialog)
-    const editContainer =
-      editMode === 'sheet'
-        ? `<Sheet open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-            <SheetContent className="w-dialog-lg sm:max-w-xl">
-              <SheetHeader>
-                <SheetTitle className="text-heading-md">{t('${keys.editTitle}')}</SheetTitle>
-                <SheetDescription className="text-subtle">{t('${keys.editDesc}')}</SheetDescription>
-              </SheetHeader>
-              <div className="mt-8">
-               {editingItem && (
-                 <${modelName}Form 
-                    id={editingItem.id} 
-                    initialData={editingItem} 
-                    onSuccess={() => setEditingItem(null)} 
-                 />
-               )}
-              </div>
-            </SheetContent>
-           </Sheet>`
-        : `<Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-            <DialogContent className="w-dialog-md">
-              <DialogHeader>
-                <DialogTitle className="text-heading-md">{t('${keys.editTitle}')}</DialogTitle>
-                <DialogDescription className="text-subtle">{t('${keys.editDesc}')}</DialogDescription>
-              </DialogHeader>
-              {editingItem && (
-                 <${modelName}Form 
-                    id={editingItem.id} 
-                    initialData={editingItem} 
-                    onSuccess={() => setEditingItem(null)} 
-                 />
-               )}
-            </DialogContent>
-           </Dialog>`;
+    const editContainer = TemplateLoader.load('ui/table/edit-container.tsf', {
+      editMode,
+      modelName,
+      editTitle: keys.editTitle,
+      editDesc: keys.editDesc,
+    }).raw;
 
     // Return with Data Table AND Modals
     statements.push({

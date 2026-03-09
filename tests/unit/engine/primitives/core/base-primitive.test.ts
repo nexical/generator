@@ -2,8 +2,8 @@
 /* eslint-disable */
 import { describe, it, expect } from 'vitest';
 import { Node, Project } from 'ts-morph';
-import { BasePrimitive } from '@nexical/generator/engine/primitives/core/base-primitive';
-import { ValidationResult } from '@nexical/generator/engine/primitives/contracts';
+import { BasePrimitive } from '@nexical/generator/engine/primitives/core/base-primitive.js';
+import { ValidationResult } from '@nexical/generator/engine/primitives/contracts.js';
 
 class TestPrimitive extends BasePrimitive<Node, { name: string }> {
   find(parent: Node): Node | undefined {

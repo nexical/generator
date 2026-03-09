@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { createTestProject } from '@nexical/generator-tests/helpers/test-project';
-import { MethodPrimitive } from '@nexical/generator/engine/primitives/nodes/method';
+import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
+import { MethodPrimitive } from '@nexical/generator/engine/primitives/nodes/method.js';
 
 describe('MethodPrimitive', () => {
   it('should add a method to a class', () => {

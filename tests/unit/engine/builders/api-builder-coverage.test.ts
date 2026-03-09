@@ -5,7 +5,7 @@ import type { ModelDef } from '../../../../src/engine/types.js';
 
 vi.mock('../../../../src/utils/template-loader.js', () => ({
   TemplateLoader: {
-    load: vi.fn((path, vars) => `({ path: "${path}", vars: ${JSON.stringify(vars)} })`),
+    load: vi.fn((path, vars) => ({ raw: `({ path: "${path}", vars: ${JSON.stringify(vars)} })` })),
   },
 }));
 

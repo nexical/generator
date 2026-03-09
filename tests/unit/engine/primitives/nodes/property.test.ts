@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { createTestProject } from '@nexical/generator-tests/helpers/test-project';
-import { PropertyPrimitive } from '@nexical/generator/engine/primitives/nodes/property';
+import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
+import { PropertyPrimitive } from '@nexical/generator/engine/primitives/nodes/property.js';
 import { Scope, PropertyDeclaration } from 'ts-morph';
 
 describe('PropertyPrimitive', () => {

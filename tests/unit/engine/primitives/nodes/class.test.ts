@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { createTestProject } from '@nexical/generator-tests/helpers/test-project';
-import { ClassPrimitive } from '@nexical/generator/engine/primitives/nodes/class';
+import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
+import { ClassPrimitive } from '@nexical/generator/engine/primitives/nodes/class.js';
 
 describe('ClassPrimitive', () => {
   it('should create a new class if it does not exist', () => {

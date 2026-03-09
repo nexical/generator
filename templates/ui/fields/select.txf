@@ -1,0 +1,22 @@
+/** @fragment-contract
+ * @description Select component fragment for Controller render prop
+ * @input {string} labelKey
+ * @input {string} options
+ */
+import { fragment } from '@nexical/generator';
+
+declare const labelKey: string;
+declare const options: string;
+
+export default fragment/* tsx */`
+({ field }) => (
+  <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+    <SelectTrigger className="w-full">
+      <SelectValue placeholder={t('\${labelKey}')} />
+    </SelectTrigger>
+    <SelectContent>
+      \${options}
+    </SelectContent>
+  </Select>
+)
+`;

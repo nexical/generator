@@ -1,0 +1,28 @@
+/** @fragment-contract
+ * @description API Documentation object
+ * @input {string} summary
+ * @input {string} tags
+ * @input {string} parameters
+ * @input {string} requestBody
+ * @input {string} responses
+ * @input {string} protected
+ */
+import { fragment } from '@nexical/generator';
+
+declare const summary: string;
+declare const tags: string;
+declare const parameters: string;
+declare const requestBody: string;
+declare const responses: string;
+declare const protectedStatus: string;
+
+export default fragment/* ts */`
+{
+    summary: "\${summary}",
+    tags: [\${tags}],
+    \${parameters}
+    \${requestBody}
+    responses: \${responses}
+    \${protectedStatus}
+}
+`;

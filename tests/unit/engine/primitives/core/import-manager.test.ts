@@ -1,9 +1,9 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SourceFile } from 'ts-morph';
-import { createTestProject } from '@nexical/generator-tests/helpers/test-project';
-import { ImportPrimitive } from '@nexical/generator/engine/primitives/core/import-manager';
-import { Normalizer } from '@nexical/generator/utils/normalizer';
+import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
+import { ImportPrimitive } from '@nexical/generator/engine/primitives/core/import-manager.js';
+import { Normalizer } from '@nexical/generator/utils/normalizer.js';
 
 describe('ImportPrimitive', () => {
   let sourceFile: SourceFile;

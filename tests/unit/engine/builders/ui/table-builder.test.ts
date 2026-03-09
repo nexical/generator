@@ -1,7 +1,8 @@
 /** @vitest-environment node */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Project } from 'ts-morph';
 import { TableBuilder } from '../../../../../src/engine/builders/ui/table-builder.js';
+import { TemplateLoader } from '../../../../../src/utils/template-loader.js';
 import * as fs from 'node:fs';
 
 vi.mock('node:fs');
@@ -9,9 +10,15 @@ vi.mock('node:fs');
 describe('TableBuilder', () => {
   let project: Project;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     project = new Project({ useInMemoryFileSystem: true });
     vi.resetAllMocks();
+    const realFs = await vi.importActual<typeof fs>('node:fs');
+    TemplateLoader.setFileSystem(realFs);
+  });
+
+  afterEach(() => {
+    TemplateLoader.restoreDefaultFileSystem();
   });
 
   it('should generate table component for models', async () => {
@@ -29,6 +36,9 @@ models:
       email: { type: String }
       role: { type: String }
 `;
+      }
+      if (String(path).endsWith('.tsf') || String(path).endsWith('.txf')) {
+        return fs.readFileSync(path, 'utf-8');
       }
       return '';
     });

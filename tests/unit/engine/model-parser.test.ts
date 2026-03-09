@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ModelParser } from '@nexical/generator/engine/model-parser';
+import { ModelParser } from '@nexical/generator/engine/model-parser.js';
 import fs from 'fs';
 
 const mocks = vi.hoisted(() => {

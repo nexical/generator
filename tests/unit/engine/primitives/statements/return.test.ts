@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { ReturnStatementPrimitive } from '@nexical/generator/engine/primitives/statements/return';
+import { ReturnStatementPrimitive } from '@nexical/generator/engine/primitives/statements/return.js';
 
 describe('ReturnStatementPrimitive', () => {
   it('should generate a return statement with expression', () => {

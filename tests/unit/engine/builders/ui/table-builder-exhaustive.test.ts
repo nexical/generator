@@ -4,19 +4,23 @@ import { Project } from 'ts-morph';
 import { TableBuilder } from '../../../../../src/engine/builders/ui/table-builder.js';
 import * as fs from 'node:fs';
 import { ModuleLocator } from '../../../../../src/lib/module-locator.js';
+import { TemplateLoader } from '../../../../../src/utils/template-loader.js';
 
 vi.mock('node:fs');
 
 describe('TableBuilder - Exhaustive Coverage', () => {
   let project: Project;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     project = new Project({ useInMemoryFileSystem: true });
     vi.resetAllMocks();
+    const realFs = await vi.importActual<typeof fs>('node:fs');
+    TemplateLoader.setFileSystem(realFs);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    TemplateLoader.restoreDefaultFileSystem();
   });
 
   it('should handle no models', async () => {
@@ -58,6 +62,9 @@ describe('TableBuilder - Exhaustive Coverage', () => {
       if (String(path).endsWith('ui.yaml')) return 'tables: { User: { editMode: "dialog" } }';
       if (String(path).endsWith('models.yaml'))
         return 'models: { User: { role: "admin", fields: { name: string } } }';
+      if (String(path).endsWith('.tsf') || String(path).endsWith('.txf')) {
+        return fs.readFileSync(path, 'utf-8');
+      }
       return '';
     });
     vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({

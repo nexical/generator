@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { FunctionPrimitive } from '@nexical/generator/engine/primitives/nodes/function';
-import { type FunctionConfig } from '@nexical/generator/engine/types';
+import { FunctionPrimitive } from '@nexical/generator/engine/primitives/nodes/function.js';
+import { type FunctionConfig } from '@nexical/generator/engine/types.js';
 
 describe('FunctionPrimitive Coverage', () => {
   // Helper to create basic setup

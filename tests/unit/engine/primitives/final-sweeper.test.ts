@@ -2,13 +2,13 @@
 /* eslint-disable */
 import { describe, it, expect } from 'vitest';
 import { Project, Scope } from 'ts-morph';
-import { ImportPrimitive as ImportManager } from '@nexical/generator/engine/primitives/core/import-manager';
-import { ExportPrimitive as ExportManager } from '@nexical/generator/engine/primitives/core/export-manager';
-import { ReturnStatementPrimitive } from '@nexical/generator/engine/primitives/statements/return';
-import { ClassPrimitive } from '@nexical/generator/engine/primitives/nodes/class';
-import { PropertyPrimitive } from '@nexical/generator/engine/primitives/nodes/property';
-import { AccessorPrimitive } from '@nexical/generator/engine/primitives/nodes/accessor';
-import { MethodPrimitive } from '@nexical/generator/engine/primitives/nodes/method';
+import { ImportPrimitive as ImportManager } from '@nexical/generator/engine/primitives/core/import-manager.js';
+import { ExportPrimitive as ExportManager } from '@nexical/generator/engine/primitives/core/export-manager.js';
+import { ReturnStatementPrimitive } from '@nexical/generator/engine/primitives/statements/return.js';
+import { ClassPrimitive } from '@nexical/generator/engine/primitives/nodes/class.js';
+import { PropertyPrimitive } from '@nexical/generator/engine/primitives/nodes/property.js';
+import { AccessorPrimitive } from '@nexical/generator/engine/primitives/nodes/accessor.js';
+import { MethodPrimitive } from '@nexical/generator/engine/primitives/nodes/method.js';
 
 describe('Final Primitives Sweeper', () => {
   const createProject = (code: string) => {

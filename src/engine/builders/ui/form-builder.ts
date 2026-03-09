@@ -16,6 +16,7 @@ import { toKebabCase, toPascalCase } from '../../../utils/string.js';
 import { ZodHelper } from '../utils/zod-helper.js';
 import { JsxElementPrimitive } from '../../primitives/jsx/element.js';
 import { LocaleRegistry } from '../../locales/locale-registry.js';
+import { TemplateLoader } from '../../../utils/template-loader.js';
 
 export class FormBuilder extends UiBaseBuilder {
   constructor(
@@ -205,32 +206,14 @@ export class FormBuilder extends UiBaseBuilder {
       },
       'type FormData = z.infer<typeof schema>;',
       // Hook form raw statement for now as it's complex destructuring
-      `const {
-        register,
-        handleSubmit,
-        reset,
-        control,
-        formState: { errors, isSubmitting },
-    } = useForm<FormData>({
-        resolver: zodResolver(schema) as unknown as Resolver<FormData>,
-        defaultValues: (initialData as unknown as FormData) || {},
-    });`,
-      `useEffect(() => {
-        if (initialData) {
-            reset(initialData as unknown as FormData);
-        }
-    }, [initialData, reset]);`,
-      `const onSubmit = (data: FormData) => {
-        if (isEdit && id) {
-            updateMutation.mutate({ id, data: data as unknown as ${this.getModuleTypeName()}.Update${toPascalCase(
-              model.name,
-            )}DTO }, { onSuccess });
-        } else {
-            createMutation.mutate(data as unknown as ${this.getModuleTypeName()}.Create${toPascalCase(
-              model.name,
-            )}DTO, { onSuccess });
-        }
-    };`,
+      TemplateLoader.load('ui/form-hooks.tsf', {
+        initialData: 'initialData',
+        isEdit: 'isEdit',
+        id: 'id',
+        getModuleTypeName: this.getModuleTypeName(),
+        modelName: toPascalCase(model.name),
+        onSuccess: 'onSuccess',
+      }),
     ];
 
     // Build JSX Fields
@@ -389,16 +372,15 @@ export class FormBuilder extends UiBaseBuilder {
                         name: 'render',
                         value: {
                           kind: 'expression',
-                          expression: `({ field }) => (
-                            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder={t('${key}')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                ${f.enumValues.map((val) => `<SelectItem value="${val}">{${model.name.endsWith('ModuleTypes') ? model.name : 'UserModuleTypes'}.${toPascalCase(f.type)}.${val}}</SelectItem>`).join('\n                                ')}
-                              </SelectContent>
-                            </Select>
-                          )`,
+                          expression: TemplateLoader.load('ui/fields/select.txf', {
+                            labelKey: key,
+                            options: f.enumValues
+                              .map(
+                                (val) =>
+                                  `<SelectItem value="${val}">{${model.name.endsWith('ModuleTypes') ? model.name : 'UserModuleTypes'}.${toPascalCase(f.type)}.${val}}</SelectItem>`,
+                              )
+                              .join('\n                                '),
+                          }).raw,
                         },
                       },
                     ],

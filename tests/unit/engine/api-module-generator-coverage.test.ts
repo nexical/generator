@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ApiModuleGenerator } from '../../../src/engine/api-module-generator.js';
+import { TemplateLoader } from '../../../src/utils/template-loader.js';
 import fs from 'node:fs';
 import { type BaseCommand } from '@nexical/cli-core';
 import { ModelParser } from '../../../src/engine/model-parser.js';
@@ -131,7 +132,7 @@ describe('ApiModuleGenerator Coverage', () => {
   const modulePath = '/tmp/test-api';
   let command: Record<string, unknown>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     command = {
       name: 'test-api',
@@ -149,6 +150,14 @@ describe('ApiModuleGenerator Coverage', () => {
     vi.mocked(fs.readdirSync).mockImplementation((() => []) as unknown as typeof fs.readdirSync);
     vi.mocked(fs.lstatSync).mockReturnValue({ isDirectory: () => false } as unknown as fs.Stats);
     vi.mocked(fs.existsSync).mockReturnValue(false);
+
+    // Set real FS for TemplateLoader
+    const realFs = await vi.importActual<typeof fs>('node:fs');
+    TemplateLoader.setFileSystem(realFs);
+  });
+
+  afterEach(() => {
+    TemplateLoader.restoreDefaultFileSystem();
   });
 
   const setupMocks = (generator: ApiModuleGenerator, roleName: string = 'admin') => {

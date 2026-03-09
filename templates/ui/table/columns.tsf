@@ -1,0 +1,60 @@
+/** @fragment-contract
+ * @description Data Table column definitions
+ * @input {string} columns
+ * @input {string} actionsLabel
+ * @input {string} editAction
+ * @input {string} deleteAction
+ * @input {string} lowerModelName
+ * @input {string} modelName
+ * @input {string} getModuleTypeName
+ */
+import { fragment } from '@nexical/generator';
+
+declare const columns: string;
+declare const actionsLabel: string;
+declare const editAction: string;
+declare const deleteAction: string;
+declare const lowerModelName: string;
+declare const modelName: string;
+declare const getModuleTypeName: string;
+
+export default fragment/* tsx */`
+[
+  \${columns},
+  {
+    id: 'actions',
+    cell: ({ row }) => {
+      const item = row.original;
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="btn-icon-sm btn-ghost">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="icon-sm" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[160px]">
+            <DropdownMenuLabel className="text-subtle-xs uppercase">{t('\${actionsLabel}')}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {canUpdate && (
+              <DropdownMenuItem onClick={() => setEditingItem(item)} className="gap-2 cursor-pointer">
+                <Pencil className="icon-xs text-muted-foreground" />
+                {t('\${editAction}')}
+              </DropdownMenuItem>
+            )}
+            {canDelete && (
+              <DropdownMenuItem
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                onClick={() => setDeletingItem(item)}
+              >
+                <Trash className="icon-xs" />
+                {t('\${deleteAction}')}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  },
+]
+`;

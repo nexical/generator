@@ -1,0 +1,44 @@
+/** @fragment-contract
+ * @description useForm, useEffect, and onSubmit hooks for forms
+ * @input {string} initialData
+ * @input {string} isEdit
+ * @input {string} id
+ * @input {string} getModuleTypeName
+ * @input {string} modelName
+ * @input {string} onSuccess
+ */
+import { fragment } from '@nexical/generator';
+
+declare const initialData: string;
+declare const isEdit: string;
+declare const id: string;
+declare const getModuleTypeName: string;
+declare const modelName: string;
+declare const onSuccess: string;
+
+export default fragment/* ts */`
+const {
+    register,
+    handleSubmit,
+    reset,
+    control,
+    formState: { errors, isSubmitting },
+} = useForm<FormData>({
+    resolver: zodResolver(schema) as unknown as Resolver<FormData>,
+    defaultValues: (\${initialData} as unknown as FormData) || {},
+});
+
+useEffect(() => {
+    if (\${initialData}) {
+        reset(\${initialData} as unknown as FormData);
+    }
+}, [\${initialData}, reset]);
+
+const onSubmit = (data: FormData) => {
+    if (\${isEdit} && \${id}) {
+        updateMutation.mutate({ id: \${id}, data: data as unknown as \${getModuleTypeName}.Update\${modelName}DTO }, { onSuccess: \${onSuccess} });
+    } else {
+        createMutation.mutate(data as unknown as \${getModuleTypeName}.Create\${modelName}DTO, { onSuccess: \${onSuccess} });
+    }
+};
+`;

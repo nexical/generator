@@ -4,6 +4,7 @@ import { Project } from 'ts-morph';
 import { FormBuilder } from '../../../../../src/engine/builders/ui/form-builder.js';
 import * as fs from 'node:fs';
 import { ModelParser } from '../../../../../src/engine/model-parser.js';
+import { TemplateLoader } from '../../../../../src/utils/template-loader.js';
 import { type ModelDef } from '../../../../../src/engine/types.js';
 
 vi.mock('node:fs');
@@ -11,13 +12,16 @@ vi.mock('node:fs');
 describe('FormBuilder - Exhaustive Coverage', () => {
   let project: Project;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     project = new Project({ useInMemoryFileSystem: true });
     vi.resetAllMocks();
+    const realFs = await vi.importActual<typeof fs>('node:fs');
+    TemplateLoader.setFileSystem(realFs);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    TemplateLoader.restoreDefaultFileSystem();
   });
 
   it('should skip models not in forms config', async () => {
@@ -30,6 +34,9 @@ models:
   InForm: { api: true, fields: {} }
   NotInForm: { api: true, fields: {} }
 `;
+      }
+      if (String(path).endsWith('.tsf') || String(path).endsWith('.txf')) {
+        return fs.readFileSync(path, 'utf-8');
       }
       return '';
     });
@@ -114,6 +121,9 @@ models:
       secret: { type: String, private: true } # Filtered out (private and NOT in forms)
       friends: { type: User, isRelation: true } # Filtered out
 `;
+      }
+      if (String(path).endsWith('.tsf') || String(path).endsWith('.txf')) {
+        return fs.readFileSync(path, 'utf-8');
       }
       return '';
     });

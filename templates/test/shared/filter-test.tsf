@@ -1,0 +1,48 @@
+/** @fragment-contract
+ * @description Filter test case for list operation
+ * @input {string} field
+ * @input {string} actorStatement
+ * @input {string} camelEntity
+ * @input {string} kebabEntity
+ * @input {string} val1Str
+ * @input {string} val2Str
+ * @input {string} uniqueInjectionA
+ * @input {string} uniqueInjectionB
+ * @input {string} assertion1
+ * @input {string} actorRelationSnippet
+ */
+import { fragment } from '@nexical/generator';
+
+declare const field: string;
+declare const actorStatement: string;
+declare const camelEntity: string;
+declare const kebabEntity: string;
+declare const val1Str: string;
+declare const val2Str: string;
+declare const uniqueInjectionA: string;
+declare const uniqueInjectionB: string;
+declare const assertion1: string;
+declare const actorRelationSnippet: string;
+
+export default fragment/* ts */`
+it('should filter by \${field}', async () => {
+    // Wait to avoid collisions
+    await new Promise(r => setTimeout(r, 10));
+    
+    \${actorStatement}
+
+    const val1 = \${val1Str};
+    const val2 = \${val2Str};
+
+    const data1 = { ...baseData, \${field}: val1\${uniqueInjectionA} };
+    const data2 = { ...baseData, \${field}: val2\${uniqueInjectionB} };
+
+    await Factory.create('\${camelEntity}', { ...data1\${actorRelationSnippet} });
+    await Factory.create('\${camelEntity}', { ...data2\${actorRelationSnippet} });
+
+    const res = await client.get('/api/\${kebabEntity}?\${field}=' + val1);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    \${assertion1}
+});
+`;

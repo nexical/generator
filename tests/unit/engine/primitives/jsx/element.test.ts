@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { JsxElementPrimitive } from '@nexical/generator/engine/primitives/jsx/element';
-import { Normalizer } from '@nexical/generator/utils/normalizer';
+import { JsxElementPrimitive } from '@nexical/generator/engine/primitives/jsx/element.js';
+import { Normalizer } from '@nexical/generator/utils/normalizer.js';
 
 describe('JsxElementPrimitive', () => {
   it('should generate self-closing element', () => {

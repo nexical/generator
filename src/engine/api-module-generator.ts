@@ -24,6 +24,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { parse } from 'yaml';
 import { Reconciler } from './reconciler.js';
+import { TemplateLoader } from '../utils/template-loader.js';
 
 export class ApiModuleGenerator extends ModuleGenerator {
   async run(): Promise<void> {
@@ -451,56 +452,9 @@ export class ApiModuleGenerator extends ModuleGenerator {
     logger.info(`[ModuleGenerator] API Generation for ${this.moduleName} complete.`);
   }
 
-  /** @internal */
   public debugBaseRoleText(accessConfig: AccessConfig): string {
-    return `// GENERATED CODE - DO NOT MODIFY
-import type { APIContext } from 'astro';
-import type { ApiActor } from '@/lib/api/api-docs';
-import { roleRegistry } from '@/lib/registries/role-registry';
-
-export abstract class BaseRole implements RolePolicy {
-  abstract readonly name: string;
-  protected readonly compatibleRoles: string[] = [];
-
-  public async check(
-    context: APIContext,
-    input: Record<string, unknown> = {},
-    data?: unknown,
-  ): Promise<void> {
-    const actor = context.locals.actor as ApiActor;
-    if (!actor) {
-      throw new Error('Unauthorized: No actor found');
-    }
-
-    const { role: actorRole } = actor as { role: string };
-    const normalizeRole = (r: unknown) => String(r).toUpperCase().replace(/-/g, '_');
-    
-    // Site Admin Bypass
-    if (normalizeRole(actorRole) === 'USER_ADMIN') return;
-    
-    const normalizedActorRole = normalizeRole(actorRole);
-    const normalizedRequiredRole = normalizeRole(this.name);
-
-    if (normalizedActorRole === normalizedRequiredRole) return;
-    if (this.compatibleRoles?.includes(normalizedActorRole)) return;
-
-    // Inheritance Check
-    const checkInheritance = (roleName: string, targetRole: string): boolean => {
-      const policy = roleRegistry.get(roleName);
-      if (!policy || !('inherits' in policy)) return false;
-      const inherits = (policy as { inherits: string[] }).inherits as string[];
-      if (inherits.includes(targetRole)) return true;
-      for (const parent of inherits) {
-        if (checkInheritance(parent, targetRole)) return true;
-      }
-      return false;
-    };
-
-    if (checkInheritance(normalizedActorRole, normalizedRequiredRole)) return;
-
-    throw new Error(\`Forbidden: required role \${this.name}\`);
-  }
-}
-`;
+    return TemplateLoader.load('roles/base-role.tsf', {
+      accessConfig: JSON.stringify(accessConfig),
+    }).raw;
   }
 }

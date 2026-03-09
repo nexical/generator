@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 /* eslint-disable */
 import { describe, it, expect } from 'vitest';
-import { VariableStatementPrimitive } from '@nexical/generator/engine/primitives/statements/variable';
-import { Normalizer } from '@nexical/generator/utils/normalizer';
+import { VariableStatementPrimitive } from '@nexical/generator/engine/primitives/statements/variable.js';
+import { Normalizer } from '@nexical/generator/utils/normalizer.js';
 
 describe('VariableStatementPrimitive', () => {
   it('should generate a simple const declaration', () => {

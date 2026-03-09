@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { IfStatementPrimitive } from '@nexical/generator/engine/primitives/statements/if';
-import { type IfStatementConfig } from '@nexical/generator/engine/types';
+import { IfStatementPrimitive } from '@nexical/generator/engine/primitives/statements/if.js';
+import { type IfStatementConfig } from '@nexical/generator/engine/types.js';
 
 describe('IfStatementPrimitive', () => {
   it('should handle standard if-else', () => {

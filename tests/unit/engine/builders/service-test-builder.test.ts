@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { ServiceTestBuilder } from '../../../../src/engine/builders/service-test-builder';
+import { ServiceTestBuilder } from '../../../../src/engine/builders/service-test-builder.js';
 
 describe('ServiceTestBuilder', () => {
   it('should strip [] from array types in imports', () => {

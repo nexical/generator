@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { createTestProject } from '@nexical/generator-tests/helpers/test-project';
-import { EnumPrimitive } from '@nexical/generator/engine/primitives/nodes/enum';
+import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
+import { EnumPrimitive } from '@nexical/generator/engine/primitives/nodes/enum.js';
 
 describe('EnumPrimitive', () => {
   it('should create a new enum', () => {

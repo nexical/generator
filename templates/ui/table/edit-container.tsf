@@ -1,0 +1,50 @@
+/** @fragment-contract
+ * @description Edit container for tables (Sheet or Dialog)
+ * @input {string} editMode
+ * @input {string} modelName
+ * @input {string} editTitle
+ * @input {string} editDesc
+ */
+import { fragment } from '@nexical/generator';
+
+declare const editMode: string;
+declare const modelName: string;
+declare const editTitle: string;
+declare const editDesc: string;
+
+export default fragment/* tsx */`
+\${editMode === 'sheet' ?
+  \`<Sheet open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+    <SheetContent className="w-dialog-lg sm:max-w-xl">
+      <SheetHeader>
+        <SheetTitle className="text-heading-md">{t('\${editTitle}')}</SheetTitle>
+        <SheetDescription className="text-subtle">{t('\${editDesc}')}</SheetDescription>
+      </SheetHeader>
+      <div className="mt-8">
+       {editingItem && (
+         <\${modelName}Form 
+            id={editingItem.id} 
+            initialData={editingItem} 
+            onSuccess={() => setEditingItem(null)} 
+         />
+       )}
+      </div>
+    </SheetContent>
+   </Sheet>\` :
+  \`<Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+    <DialogContent className="w-dialog-md">
+      <DialogHeader>
+        <DialogTitle className="text-heading-md">{t('\${editTitle}')}</DialogTitle>
+        <DialogDescription className="text-subtle">{t('\${editDesc}')}</DialogDescription>
+      </DialogHeader>
+      {editingItem && (
+         <\${modelName}Form 
+            id={editingItem.id} 
+            initialData={editingItem} 
+            onSuccess={() => setEditingItem(null)} 
+         />
+       )}
+    </DialogContent>
+   </Dialog>\`
+}
+`;

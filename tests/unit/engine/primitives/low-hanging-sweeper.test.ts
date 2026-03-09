@@ -2,14 +2,14 @@
 /* eslint-disable */
 import { describe, it, expect } from 'vitest';
 import { Project, ModuleDeclarationKind } from 'ts-morph';
-import { ConstructorPrimitive } from '@nexical/generator/engine/primitives/nodes/constructor';
-import { TypePrimitive } from '@nexical/generator/engine/primitives/nodes/type';
-import { DecoratorPrimitive } from '@nexical/generator/engine/primitives/nodes/decorator';
-import { IfStatementPrimitive } from '@nexical/generator/engine/primitives/statements/if';
-import { VariablePrimitive } from '@nexical/generator/engine/primitives/nodes/variable';
-import { MethodPrimitive } from '@nexical/generator/engine/primitives/nodes/method';
-import { ModulePrimitive } from '@nexical/generator/engine/primitives/nodes/module';
-import { ts } from '@nexical/generator/engine/primitives/statements/factory';
+import { ConstructorPrimitive } from '@nexical/generator/engine/primitives/nodes/constructor.js';
+import { TypePrimitive } from '@nexical/generator/engine/primitives/nodes/type.js';
+import { DecoratorPrimitive } from '@nexical/generator/engine/primitives/nodes/decorator.js';
+import { IfStatementPrimitive } from '@nexical/generator/engine/primitives/statements/if.js';
+import { VariablePrimitive } from '@nexical/generator/engine/primitives/nodes/variable.js';
+import { MethodPrimitive } from '@nexical/generator/engine/primitives/nodes/method.js';
+import { ModulePrimitive } from '@nexical/generator/engine/primitives/nodes/module.js';
+import { ts } from '@nexical/generator/engine/primitives/statements/factory.js';
 
 describe('Low Hanging Sweeper', () => {
   const createProject = (code: string) => {

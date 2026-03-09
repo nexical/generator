@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { JsxAttributePrimitive } from '@nexical/generator/engine/primitives/jsx/attribute';
+import { JsxAttributePrimitive } from '@nexical/generator/engine/primitives/jsx/attribute.js';
 
 describe('JsxAttributePrimitive', () => {
   it('should generate boolean attribute', () => {

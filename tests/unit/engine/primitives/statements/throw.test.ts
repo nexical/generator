@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { ThrowStatementPrimitive } from '@nexical/generator/engine/primitives/statements/throw';
+import { ThrowStatementPrimitive } from '@nexical/generator/engine/primitives/statements/throw.js';
 
 describe('ThrowStatementPrimitive', () => {
   it('should generate a throw statement', () => {

@@ -33,8 +33,8 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('export const GET = defineApi');
-    expect(text).toContain('export const POST = defineApi');
+    expect(text).toMatch(/const\s+GET\s+=\s+defineApi/);
+    expect(text).toMatch(/const\s+POST\s+=\s+defineApi/);
     expect(text).toContain('UserService.list');
     expect(text).toContain('UserService.create');
     expect(text).toContain('z.object({');
@@ -69,9 +69,9 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('export const GET = defineApi');
-    expect(text).toContain('export const PUT = defineApi');
-    expect(text).toContain('export const DELETE = defineApi');
+    expect(text).toMatch(/const\s+GET\s+=\s+defineApi/);
+    expect(text).toMatch(/const\s+PUT\s+=\s+defineApi/);
+    expect(text).toMatch(/const\s+DELETE\s+=\s+defineApi/);
     expect(text).toContain('UserService.get(id, select, actor)');
     expect(text).toContain('UserService.update(id, validated, select, actor)');
     expect(text).toContain('UserService.delete(id, actor)');
@@ -92,7 +92,7 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('export const POST = defineApi');
+    expect(text).toMatch(/const\s+POST\s+=\s+defineApi/);
     expect(text).toContain('ResetPasswordUserAction.run');
     expect(text).toContain(
       'import { ResetPasswordUserAction } from "@modules/user-api/src/actions/reset-password-user"',

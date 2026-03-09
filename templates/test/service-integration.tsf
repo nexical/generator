@@ -1,0 +1,30 @@
+/** @fragment-contract
+ * @description Service integration test template
+ * @input {string} testBody
+ */
+import { fragment } from '@nexical/generator';
+
+declare const actionName: string;
+declare const isVoidInput: boolean;
+declare const testBody: string;
+
+export default fragment/* ts */`
+it.skip('should execute successfully', async () => {
+    // 1. Setup prerequisite state using DataFactory
+    // const prerequisite = await Factory.create('someModel', { ... });
+    
+    // 2. Prepare Action Input
+    \${testBody}
+    
+    // 3. Prepare Mock Context with Actor
+    const ctx = await createMockContext(); 
+    const result = await \${actionName}.run(\${inputArgument}, ctx);
+    
+    // 4. Verify Database state explicitly using Prisma
+    // const record = await Factory.prisma.someModel.findUnique({ where: { id: ... } });
+    // expect(record).toBeDefined();
+    
+    // 5. Verify the Action's direct output
+    expect(result.success).toBe(true);
+});
+`;

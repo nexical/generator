@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Formatter } from '@nexical/generator/utils/formatter';
+import { Formatter } from '@nexical/generator/utils/formatter.js';
 import prettier from 'prettier';
 import { logger } from '@nexical/cli-core';
 

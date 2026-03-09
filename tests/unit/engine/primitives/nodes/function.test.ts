@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { createTestProject } from '@nexical/generator-tests/helpers/test-project';
-import { FunctionPrimitive } from '@nexical/generator/engine/primitives/nodes/function';
+import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
+import { FunctionPrimitive } from '@nexical/generator/engine/primitives/nodes/function.js';
 import { ts } from '../../../../../src/engine/primitives/statements/factory.js';
 
 describe('FunctionPrimitive', () => {

@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi } from 'vitest';
-import { createTestProject } from '@nexical/generator-tests/helpers/test-project';
-import { TypePrimitive } from '@nexical/generator/engine/primitives/nodes/type';
+import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
+import { TypePrimitive } from '@nexical/generator/engine/primitives/nodes/type.js';
 
 describe('TypePrimitive', () => {
   it('should create a new type alias', () => {

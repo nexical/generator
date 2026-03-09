@@ -1,10 +1,10 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project, Scope } from 'ts-morph';
-import { ClassPrimitive } from '@nexical/generator/engine/primitives/nodes/class';
-import { PropertyPrimitive } from '@nexical/generator/engine/primitives/nodes/property';
-import { AccessorPrimitive } from '@nexical/generator/engine/primitives/nodes/accessor';
-import { VariablePrimitive } from '@nexical/generator/engine/primitives/nodes/variable';
+import { ClassPrimitive } from '@nexical/generator/engine/primitives/nodes/class.js';
+import { PropertyPrimitive } from '@nexical/generator/engine/primitives/nodes/property.js';
+import { AccessorPrimitive } from '@nexical/generator/engine/primitives/nodes/accessor.js';
+import { VariablePrimitive } from '@nexical/generator/engine/primitives/nodes/variable.js';
 
 describe('Remaining Primitives Sweeper', () => {
   const createProject = (code: string) => {

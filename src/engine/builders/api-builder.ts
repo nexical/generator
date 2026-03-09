@@ -49,7 +49,6 @@ export class ApiBuilder extends BaseBuilder {
   }
 
   private generateZodSchema(): string {
-    // ... existing generateZodSchema logic ...
     const fields = Object.entries(this.model.fields)
       .filter(([name, f]) => {
         const typeName = f.type.replace('[]', '');
@@ -101,9 +100,9 @@ export class ApiBuilder extends BaseBuilder {
       return `z.object({}).passthrough()`;
     }
 
-    return `z.object({
-        ${fields.join(',\n        ')}
-    })`;
+    return TemplateLoader.load('api/shared/zod-object.tsf', {
+      fields: fields.join(',\n        '),
+    }).raw;
   }
 
   private generateSelectObject(): string {
@@ -112,14 +111,10 @@ export class ApiBuilder extends BaseBuilder {
       .map(([name, f]) => {
         const props: string[] = [];
 
-        // Performance: Limit relation lists
-        // Robust check for list types (handle arrays or explicit isList flag)
         if (f.isRelation && (f.isList || f.type.trim().endsWith('[]'))) {
-          // Default limit for nested lists to prevent performance issues
           props.push('take: 10');
         }
 
-        // Security: Filter private fields in relations
         if (f.isRelation && f.relationTo) {
           const targetModel = this.allModels.find((m) => m.name === f.relationTo);
           if (targetModel) {
@@ -147,9 +142,9 @@ export class ApiBuilder extends BaseBuilder {
 
     if (fields.length === 0) return '{}';
 
-    return `{
-            ${fields.join(',\n            ')}
-        }`;
+    return TemplateLoader.load('api/shared/select-object.tsf', {
+      fields: fields.join(',\n            '),
+    }).raw;
   }
 
   private generateResponseSchema(modelName: string, isList: boolean = false): string {
@@ -261,13 +256,12 @@ export class ApiBuilder extends BaseBuilder {
     const variables: VariableConfig[] = [];
 
     if (listRole !== 'none') {
-      const listDocs = `{
-    summary: "List ${entityName}s",
-    tags: ["${entityName}"],
-    parameters: [
-        ${parameterDocs.join(',\n        ')}
-    ],
-    responses: {
+      const listDocs = TemplateLoader.load('api/shared/docs.tsf', {
+        summary: `List ${entityName}s`,
+        tags: `"${entityName}"`,
+        parameters: `parameters: [\n        ${parameterDocs.join(',\n        ')}\n    ],`,
+        requestBody: '',
+        responses: `{
         200: {
             description: "OK",
             content: {
@@ -276,8 +270,9 @@ export class ApiBuilder extends BaseBuilder {
                 }
             }
         }
-    }${['anonymous', 'public'].includes(listRole) ? ',\n    protected: false' : ''}
-}`;
+    }`,
+        protectedStatus: ['anonymous', 'public'].includes(listRole) ? 'protected: false,' : '',
+      }).raw;
 
       variables.push({
         name: 'GET',
@@ -405,11 +400,12 @@ export class ApiBuilder extends BaseBuilder {
     const variables: VariableConfig[] = [];
 
     if (getRole !== 'none') {
-      const getDocs = `{
-    summary: "Get ${entityName}",
-    tags: ["${entityName}"],
-    parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
-    responses: {
+      const getDocs = TemplateLoader.load('api/shared/docs.tsf', {
+        summary: `Get ${entityName}`,
+        tags: `"${entityName}"`,
+        parameters: `parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],`,
+        requestBody: '',
+        responses: `{
         200: {
             description: "OK",
             content: {
@@ -418,8 +414,9 @@ export class ApiBuilder extends BaseBuilder {
                 }
             }
         }
-    }${['anonymous', 'public'].includes(getRole) ? ',\n    protected: false' : ''}
-}`;
+    }`,
+        protectedStatus: ['anonymous', 'public'].includes(getRole) ? 'protected: false,' : '',
+      }).raw;
 
       variables.push({
         name: 'GET',
@@ -436,18 +433,18 @@ export class ApiBuilder extends BaseBuilder {
     }
 
     if (updateRole !== 'none') {
-      const updateDocs = `{
-    summary: "Update ${entityName}",
-    tags: ["${entityName}"],
-    parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
-    requestBody: {
+      const updateDocs = TemplateLoader.load('api/shared/docs.tsf', {
+        summary: `Update ${entityName}`,
+        tags: `"${entityName}"`,
+        parameters: `parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],`,
+        requestBody: `requestBody: {
         content: {
             "application/json": {
                 schema: ${partialJsonSchema}
             }
         }
-    },
-    responses: {
+    },`,
+        responses: `{
         200: {
             description: "OK",
             content: {
@@ -456,8 +453,9 @@ export class ApiBuilder extends BaseBuilder {
                 }
             }
         }
-    }${['anonymous', 'public'].includes(updateRole) ? ',\n    protected: false' : ''}
-}`;
+    }`,
+        protectedStatus: ['anonymous', 'public'].includes(updateRole) ? 'protected: false,' : '',
+      }).raw;
 
       variables.push({
         name: 'PUT',
@@ -475,11 +473,12 @@ export class ApiBuilder extends BaseBuilder {
     }
 
     if (deleteRole !== 'none') {
-      const deleteDocs = `{
-    summary: "Delete ${entityName}",
-    tags: ["${entityName}"],
-    parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
-    responses: {
+      const deleteDocs = TemplateLoader.load('api/shared/docs.tsf', {
+        summary: `Delete ${entityName}`,
+        tags: `"${entityName}"`,
+        parameters: `parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],`,
+        requestBody: '',
+        responses: `{
         200: {
             description: "OK",
             content: {
@@ -493,8 +492,9 @@ export class ApiBuilder extends BaseBuilder {
                 }
             }
         }
-    }${['anonymous', 'public'].includes(deleteRole) ? ',\n    protected: false' : ''}
-}`;
+    }`,
+        protectedStatus: ['anonymous', 'public'].includes(deleteRole) ? 'protected: false,' : '',
+      }).raw;
 
       variables.push({
         name: 'DELETE',
@@ -676,21 +676,21 @@ export class ApiBuilder extends BaseBuilder {
         }
       }
 
-      const customDocs = `{
-    summary: "${route.summary || ''}",
-    tags: ["${this.model.name}"],
-    ${
-      verb !== 'GET'
-        ? `requestBody: {
+      const customDocs = TemplateLoader.load('api/shared/docs.tsf', {
+        summary: route.summary || '',
+        tags: `"${this.model.name}"`,
+        parameters: '',
+        requestBody:
+          verb !== 'GET'
+            ? `requestBody: {
         content: {
             "application/json": {
                 schema: ${requestBodySchema}
             }
         }
     },`
-        : ''
-    }
-    responses: {
+            : '',
+        responses: `{
         200: {
             description: "OK",
             content: {
@@ -699,8 +699,9 @@ export class ApiBuilder extends BaseBuilder {
                 }
             }
         }
-    }${['anonymous', 'public'].includes(role || '') ? ',\n        protected: false' : ''}
-}`;
+    }`,
+        protectedStatus: ['anonymous', 'public'].includes(role || '') ? 'protected: false,' : '',
+      }).raw;
       const bodyLoader = verb === 'GET' ? '{}' : 'await context.request.json()';
 
       variables.push({

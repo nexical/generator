@@ -1,0 +1,13 @@
+/** @fragment-contract
+ * @description Template for Prisma Select Object
+ * @input {string} fields
+ */
+import { fragment } from '@nexical/generator';
+
+declare const fields: string;
+
+export default fragment/* ts */`
+{
+    \${fields}
+}
+`;

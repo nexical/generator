@@ -1,0 +1,22 @@
+/** @fragment-contract
+ * @description Default Email Template Body
+ * @input {string} templateName
+ */
+import { fragment } from '@nexical/generator';
+
+declare const templateName: string;
+
+export default fragment/* tsx */`
+return (
+    <Html>
+        <Body style={main}>
+            <Container style={container}>
+                <Heading style={h1}>\${templateName}</Heading>
+                <Text style={text}>Hello! This is an automated email.</Text>
+                <Hr style={hr} />
+                <Text style={textStyles.footer}>Nexical Ecosystem</Text>
+            </Container>
+        </Body>
+    </Html>
+);
+`;

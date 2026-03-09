@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ApiModuleGenerator } from '../../../src/engine/api-module-generator.js';
+import { TemplateLoader } from '../../../src/utils/template-loader.js';
 import fs from 'node:fs';
 
 const parseSpy = vi.fn();
@@ -102,8 +103,16 @@ vi.mock('../../../src/engine/reconciler.js', () => ({
 }));
 
 describe('ApiModuleGenerator Functional Mocked', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+
+    // Set real FS for TemplateLoader
+    const realFs = await vi.importActual<typeof fs>('node:fs');
+    TemplateLoader.setFileSystem(realFs);
+  });
+
+  afterEach(() => {
+    TemplateLoader.restoreDefaultFileSystem();
   });
 
   it('should skip generation when no models or custom routes found', async () => {
@@ -128,8 +137,14 @@ describe('ApiModuleGenerator Functional Mocked', () => {
     });
 
     const generator = new ApiModuleGenerator('/tmp/mock-path');
-    generator.saveAll = vi.fn().mockResolvedValue(undefined);
-    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'saveAll',
+    ).mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'runCustomBuilders',
+    ).mockResolvedValue(undefined);
     await generator.run();
 
     expect(parseSpy).toHaveBeenCalled();
@@ -150,8 +165,14 @@ describe('ApiModuleGenerator Functional Mocked', () => {
     });
 
     const generator = new ApiModuleGenerator('/tmp/mock-path');
-    generator.saveAll = vi.fn().mockResolvedValue(undefined);
-    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'saveAll',
+    ).mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'runCustomBuilders',
+    ).mockResolvedValue(undefined);
     await generator.run();
   });
 
@@ -171,8 +192,14 @@ describe('ApiModuleGenerator Functional Mocked', () => {
     });
 
     const generator = new ApiModuleGenerator('/tmp/mock-path');
-    generator.saveAll = vi.fn().mockResolvedValue(undefined);
-    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'saveAll',
+    ).mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'runCustomBuilders',
+    ).mockResolvedValue(undefined);
     await generator.run();
   });
 
@@ -192,8 +219,14 @@ describe('ApiModuleGenerator Functional Mocked', () => {
     });
 
     const generator = new ApiModuleGenerator('/tmp/mock-path');
-    generator.saveAll = vi.fn().mockResolvedValue(undefined);
-    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'saveAll',
+    ).mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'runCustomBuilders',
+    ).mockResolvedValue(undefined);
     await generator.run();
   });
 
@@ -222,8 +255,14 @@ ApiOnlyModel:
     });
 
     const generator = new ApiModuleGenerator('/tmp/mock-path');
-    generator.saveAll = vi.fn().mockResolvedValue(undefined);
-    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'saveAll',
+    ).mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'runCustomBuilders',
+    ).mockResolvedValue(undefined);
     await generator.run();
   });
 
@@ -246,8 +285,14 @@ VirtualEntity:
     });
 
     const generator = new ApiModuleGenerator('/tmp/mock-path');
-    generator.saveAll = vi.fn().mockResolvedValue(undefined);
-    generator.runCustomBuilders = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'saveAll',
+    ).mockResolvedValue(undefined);
+    vi.spyOn(
+      generator as unknown as Record<string, () => Promise<void>>,
+      'runCustomBuilders',
+    ).mockResolvedValue(undefined);
     await generator.run();
   });
 

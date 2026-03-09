@@ -316,32 +316,32 @@ export class Reconciler {
       }
 
       // --- FINAL STAGE: Header Hoisting ---
-      // We do this last to ensure that any insertions (like addImportDeclaration)
-      // don't push the header down.
       if (definition.header && 'insertStatements' in sourceFile) {
         const sourceFileNode = sourceFile as SourceFile;
-        const isSourceFile = isRealNode(sourceFileNode) && Node.isSourceFile(sourceFileNode);
-        const sourceText = isSourceFile ? sourceFileNode.getFullText() : '';
-
-        // Regex to match ANY line starting with // GENERATED CODE or INITIAL GENERATED CODE
-        // This ensures old headers are replaced by the new version in the definition.
-        const headerRegex = /^\s*\/\/\s*(INITIAL\s+)?GENERATED CODE.*$/gm;
-
-        // 1. Remove all existing occurrences of ANY generated code header
-        let cleanText = sourceText.replace(headerRegex, '');
-        cleanText = cleanText.trimStart();
-
-        // 2. Prepare the correct header text
-        const headerText = definition.header.endsWith('\n')
-          ? definition.header
-          : `${definition.header}\n`;
+        const isSourceFile = sourceFileNode && Node.isSourceFile(sourceFileNode);
 
         if (isSourceFile) {
-          sourceFileNode.replaceWithText(headerText + cleanText);
+          const currentText = sourceFileNode.getFullText();
+          const headerRegex = /^\s*\/\/\s*(INITIAL\s+)?GENERATED CODE.*$/gm;
+
+          // Only replace if header is missing or different
+          const headerText = definition.header.trim() + '\n';
+          const headerMarker = '// GENERATED CODE';
+
+          if (!currentText.includes(headerMarker)) {
+            // New file or missing header, just insert at 0
+            sourceFileNode.insertStatements(0, headerText);
+          } else {
+            // Header exists, use more surgical replacement if possible
+            // but for now, the replaceWithText is okay IF we use the LATEST currentText
+            const cleanText = currentText.replace(headerRegex, '').trimStart();
+            sourceFileNode.replaceWithText(headerText + cleanText);
+          }
         } else {
-          // Fallback for non-sourcefiles (likely namespaces)
+          // Fallback for non-sourcefiles (namespaces)
+          const sourceText = (sourceFile as Node).getFullText?.() || '';
           if (!sourceText.trimStart().startsWith(definition.header.trim())) {
-            (sourceFile as StatementedNode).insertStatements(0, headerText);
+            (sourceFile as StatementedNode).insertStatements(0, definition.header + '\n');
           }
         }
       }

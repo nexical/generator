@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { toPascalCase } from '../../utils/string.js';
 import { ts } from '../primitives/statements/factory.js';
+import { TemplateLoader } from '../../utils/template-loader.js';
 
 export interface EmailTemplateConfig {
   id: string;
@@ -82,18 +83,9 @@ export class EmailBuilder extends BaseBuilder {
           parameters: [{ name: 'props', type: `${toPascalCase(template.name)}Props` }],
           statements: [
             ts`const { ${(template.props || []).map((p) => p.name).join(', ')} } = props;`,
-            ts`return (
-        <Html>
-            <Body style={main}>
-                <Container style={container}>
-                    <Heading style={h1}>${toPascalCase(template.name)}</Heading>
-                    <Text style={text}>Hello! This is an automated email.</Text>
-                    <Hr style={hr} />
-                    <Text style={footer}>Nexus Ecosystem</Text>
-                </Container>
-            </Body>
-        </Html>
-    );`,
+            TemplateLoader.load('ui/email/base-email.tsf', {
+              templateName: toPascalCase(template.name),
+            }),
           ],
         },
       ],
