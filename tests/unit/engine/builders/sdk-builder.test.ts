@@ -51,7 +51,9 @@ describe('SdkBuilder', () => {
     const text = sourceFile.getFullText();
     expect(text).toContain('public async resetPassword(data: ResetPasswordInput)');
     expect(text).toMatch(/this\._request\('POST', `\/user\/reset-password`, data\);/);
-    expect(text).toMatch(/import type \{.*User,.*ResetPasswordInput.*\} from "\.\/types\.js";/);
+    expect(text).toMatch(
+      /import type \{.*(User,.*ResetPasswordInput|ResetPasswordInput,.*User).*\} from "\.\/types\.js";/,
+    );
   });
 
   it('should handle path parameters in custom routes', () => {

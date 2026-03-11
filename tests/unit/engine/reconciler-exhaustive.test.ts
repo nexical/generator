@@ -62,7 +62,7 @@ describe('Reconciler - Exhaustive Coverage', () => {
 
     const definition: FileDefinition = {
       header: '// INITIAL GENERATED CODE',
-      statements: ['', 'import { X } from "Y";'],
+      statements: ['', 'import { X } from "Y";', 'console.log(X);'],
     };
 
     Reconciler.reconcile(file, definition);
@@ -74,7 +74,8 @@ describe('Reconciler - Exhaustive Coverage', () => {
     );
     Reconciler.reconcile(genFile, {
       header: '// GENERATED CODE',
-      imports: [{ moduleSpecifier: 'new' }],
+      imports: [{ moduleSpecifier: 'new', namedImports: ['New'] }],
+      statements: ['console.log(New);'], // Usage during reconcile
     });
     expect(genFile.getImportDeclarations().length).toBe(1);
     expect(genFile.getImportDeclarations()[0].getModuleSpecifierValue()).toBe('new');
@@ -237,6 +238,7 @@ export const myVar = 1;
     const definition: FileDefinition = {
       header: '// GENERATED CODE',
       imports: [{ moduleSpecifier: '@/lib/db.ts' }, { moduleSpecifier: 'foo/src/sdk/bar.ts' }],
+      statements: ['console.log(X, Y);'], // Usage during reconcile
     };
 
     Reconciler.reconcile(file, definition);

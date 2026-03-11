@@ -315,6 +315,12 @@ export class Reconciler {
         }
       }
 
+      // --- FINAL STAGE: Organize Imports ---
+      // We do this to ensure all unused imports are stripped and imports are alphabetized/consistent.
+      if (isRealNode(sourceFile) && Node.isSourceFile(sourceFile)) {
+        sourceFile.organizeImports();
+      }
+
       // --- FINAL STAGE: Header Hoisting ---
       if (definition.header && 'insertStatements' in sourceFile) {
         const sourceFileNode = sourceFile as SourceFile;

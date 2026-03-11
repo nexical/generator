@@ -43,6 +43,7 @@ describe('RoleBuilder', () => {
       'custom-role.ts',
       `
         import { someUtil } from '@/utils';
+        console.log(someUtil);
         // GENERATED CODE - THE SIGNATURE IS MANAGED BY THE GENERATOR. YOU MAY MODIFY THE IMPLEMENTATION AND ADD CUSTOM IMPORTS.
         export class AdminRole extends BaseRole {
             readonly name = 'ADMIN';

@@ -26,6 +26,7 @@ describe('Reconciler', () => {
   it('should reconcile imports', () => {
     const definition: FileDefinition = {
       imports: [{ moduleSpecifier: './foo', namedImports: ['Bar'] }],
+      statements: ['console.log(Bar);'], // Usage during reconcile
     };
 
     Reconciler.reconcile(sourceFile, definition);
@@ -195,6 +196,7 @@ describe('Reconciler', () => {
           namedImports: ['UserDTO'],
         },
       ],
+      statements: ['console.log(UserDTO);'], // Usage during reconcile
     };
 
     // 3. Reconcile
@@ -224,6 +226,7 @@ describe('Reconciler', () => {
           namedImports: ['ApiGuard'],
         },
       ],
+      statements: ['console.log(ApiGuard);'], // Usage during reconcile
     };
 
     // 3. Reconcile

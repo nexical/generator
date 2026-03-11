@@ -152,7 +152,8 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('import { UserModuleTypes } from "@/lib/api"');
+    // UserModuleTypes is correctly pruned as it is not used in this GET route
+    expect(text).not.toContain('import { UserModuleTypes } from "@/lib/api"');
     // Verify GET routes have empty body with correct type (unknown default)
     expect(text).toContain('const body = {} as unknown;');
   });

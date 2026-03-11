@@ -55,7 +55,11 @@ hooks:
     const builder = new HookBuilder('test-api', { name: 'test-api' });
     // Setup a file with existing imports to cover the filter branch
     const fileName = 'src/hooks/data-process-Transform.ts';
-    project.createSourceFile(fileName, "import { something } from './else';", { overwrite: true });
+    project.createSourceFile(
+      fileName,
+      "import { something } from './else';\nconsole.log(something);",
+      { overwrite: true },
+    );
 
     await builder.build(project, undefined);
 

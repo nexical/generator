@@ -23,7 +23,7 @@ describe('PermissionBuilder', () => {
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile(
       'test.ts',
-      "import { Other } from 'astro';\nimport { Custom } from './local';",
+      "import { Other } from 'astro';\nimport { Custom } from './local';\nconsole.log(Other, Custom);",
     );
 
     builder.ensure(sourceFile);
