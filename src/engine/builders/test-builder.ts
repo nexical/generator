@@ -259,11 +259,7 @@ export class TestBuilder extends BaseBuilder {
     const actorRelationField = this.getActorRelationFieldName();
 
     let dependencySetup = '';
-    // ... logic for payloadConstruction remains ...
-    // Constructing payload string manually here to match existing logic exactly or reusing valid parts
-    let payloadConstruction = `const payload = ${JSON.stringify(mockData, null, 8)
-      .replace(/"([^"]+)":/g, '$1:')
-      .replace(/"__DATE_NOW__"/g, 'new Date().toISOString()')};`;
+    let payloadConstruction = `const payload = ${this.stringifyObject(mockData, true)};`;
 
     if (requiredFKs.length > 0 || actorRelationField) {
       const setups = requiredFKs.map((fk, i) => {
@@ -290,9 +286,9 @@ export class TestBuilder extends BaseBuilder {
       const overridesString = overrides.join(',\n                ');
 
       payloadConstruction = `const payload = {
-  ...${JSON.stringify(mockData).replace(/"__DATE_NOW__"/g, 'new Date().toISOString()')},
+                ...${this.stringifyObject(mockData)},
                 ${overridesString}
-            }; `;
+            };`;
     }
 
     const isActorUsed = requiredFKs.some((fk) => fk.model === 'Job') || !!actorRelationField;
@@ -582,13 +578,11 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
     mockData: Record<string, unknown>,
     updateData: Record<string, unknown>,
   ): string {
-    const updatePayload = JSON.stringify(updateData, null, 8)
-      .replace(/"([^"]+)":/g, '$1:')
-      .replace(/"__DATE_NOW__"/g, 'new Date().toISOString()');
     const isActorModel =
       this.model.name.toLowerCase() === this.getTestActorModelName().toLowerCase();
 
     const requiredFKs = this.getRequiredForeignKeys();
+    const actorRelationField = this.getActorRelationFieldName();
     let dependencySetup = '';
     let overrides = '';
 
@@ -611,6 +605,28 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
         })
         .join(', ');
       if (overrides) overrides = `, ${overrides}`;
+    }
+
+    let payloadConstruction = `const updatePayload = ${this.stringifyObject(updateData, true)};`;
+
+    if (requiredFKs.length > 0 || actorRelationField) {
+      const payloadOverridesList = requiredFKs.map((fk, i) => {
+        const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i}`;
+        return `${fk.field}: ${varName}.id`;
+      });
+
+      if (actorRelationField) {
+        payloadOverridesList.push(
+          `${actorRelationField}: (actor ? (actor as unknown as { id: string }).id : undefined)`,
+        );
+      }
+
+      const payloadOverrides = payloadOverridesList.join(',\n                ');
+
+      payloadConstruction = `const updatePayload = {
+                ...${this.stringifyObject(updateData)},
+                ${payloadOverrides}
+            };`;
     }
 
     let setupSnippet = '';
@@ -652,7 +668,7 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
       camelEntity,
       actorStatement,
       setupSnippet,
-      updatePayload,
+      updatePayload: payloadConstruction,
       assertionBlock: verificationBlock,
     }).raw;
   }
@@ -794,5 +810,13 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
       }
     }
     return data;
+  }
+
+  private stringifyObject(data: Record<string, unknown>, pretty = false): string {
+    const json = JSON.stringify(data, null, pretty ? 8 : 0);
+    return json
+      .replace(/"([^"]+)":\s*/g, '$1: ')
+      .replace(/"__DATE_NOW__"/g, 'new Date().toISOString()')
+      .replace(/'/g, "\\'");
   }
 }

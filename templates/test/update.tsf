@@ -23,12 +23,11 @@ describe('PUT /api/${kebabEntity}/[id]', () => {
     ${actorStatement}
             
     ${setupSnippet}
-
-    const updatePayload = ${updatePayload};
+    ${updatePayload}
 
     const res = await client.put(\`/api/${kebabEntity}/\${target.id}\`, updatePayload);
 
-    expect(res.status).toBe(200);
+expect(res.status).toBe(200);
             
     ${assertionBlock}
   });

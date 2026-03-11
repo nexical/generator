@@ -393,15 +393,11 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
             // Extract compatible roles from config.test.roles
             const compatibleRoles: string[] = [];
-            const testRoles = (
-              this as unknown as {
-                config: { test?: { roles?: Record<string, { role?: string }> } };
-              }
-            ).config?.test?.roles;
+            const testRoles = config?.test?.roles;
             if (testRoles) {
               for (const [testRole, mapping] of Object.entries(testRoles)) {
                 if (testRole === roleName && mapping?.role) {
-                  compatibleRoles.push(mapping.role);
+                  compatibleRoles.push(String(mapping.role));
                 }
               }
             }

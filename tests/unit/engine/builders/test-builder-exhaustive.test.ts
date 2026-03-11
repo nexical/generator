@@ -68,9 +68,9 @@ describe('TestBuilder - Exhaustive Coverage', () => {
     const text = sourceFile.getFullText();
 
     expect(text).toContain("Factory.create('job'");
-    expect(text).toContain('"bool":true');
-    expect(text).toContain('"int":10');
-    expect(text).toContain('"float":10.5');
+    expect(text).toContain('bool: true');
+    expect(text).toContain('int: 10');
+    expect(text).toContain('float: 10.5');
     // It uses new Date().toISOString() in payload but compares res.body.data.date with it.
     expect(text).toContain('expect(res.body.data.date).toBe(payload.date)');
   });
