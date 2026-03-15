@@ -260,6 +260,16 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
             if (result && typeof result === 'object' && 'success' in result) {
                 expect(result.success).toBe(true);
             }
+            ${
+              method.toLowerCase().startsWith('count')
+                ? "if (result && typeof result === 'object' && 'data' in result) { expect(result.data).toBe(100); }"
+                : ''
+            }
+            ${
+              method.toLowerCase().startsWith('get')
+                ? "if (result && typeof result === 'object' && 'data' in result) { expect(result.data).toBeDefined(); }"
+                : ''
+            }
         });`;
           failureTest = `
         it('should handle errors in ${method}', async () => {

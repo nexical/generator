@@ -1,11 +1,11 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { ServiceTestBuilder } from '../../../../src/engine/builders/service-test-builder.js';
+import { ServiceIntegrationTestBuilder } from '../../../../src/engine/builders/service-integration-test-builder.js';
 
-describe('ServiceTestBuilder', () => {
+describe('ServiceIntegrationTestBuilder', () => {
   it('should strip [] from array types in imports', () => {
-    const builder = new ServiceTestBuilder(
+    const builder = new ServiceIntegrationTestBuilder(
       'poll-jobs-orchestrator',
       'PollJobsOrchestratorAction',
       'PollJobsDTO',
@@ -23,7 +23,12 @@ describe('ServiceTestBuilder', () => {
   });
 
   it('should handle void types correctly', () => {
-    const builder = new ServiceTestBuilder('simple-action', 'SimpleAction', 'void', 'void');
+    const builder = new ServiceIntegrationTestBuilder(
+      'simple-action',
+      'SimpleAction',
+      'void',
+      'void',
+    );
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 

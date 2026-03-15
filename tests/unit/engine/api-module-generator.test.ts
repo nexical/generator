@@ -33,8 +33,8 @@ vi.mock('../../../src/engine/builders/action-builder.js', () => ({
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/service-test-builder.js', () => ({
-  ServiceTestBuilder: class {
+vi.mock('../../../src/engine/builders/service-integration-test-builder.js', () => ({
+  ServiceIntegrationTestBuilder: class {
     ensure() {}
   },
 }));
@@ -43,8 +43,8 @@ vi.mock('../../../src/engine/builders/sdk-builder.js', () => ({
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test-builder.js', () => ({
-  TestBuilder: class {
+vi.mock('../../../src/engine/builders/integration-test-builder.js', () => ({
+  IntegrationTestBuilder: class {
     ensure() {}
   },
 }));
@@ -95,6 +95,56 @@ vi.mock('../../../src/engine/builders/middleware-builder.js', () => ({
 }));
 vi.mock('../../../src/engine/builders/role-builder.js', () => ({
   RoleBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/api-unit-test-builder.js', () => ({
+  ApiUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/action-unit-test-builder.js', () => ({
+  ActionUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/service-unit-test-builder.js', () => ({
+  ServiceUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/sdk-unit-test-builder.js', () => ({
+  SdkUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/role-unit-test-builder.js', () => ({
+  RoleUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/hook-unit-test-builder.js', () => ({
+  HookUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/agent-unit-test-builder.js', () => ({
+  AgentUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/config-unit-test-builder.js', () => ({
+  ConfigUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/middleware-unit-test-builder.js', () => ({
+  MiddlewareUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/permission-unit-test-builder.js', () => ({
+  PermissionUnitTestBuilder: class {
     ensure() {}
   },
 }));

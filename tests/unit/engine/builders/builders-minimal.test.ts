@@ -3,7 +3,7 @@ import { Project } from 'ts-morph';
 import { ApiBuilder } from '../../../../src/engine/builders/api-builder.js';
 import { SdkBuilder } from '../../../../src/engine/builders/sdk-builder.js';
 import { InitBuilder } from '../../../../src/engine/builders/init-builder.js';
-import { TestBuilder } from '../../../../src/engine/builders/test-builder.js';
+import { IntegrationTestBuilder } from '../../../../src/engine/builders/integration-test-builder.js';
 import { type ModelDef } from '../../../../src/engine/types.js';
 
 describe('Builders Minimal Coverage', () => {
@@ -71,8 +71,12 @@ describe('Builders Minimal Coverage', () => {
     expect(file.getFullText()).toContain('init');
   });
 
-  it('TestBuilder should hit branches', () => {
-    const builder = new TestBuilder(mockModel as unknown as ModelDef, 'test-api', 'create');
+  it('IntegrationTestBuilder should hit branches', () => {
+    const builder = new IntegrationTestBuilder(
+      mockModel as unknown as ModelDef,
+      'test-api',
+      'create',
+    );
     const file = project.createSourceFile('user.test.ts', '');
     builder.ensure(file);
     expect(file.getFullText()).toContain('describe');

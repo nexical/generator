@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { FactoryBuilder } from '../../../../src/engine/builders/factory-builder';
-import { TestBuilder } from '../../../../src/engine/builders/test-builder';
-import { type ModelDef, type ParsedStatement } from '../../../../src/engine/types';
+import { FactoryBuilder } from '../../../../src/engine/builders/factory-builder.js';
+import { IntegrationTestBuilder } from '../../../../src/engine/builders/integration-test-builder.js';
+import { type ModelDef, type ParsedStatement } from '../../../../src/engine/types.js';
 
 describe('Builders Sweeper', () => {
   describe('FactoryBuilder Edge Cases', () => {
@@ -42,7 +42,7 @@ describe('Builders Sweeper', () => {
     });
   });
 
-  describe('TestBuilder Edge Cases', () => {
+  describe('IntegrationTestBuilder Edge Cases', () => {
     const baseModel: ModelDef = {
       name: 'TestModel',
       api: true,
@@ -55,7 +55,7 @@ describe('Builders Sweeper', () => {
         ...baseModel,
         role: { create: 'admin' }, // Object role config
       } as unknown as ModelDef;
-      const builder = new TestBuilder(model, 'mod', 'create');
+      const builder = new IntegrationTestBuilder(model, 'mod', 'create');
       // Just verifying it runs without error and internal logic holds
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       builder.validate({} as any); // Use a dummy for validate check
@@ -65,7 +65,7 @@ describe('Builders Sweeper', () => {
     });
 
     it('should use roleConfig for actor options', () => {
-      const builder = new TestBuilder(baseModel, 'mod', 'create', {
+      const builder = new IntegrationTestBuilder(baseModel, 'mod', 'create', {
         member: { headers: { 'X-Custom': 'val' } },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
@@ -83,7 +83,7 @@ describe('Builders Sweeper', () => {
 
     it('should fallback to user if actor is missing', () => {
       const model: ModelDef = { name: 'NoActor', api: true, fields: {} } as unknown as ModelDef;
-      const builder = new TestBuilder(model, 'mod', 'create');
+      const builder = new IntegrationTestBuilder(model, 'mod', 'create');
       const schema = (builder as unknown as { getSchema: () => unknown }).getSchema();
       expect(schema).toBeDefined();
     });
@@ -96,7 +96,7 @@ describe('Builders Sweeper', () => {
         fields: { id: { type: 'String', isRequired: true } },
         test: { actor: 'Team' },
       } as unknown as ModelDef;
-      const b1 = new TestBuilder(teamModel, 'mod', 'create');
+      const b1 = new IntegrationTestBuilder(teamModel, 'mod', 'create');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const s1 = (b1 as any).getSchema().statements?.[0];
       const c1 = typeof s1 === 'string' ? s1 : (s1 as ParsedStatement)?.raw || '';
@@ -114,7 +114,7 @@ describe('Builders Sweeper', () => {
         },
         test: { actor: 'Manager' },
       } as unknown as ModelDef;
-      const b2 = new TestBuilder(jobModel, 'mod', 'create');
+      const b2 = new IntegrationTestBuilder(jobModel, 'mod', 'create');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const s2 = (b2 as any).getSchema().statements?.[0];
       const c2 = typeof s2 === 'string' ? s2 : (s2 as ParsedStatement)?.raw || '';
@@ -133,7 +133,7 @@ describe('Builders Sweeper', () => {
         },
         test: { actor: 'User' },
       } as unknown as ModelDef;
-      const b3 = new TestBuilder(postModel, 'mod', 'create');
+      const b3 = new IntegrationTestBuilder(postModel, 'mod', 'create');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const s3 = (b3 as any).getSchema().statements?.[0];
       const c3 = typeof s3 === 'string' ? s3 : (s3 as ParsedStatement)?.raw || '';
@@ -157,7 +157,7 @@ describe('Builders Sweeper', () => {
         test: { actor: 'User' },
       } as unknown as ModelDef;
 
-      const builder = new TestBuilder(model, 'mod', 'list');
+      const builder = new IntegrationTestBuilder(model, 'mod', 'list');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const file = (builder as any).getSchema();
       const s = file.statements?.[0];
@@ -174,7 +174,7 @@ describe('Builders Sweeper', () => {
         role: 'public', // Short string format
         test: { actor: 'User' },
       } as unknown as ModelDef;
-      const builder = new TestBuilder(model, 'mod', 'create');
+      const builder = new IntegrationTestBuilder(model, 'mod', 'create');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const file = (builder as any).getSchema();
       const s = file.statements?.[0];
@@ -195,7 +195,7 @@ describe('Builders Sweeper', () => {
         test: { actor: 'User' },
       } as unknown as ModelDef;
       // List operation triggers valid filter generation
-      const builder = new TestBuilder(model, 'mod', 'list');
+      const builder = new IntegrationTestBuilder(model, 'mod', 'list');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const file = (builder as any).getSchema();
       const s = file.statements?.[0];

@@ -99,7 +99,7 @@ describe('ApiBuilder', () => {
     );
     // Verify strong typing restoration
     expect(text).toContain(
-      'const body = await context.request.json() as UserModuleTypes.ResetPasswordInput;',
+      'const body = (zodSchema ? zodSchema.parse(rawInput) : rawInput) as UserModuleTypes.ResetPasswordInput;',
     );
     expect(text).toContain(
       "const input: UserModuleTypes.ResetPasswordInput = await HookSystem.filter('user.resetPassword.input', body);",
@@ -155,7 +155,9 @@ describe('ApiBuilder', () => {
     // UserModuleTypes is correctly pruned as it is not used in this GET route
     expect(text).not.toContain('import { UserModuleTypes } from "@/lib/api"');
     // Verify GET routes have empty body with correct type (unknown default)
-    expect(text).toContain('const body = {} as unknown;');
+    expect(text).toContain(
+      'const body = (zodSchema ? zodSchema.parse(rawInput) : rawInput) as unknown;',
+    );
   });
   it('should handle complex field types (Float, DateTime, Json)', () => {
     const complexModel: ModelDef = {

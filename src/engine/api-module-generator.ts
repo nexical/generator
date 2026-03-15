@@ -1,3 +1,4 @@
+import { SourceFile } from 'ts-morph';
 import { ModuleGenerator } from './module-generator.js';
 import { ModelParser } from './model-parser.js';
 import { logger } from '@nexical/cli-core';
@@ -170,11 +171,12 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const prefix = '../'.repeat(levels);
 
           const unitTestRoutes = routes.map((route) => {
-            const kebabMethod = route.method.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+            const method = route.method || 'GET';
+            const kebabMethod = method.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
             const actionBase =
               route.action ||
               (kebabMethod.includes(kebabName) ? kebabMethod : `${kebabMethod}-${kebabName}`);
-            const methodPascal = route.method.charAt(0).toUpperCase() + route.method.slice(1);
+            const methodPascal = method.charAt(0).toUpperCase() + method.slice(1);
             const actionName = route.action
               ? route.action
                   .split('-')
@@ -371,11 +373,12 @@ export class ApiModuleGenerator extends ModuleGenerator {
         const prefix = '../'.repeat(levels);
 
         const unitTestRoutes = routes.map((route) => {
-          const kebabMethod = route.method.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+          const method = route.method || 'GET';
+          const kebabMethod = method.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
           const actionBase =
             route.action ||
             (kebabMethod.includes(kebabEntity) ? kebabMethod : `${kebabMethod}-${kebabEntity}`);
-          const methodPascal = route.method.charAt(0).toUpperCase() + route.method.slice(1);
+          const methodPascal = method.charAt(0).toUpperCase() + method.slice(1);
           const actionName = route.action
             ? route.action
                 .split('-')

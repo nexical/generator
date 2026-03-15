@@ -1,10 +1,10 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { TestBuilder } from '../../../../src/engine/builders/test-builder.js';
+import { IntegrationTestBuilder } from '../../../../src/engine/builders/integration-test-builder.js';
 import { type ModelDef } from '../../../../src/engine/types.js';
 
-describe('TestBuilder - Exhaustive Coverage', () => {
+describe('IntegrationTestBuilder - Exhaustive Coverage', () => {
   const complexModel: ModelDef = {
     name: 'Complex',
     db: true,
@@ -61,7 +61,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
   };
 
   it('should cover all field types in CREATE', () => {
-    const builder = new TestBuilder(complexModel, 'ComplexApi', 'create', roleConfig);
+    const builder = new IntegrationTestBuilder(complexModel, 'ComplexApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
     builder.ensure(sourceFile);
@@ -76,7 +76,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
   });
 
   it('should cover all filter types in LIST', () => {
-    const builder = new TestBuilder(complexModel, 'ComplexApi', 'list', roleConfig);
+    const builder = new IntegrationTestBuilder(complexModel, 'ComplexApi', 'list', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
     builder.ensure(sourceFile);
@@ -107,7 +107,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const builder = new TestBuilder(authModel, 'AuthTokenApi', 'list', roleConfig);
+    const builder = new IntegrationTestBuilder(authModel, 'AuthTokenApi', 'list', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_auth.ts', '');
     builder.ensure(sourceFile);
@@ -120,7 +120,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
     const project = new Project({ useInMemoryFileSystem: true });
 
     for (const op of ['get', 'update', 'delete'] as const) {
-      const builder = new TestBuilder(complexModel, 'ComplexApi', op, roleConfig);
+      const builder = new IntegrationTestBuilder(complexModel, 'ComplexApi', op, roleConfig);
       const sourceFile = project.createSourceFile(`test_${op}.ts`, '');
       builder.ensure(sourceFile);
       const text = sourceFile.getFullText();
@@ -143,7 +143,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       test: { actor: 'User' },
     };
     for (const op of ['get', 'update', 'delete'] as const) {
-      const builder = new TestBuilder(userModel, 'UserApi', op, roleConfig);
+      const builder = new IntegrationTestBuilder(userModel, 'UserApi', op, roleConfig);
       const project = new Project({ useInMemoryFileSystem: true });
       const sourceFile = project.createSourceFile(`test_self_${op}.ts`, '');
       builder.ensure(sourceFile);
@@ -169,7 +169,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const builder = new TestBuilder(modelWithJob, 'TaskApi', 'create', roleConfig);
+    const builder = new IntegrationTestBuilder(modelWithJob, 'TaskApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_job.ts', '');
     builder.ensure(sourceFile);
@@ -194,7 +194,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const builder = new TestBuilder(modelWithSpaceId, 'ItemApi', 'create', roleConfig);
+    const builder = new IntegrationTestBuilder(modelWithSpaceId, 'ItemApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_space_2.ts', '');
     builder.ensure(sourceFile);
@@ -211,7 +211,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const builder = new TestBuilder(modelNoFk, 'IsolatedApi', 'create', roleConfig);
+    const builder = new IntegrationTestBuilder(modelNoFk, 'IsolatedApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_no_fk.ts', '');
     builder.ensure(sourceFile);
@@ -228,7 +228,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const builder = new TestBuilder(userModel, 'UserApi', 'create', roleConfig);
+    const builder = new IntegrationTestBuilder(userModel, 'UserApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_user_create.ts', '');
     builder.ensure(sourceFile);
@@ -240,7 +240,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
     const ownerRoleConfig = {
       OWNER: { role: 'OWNER', some: 'opt' },
     };
-    new TestBuilder(complexModel, 'ComplexApi', 'create', ownerRoleConfig);
+    new IntegrationTestBuilder(complexModel, 'ComplexApi', 'create', ownerRoleConfig);
     // complexModel.role.create is 'admin'. Uppercase is 'ADMIN'.
     // ownerRoleConfig has key 'OWNER'. Not a match for line 75.
     // val.role is 'OWNER'. Not a match for 'ADMIN' in line 84.
@@ -249,7 +249,12 @@ describe('TestBuilder - Exhaustive Coverage', () => {
     const matchingRoleConfig = {
       SOME_KEY: { role: 'ADMIN', extra: true },
     };
-    const builder2 = new TestBuilder(complexModel, 'ComplexApi', 'create', matchingRoleConfig);
+    const builder2 = new IntegrationTestBuilder(
+      complexModel,
+      'ComplexApi',
+      'create',
+      matchingRoleConfig,
+    );
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_role_match.ts', '');
     builder2.ensure(sourceFile);
@@ -266,7 +271,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const builder = new TestBuilder(modelWithUserField, 'ItemApi', 'create', roleConfig);
+    const builder = new IntegrationTestBuilder(modelWithUserField, 'ItemApi', 'create', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_user_field.ts', '');
     builder.ensure(sourceFile);
@@ -290,7 +295,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const builder = new TestBuilder(modelWithUnique, 'UniqueApi', 'list', roleConfig);
+    const builder = new IntegrationTestBuilder(modelWithUnique, 'UniqueApi', 'list', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_unique.ts', '');
     builder.ensure(sourceFile);
@@ -307,7 +312,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const getBuilder = new TestBuilder(postModel, 'PostApi', 'get', roleConfig);
+    const getBuilder = new IntegrationTestBuilder(postModel, 'PostApi', 'get', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFileGet = project.createSourceFile('test_post_get.ts', '');
     getBuilder.ensure(sourceFileGet);
@@ -323,7 +328,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const builder = new TestBuilder(userModel, 'UserApi', 'list', roleConfig);
+    const builder = new IntegrationTestBuilder(userModel, 'UserApi', 'list', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_user_list_cleanup.ts', '');
     builder.ensure(sourceFile);
@@ -349,7 +354,7 @@ describe('TestBuilder - Exhaustive Coverage', () => {
       },
       test: { actor: 'User' },
     };
-    const builder = new TestBuilder(tokenModel, 'UserTokenApi', 'list', roleConfig);
+    const builder = new IntegrationTestBuilder(tokenModel, 'UserTokenApi', 'list', roleConfig);
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test_token_list.ts', '');
     builder.ensure(sourceFile);

@@ -7,7 +7,7 @@ import { ExportPrimitive } from '../../../src/engine/primitives/core/export-mana
 import { PropertyPrimitive } from '../../../src/engine/primitives/nodes/property.js';
 import { MethodPrimitive } from '../../../src/engine/primitives/nodes/method.js';
 import { AccessorPrimitive } from '../../../src/engine/primitives/nodes/accessor.js';
-import { TestBuilder } from '../../../src/engine/builders/test-builder.js';
+import { IntegrationTestBuilder } from '../../../src/engine/builders/integration-test-builder.js';
 import { BuilderLoader } from '../../../src/engine/builder-loader.js';
 import { ApiModuleGenerator } from '../../../src/engine/api-module-generator.js';
 import { UiModuleGenerator } from '../../../src/engine/ui-module-generator.js';
@@ -360,16 +360,16 @@ describe('Coverage Gap Sweeper', () => {
     });
   });
 
-  describe('TestBuilder Internals', () => {
+  describe('IntegrationTestBuilder Internals', () => {
     it('should fallback to user if actor missing in config', () => {
       const model = { name: 'User', fields: {} };
-      const builder = new TestBuilder(model as any, 'mod', 'create');
+      const builder = new IntegrationTestBuilder(model as any, 'mod', 'create');
       expect((builder as any).getTestActorModelName()).toBe('user');
     });
 
     it('should handle public role checks', () => {
       const model = { name: 'PublicResource', role: 'public', fields: {}, test: { actor: 'User' } };
-      const builder = new TestBuilder(model as any, 'mod', 'create');
+      const builder = new IntegrationTestBuilder(model as any, 'mod', 'create');
       const stmt = (builder as any).getActorStatement('create');
       expect(stmt).toContain('Public access');
     });

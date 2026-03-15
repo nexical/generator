@@ -1,10 +1,10 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { TestBuilder } from '../../../../src/engine/builders/test-builder';
-import { type ModelDef } from '../../../../src/engine/types';
+import { IntegrationTestBuilder } from '../../../../src/engine/builders/integration-test-builder.js';
+import { type ModelDef } from '../../../../src/engine/types.js';
 
-describe('TestBuilder', () => {
+describe('IntegrationTestBuilder', () => {
   const userModel: ModelDef = {
     name: 'User',
     db: true,
@@ -79,7 +79,7 @@ describe('TestBuilder', () => {
   };
 
   it('should generate CREATE tests', () => {
-    const builder = new TestBuilder(userModel, 'UserApi', 'create');
+    const builder = new IntegrationTestBuilder(userModel, 'UserApi', 'create');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -92,7 +92,7 @@ describe('TestBuilder', () => {
   });
 
   it('should generate LIST tests with pagination and filters', () => {
-    const builder = new TestBuilder(postModel, 'PostApi', 'list');
+    const builder = new IntegrationTestBuilder(postModel, 'PostApi', 'list');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -106,7 +106,7 @@ describe('TestBuilder', () => {
   });
 
   it('should generate GET tests with dependency setup', () => {
-    const builder = new TestBuilder(postModel, 'PostApi', 'get');
+    const builder = new IntegrationTestBuilder(postModel, 'PostApi', 'get');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -122,7 +122,12 @@ describe('TestBuilder', () => {
   it('should generate POST tests for restricted roles', () => {
     // Pass roleConfig so the builder knows what options to use for 'admin'
     const roleConfig = { admin: { role: 'admin' } };
-    const builder = new TestBuilder(restrictedModel, 'AdminDocApi', 'create', roleConfig);
+    const builder = new IntegrationTestBuilder(
+      restrictedModel,
+      'AdminDocApi',
+      'create',
+      roleConfig,
+    );
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -135,7 +140,7 @@ describe('TestBuilder', () => {
   });
 
   it('should generate DELETE tests', () => {
-    const builder = new TestBuilder(postModel, 'PostApi', 'delete');
+    const builder = new IntegrationTestBuilder(postModel, 'PostApi', 'delete');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -147,7 +152,7 @@ describe('TestBuilder', () => {
   });
 
   it('should generate GET tests with public role and no auth requirement', () => {
-    const builder = new TestBuilder(restrictedModel, 'AdminDocApi', 'get');
+    const builder = new IntegrationTestBuilder(restrictedModel, 'AdminDocApi', 'get');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -159,7 +164,7 @@ describe('TestBuilder', () => {
   });
 
   it('should fallback to User actor if test.actor is missing', () => {
-    const builder = new TestBuilder(missingActorModel, 'LogEntryApi', 'create');
+    const builder = new IntegrationTestBuilder(missingActorModel, 'LogEntryApi', 'create');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 

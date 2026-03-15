@@ -1,10 +1,10 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { TestBuilder } from '../../../../src/engine/builders/test-builder';
-import { type ModelDef } from '../../../../src/engine/types';
+import { IntegrationTestBuilder } from '../../../../src/engine/builders/integration-test-builder.js';
+import { type ModelDef } from '../../../../src/engine/types.js';
 
-describe('TestBuilder Complex Scenarios', () => {
+describe('IntegrationTestBuilder Complex Scenarios', () => {
   // Scenario 1: Model with complex fields (DateTime, List, Json) and Reserved fields
   const complexModel: ModelDef = {
     name: 'ComplexDoc',
@@ -55,7 +55,7 @@ describe('TestBuilder Complex Scenarios', () => {
   };
 
   it('should handle update logic with complex and reserved fields', () => {
-    const builder = new TestBuilder(complexModel, 'ComplexDocApi', 'update');
+    const builder = new IntegrationTestBuilder(complexModel, 'ComplexDocApi', 'update');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -77,7 +77,7 @@ describe('TestBuilder Complex Scenarios', () => {
   });
 
   it('should generate dependency setup for required Foreign Keys', () => {
-    const builder = new TestBuilder(relationModel, 'TicketApi', 'create');
+    const builder = new IntegrationTestBuilder(relationModel, 'TicketApi', 'create');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -96,7 +96,7 @@ describe('TestBuilder Complex Scenarios', () => {
     const strictModel = JSON.parse(JSON.stringify(relationModel));
     strictModel.fields['assigneeId'].isRequired = true;
 
-    const builder = new TestBuilder(strictModel, 'TicketApi', 'create');
+    const builder = new IntegrationTestBuilder(strictModel, 'TicketApi', 'create');
     // We need to inject the logic that finds 'assigneeId' as the actor field.
     // The builder logic 'getActorRelationFieldName' checks for type match.
     // 'assignee' has type 'User'. Actor is 'User'. Match!
@@ -132,7 +132,7 @@ describe('TestBuilder Complex Scenarios', () => {
       test: { actor: 'User' },
     };
 
-    const builder = new TestBuilder(uniqueModel, 'ProfileApi', 'list');
+    const builder = new IntegrationTestBuilder(uniqueModel, 'ProfileApi', 'list');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 

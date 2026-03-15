@@ -35,9 +35,7 @@ export class ActionUnitTestBuilder extends BaseBuilder {
             relativePath = `../../../src/actions/${modulePath}`;
           }
 
-          if (!this.services.find((s) => s.name === name)) {
-            this.services.push({ name, path: relativePath });
-          }
+          this.services.push({ name, path: relativePath });
         }
       }
     }

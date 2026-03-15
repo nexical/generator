@@ -59,8 +59,8 @@ vi.mock('../../../src/engine/builders/init-builder.js', () => ({
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test-builder.js', () => ({
-  TestBuilder: class {
+vi.mock('../../../src/engine/builders/integration-test-builder.js', () => ({
+  IntegrationTestBuilder: class {
     ensure() {}
   },
 }));
@@ -69,8 +69,8 @@ vi.mock('../../../src/engine/builders/action-builder.js', () => ({
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/service-test-builder.js', () => ({
-  ServiceTestBuilder: class {
+vi.mock('../../../src/engine/builders/service-integration-test-builder.js', () => ({
+  ServiceIntegrationTestBuilder: class {
     ensure() {}
   },
 }));
@@ -115,11 +115,59 @@ vi.mock('../../../src/engine/builders/hook-builder.js', () => ({
   },
 }));
 vi.mock('../../../src/engine/builders/role-builder.js', () => ({
-  RoleBuilder: vi.fn(
-    class {
-      ensure = vi.fn();
-    },
-  ),
+  RoleBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/api-unit-test-builder.js', () => ({
+  ApiUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/action-unit-test-builder.js', () => ({
+  ActionUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/service-unit-test-builder.js', () => ({
+  ServiceUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/sdk-unit-test-builder.js', () => ({
+  SdkUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/role-unit-test-builder.js', () => ({
+  RoleUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/hook-unit-test-builder.js', () => ({
+  HookUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/agent-unit-test-builder.js', () => ({
+  AgentUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/config-unit-test-builder.js', () => ({
+  ConfigUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/middleware-unit-test-builder.js', () => ({
+  MiddlewareUnitTestBuilder: class {
+    ensure() {}
+  },
+}));
+vi.mock('../../../src/engine/builders/test/permission-unit-test-builder.js', () => ({
+  PermissionUnitTestBuilder: class {
+    ensure() {}
+  },
 }));
 vi.mock('../../../src/engine/reconciler.js', () => ({
   Reconciler: {
@@ -168,6 +216,7 @@ describe('ApiModuleGenerator Coverage', () => {
         getFilePath: () => path,
         replaceWithText: vi.fn(),
         getFullText: () => '',
+        getText: () => '',
         name: roleName,
       }));
     (generator as unknown as { saveAll: import('vitest').Mock }).saveAll = vi
@@ -371,5 +420,164 @@ Virtual:
     const generator = new ApiModuleGenerator(modulePath, {});
     const text = generator.debugBaseRoleText({ roles: {}, permissions: {} });
     expect(text).toContain('export abstract class BaseRole');
+  });
+
+  it('should cover Root virtual model and normalization logic', async () => {
+    const generator = new ApiModuleGenerator(modulePath, {});
+    vi.mocked(ModelParser.parse).mockReturnValue({
+      models: [],
+      enums: [],
+      config: { test: {} },
+    } as unknown as { models: ModelDef[]; enums: EnumConfig[]; config: GlobalConfig });
+
+    vi.mocked(fs.existsSync).mockImplementation(((p: string) =>
+      p.endsWith('api.yaml')) as unknown as typeof fs.existsSync);
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      `
+Root:
+  - path: "/"
+    method: "POST"
+    input: "none"
+    output: "none"
+  - path: "/health"
+    method: "GET"
+    input: "none"
+    output: "none"
+    action: "health-check"
+` as unknown as string & Buffer,
+    );
+
+    setupMocks(generator);
+    await generator.run();
+  });
+
+  it('should cover access.yaml config mapping and model role overrides', async () => {
+    const generator = new ApiModuleGenerator(modulePath, {});
+    vi.mocked(ModelParser.parse).mockReturnValue({
+      models: [
+        { name: 'User', db: true, api: true, role: 'none', fields: {} } as ModelDef,
+        { name: 'Profile', db: true, api: true, role: { create: 'admin' }, fields: {} } as ModelDef,
+      ],
+      enums: [],
+      config: { test: { roles: { admin: { role: 'R1' } } } },
+    } as unknown as { models: ModelDef[]; enums: EnumConfig[]; config: GlobalConfig });
+
+    vi.mocked(fs.existsSync).mockImplementation(((p: string) =>
+      p.endsWith('access.yaml')) as unknown as typeof fs.existsSync);
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      `
+config:
+  roles:
+    admin:
+      permissions: ["all"]
+  permissions:
+    all: "Full access"
+` as unknown as string & Buffer,
+    );
+
+    setupMocks(generator);
+    await generator.run();
+  });
+
+  it('should cover coverage sweeper and safety skips', async () => {
+    const generator = new ApiModuleGenerator(modulePath, {});
+    vi.mocked(ModelParser.parse).mockReturnValue({
+      models: [],
+      enums: [],
+      config: { test: {} },
+    } as unknown as { models: ModelDef[]; enums: EnumConfig[]; config: GlobalConfig });
+
+    vi.mocked(fs.existsSync).mockImplementation(
+      ((p: string) =>
+        p.includes('src/hooks') ||
+        p.includes('src/agent') ||
+        p.includes('src/config') ||
+        p.includes('src/services') ||
+        p.endsWith('models.yaml')) as unknown as typeof fs.existsSync,
+    );
+
+    vi.mocked(fs.readdirSync).mockImplementation(((p: string) => {
+      if (p.endsWith('src/hooks')) return ['hook.ts', 'react-hook.ts', 'no-init.ts'];
+      if (p.endsWith('src/agent')) return ['agent.ts'];
+      if (p.endsWith('src/config')) return ['config.ts'];
+      if (p.endsWith('src/services')) return ['user-service.ts'];
+      return [];
+    }) as unknown as typeof fs.readdirSync);
+
+    vi.mocked(fs.readFileSync).mockImplementation(((p: string) => {
+      if (p.endsWith('react-hook.ts')) return 'import { useState } from "react";';
+      if (p.endsWith('no-init.ts')) return 'export const someFunc = () => {};';
+      if (p.endsWith('hook.ts')) return 'export const init = () => {};';
+      return '';
+    }) as unknown as typeof fs.readFileSync);
+
+    setupMocks(generator);
+    // Don't mock discoverMethods here to cover it
+    // (generator as any).discoverMethods = vi.fn().mockReturnValue({ list: 1 });
+
+    await generator.run();
+
+    // Trigger branch where test file already has content and no GENERATED CODE
+    (generator as unknown as { getOrCreateFile: import('vitest').Mock }).getOrCreateFile = vi
+      .fn()
+      .mockReturnValue({
+        getText: () => 'Existing code',
+        replaceWithText: vi.fn(),
+        ensure: vi.fn(),
+      });
+    await (
+      generator as unknown as { runCoverageSweeper: () => Promise<void> }
+    ).runCoverageSweeper();
+  });
+
+  it('should cover method discovery logic parameter counting and fallbacks', () => {
+    const generator = new ApiModuleGenerator(modulePath, {});
+    (generator as unknown as { project: unknown }).project = {
+      getSourceFile: vi.fn().mockReturnValue({
+        getFullText: () => `
+          export class TestService {
+            async list() {}
+            async get(id: string) {}
+            async update(id: string, data: any) {}
+            // Skip these
+            async init() {}
+            async run() {}
+          }
+        `,
+      }),
+    };
+
+    const methods = (
+      generator as unknown as { discoverMethods: (path: string) => Record<string, number> }
+    ).discoverMethods('path/to/service.ts');
+    expect(methods.list).toBe(0);
+    expect(methods.get).toBe(1);
+    expect(methods.update).toBe(2);
+    expect(methods.init).toBeUndefined();
+
+    // Absolute path branch
+    (
+      generator as unknown as { discoverMethods: (path: string) => Record<string, number> }
+    ).discoverMethods('/absolute/path/to/service.ts');
+
+    // Fallback case (null source file and fs exists)
+    (
+      generator as unknown as { project: { getSourceFile: import('vitest').Mock } }
+    ).project.getSourceFile = vi.fn().mockReturnValue(null);
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      'async custom(a, b, c) {}' as unknown as string & Buffer,
+    );
+    const customMethods = (
+      generator as unknown as { discoverMethods: (path: string) => Record<string, number> }
+    ).discoverMethods('existent.ts');
+    expect(customMethods.custom).toBe(3);
+
+    // No content case
+    vi.mocked(fs.readFileSync).mockReturnValue('' as unknown as string & Buffer);
+    const defaults = (
+      generator as unknown as { discoverMethods: (path: string) => Record<string, number> }
+    ).discoverMethods('existent.ts');
+    expect(defaults.list).toBe(1);
   });
 });

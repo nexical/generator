@@ -3,9 +3,9 @@ import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
 import { ActionBuilder } from '../../../../src/engine/builders/action-builder.js';
 import { ActorBuilder } from '../../../../src/engine/builders/actor-builder.js';
-import { ServiceTestBuilder } from '../../../../src/engine/builders/service-test-builder.js';
+import { ServiceIntegrationTestBuilder } from '../../../../src/engine/builders/service-integration-test-builder.js';
 import { ApiModuleGenerator } from '../../../../src/engine/api-module-generator.js';
-import { type ModelDef } from '../../../../src/engine/types';
+import { type ModelDef } from '../../../../src/engine/types.js';
 
 describe('Coverage Fix - Generator Builders', () => {
   it('ActorBuilder - should handle model with role field (roleCleanup empty)', () => {
@@ -91,12 +91,12 @@ export class MyAction {
     expect(imports).toContain('@/lib/core/db');
   });
 
-  it('ServiceTestBuilder - should cover various input/output types', () => {
-    const builder1 = new ServiceTestBuilder('test-api', 'DoStuff', 'string', 'void');
+  it('ServiceIntegrationTestBuilder - should cover various input/output types', () => {
+    const builder1 = new ServiceIntegrationTestBuilder('test-api', 'DoStuff', 'string', 'void');
     const schema1 = (builder1 as unknown as { getSchema(): { header: string } }).getSchema();
     expect(schema1.header).toContain('INITIAL');
 
-    const builder2 = new ServiceTestBuilder('test-api', 'GetMany', 'User[]', 'void');
+    const builder2 = new ServiceIntegrationTestBuilder('test-api', 'GetMany', 'User[]', 'void');
     const schema2 = (
       builder2 as unknown as { getSchema(): { imports: { namedImports: string[] }[] } }
     ).getSchema();
@@ -252,8 +252,8 @@ export class MyAction {
     expect(specifiers).toContain('@/lib/core/db');
   });
 
-  it('ServiceTestBuilder - should cover complex type normalization', () => {
-    const builder = new ServiceTestBuilder('api', 'Action', 'Array<User>', 'void');
+  it('ServiceIntegrationTestBuilder - should cover complex type normalization', () => {
+    const builder = new ServiceIntegrationTestBuilder('api', 'Action', 'Array<User>', 'void');
     const schema = (
       builder as unknown as { getSchema(): { imports: { namedImports: string[] }[] } }
     ).getSchema();
