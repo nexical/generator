@@ -269,37 +269,45 @@ export class Reconciler {
             if (!trimmedStmt) return;
 
             const normalizedStmt = Normalizer.normalize(trimmedStmt);
-            if (currentNormalizedExisting.includes(normalizedStmt)) return;
+            if (currentNormalizedExisting.includes(normalizedStmt)) {
+              return;
+            }
 
             // Smart check for blocks: extract the "signature" (first meaningful line)
-            // e.g. "export enum Status {", "export function foo(", "defineApi("
             const lines = trimmedStmt.split('\n');
             const signature = lines.find((l) => l.trim().length > 0)?.trim();
 
             if (signature) {
               const normalizedSignature = Normalizer.normalize(signature);
+
               // For declarations or common patterns, check if the signature already exists
               const isDeclaration =
                 /^(export\s+)?(enum|function|class|const|let|interface)\s+/.test(signature);
               const isDefineApi = signature.startsWith('defineApi(');
+              const isDescribeOrIt =
+                signature.startsWith('describe(') || signature.startsWith('it(');
 
-              if (isDeclaration || isDefineApi) {
+              if (isDeclaration || isDefineApi || isDescribeOrIt) {
+                // If it's a describe/it block, extract the name and check for it
+                if (isDescribeOrIt) {
+                  const nameMatch = signature.match(/^(describe|it)\(['"`]([^'"`]+)['"`]/);
+                  if (nameMatch) {
+                    const searchPattern = Normalizer.normalize(`${nameMatch[1]}("${nameMatch[2]}"`);
+                    const altSearchPattern = Normalizer.normalize(
+                      `${nameMatch[1]}('${nameMatch[2]}'`,
+                    );
+                    if (
+                      currentNormalizedExisting.includes(searchPattern) ||
+                      currentNormalizedExisting.includes(altSearchPattern)
+                    ) {
+                      console.info(`[Reconciler] Skipping existing block by name: ${nameMatch[2]}`);
+                      return;
+                    }
+                  }
+                }
+
                 if (currentNormalizedExisting.includes(normalizedSignature)) {
                   console.info(`[Reconciler] Skipping existing block by signature: ${signature}`);
-                  return;
-                }
-              }
-            }
-
-            // Fallback: Smart check for describe/it blocks
-            const firstLine = lines[0].trim();
-            if (firstLine.startsWith('describe(') || firstLine.startsWith('it(')) {
-              // Extract the signature: describe('...', () =>
-              const signatureMatch = firstLine.match(/^(describe|it)\(['"`]([^'"`]+)['"`]/);
-              if (signatureMatch) {
-                const searchPattern = `${signatureMatch[1]}("${signatureMatch[2]}"`;
-                if (currentNormalizedExisting.includes(searchPattern)) {
-                  console.info(`[Reconciler] Skipping existing block: ${signatureMatch[2]}`);
                   return;
                 }
               }

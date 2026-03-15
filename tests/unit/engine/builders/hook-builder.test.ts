@@ -17,7 +17,8 @@ describe('HookBuilder', () => {
   it('should generate hook files from config', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockImplementation((path) => {
-      if (String(path).endsWith('hooks.yaml')) {
+      const pathStr = String(path);
+      if (pathStr.endsWith('hooks.yaml')) {
         return `
 hooks:
   - event: "user.created"
@@ -25,6 +26,9 @@ hooks:
   - event: "order.paid"
     action: "MarkAsShipped"
 `;
+      }
+      if (pathStr.endsWith('.tsf')) {
+        return 'export default fragment`mock-content`';
       }
       return '';
     });
@@ -45,12 +49,21 @@ hooks:
 
   it('should handle filters and existing imports', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readFileSync).mockReturnValue(`
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      const pathStr = String(path);
+      if (pathStr.endsWith('hooks.yaml')) {
+        return `
 hooks:
   - event: "data.process"
     action: "Transform"
     filter: true
-`);
+`;
+      }
+      if (pathStr.endsWith('.tsf')) {
+        return 'export default fragment`mock-content`';
+      }
+      return '';
+    });
 
     const builder = new HookBuilder('test-api', { name: 'test-api' });
     // Setup a file with existing imports to cover the filter branch

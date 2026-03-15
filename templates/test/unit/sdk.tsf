@@ -1,0 +1,29 @@
+import { fragment } from '@nexical/generator';
+
+declare const sdkName: string;
+declare const sdkPath: string;
+declare const tests: string;
+
+export default fragment/* ts */`
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ${sdkName} } from '${sdkPath}';
+
+describe('${sdkName}', () => {
+  let sdk: ${sdkName};
+  let mockClient: any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockClient = {
+      request: vi.fn().mockResolvedValue({ success: true, data: { id: 'test-id' } }),
+    };
+    sdk = new ${sdkName}(mockClient as any);
+  });
+
+  it('should initialize', () => {
+    expect(sdk).toBeDefined();
+  });
+
+  ${tests}
+});
+`

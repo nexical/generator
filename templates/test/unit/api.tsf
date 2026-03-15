@@ -1,0 +1,18 @@
+import { fragment } from '@nexical/generator';
+
+declare const modelName: string;
+declare const method: string;
+declare const endpointPath: string;
+declare const renderedTests: string;
+
+export default fragment/* ts */`
+describe('${modelName} API - ${method} ${endpointPath}', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(ApiGuard.protect).mockResolvedValue(undefined);
+    });
+
+    ${renderedTests}
+});
+`
+  ;

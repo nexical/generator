@@ -30,16 +30,19 @@ declare const HookSystem: unknown;
 export default fragment/* ts */`
 
 defineApi(async (context, actor) => {
-    // 1. Body Parsing (Input)
-    const body = ${bodyLoader} as ${inputType};
-
+    // 1. Parsing Input (Body + Query + Params)
+    const rawBody = ${bodyLoader};
     const query = Object.fromEntries(new URL(context.request.url).searchParams);
+    const rawInput = { ...context.params, ...query, ...rawBody };
+
+    const zodSchema = ${zodSchema};
+    const body = (zodSchema ? zodSchema.parse(rawInput) : rawInput) as ${inputType};
 
     // 2. Hook: Filter Input
     const input: ${inputType} = await HookSystem.filter('${lowerEntity}.${method}.input', body);
 
     // 3. Security Check
-    const combinedInput = { ...context.params, ...query, ...input };
+    const combinedInput = { ...input }; // input already contains params, query and body
     await ApiGuard.protect(context, '${role}', combinedInput);
 
     // Inject userId from context for protected routes
@@ -55,7 +58,7 @@ defineApi(async (context, actor) => {
 
     // 6. Response
     if (!filteredResult.success) {
-        return new Response(JSON.stringify({ error: filteredResult.error }), { status: 400 });
+        throw new Error(filteredResult.error || 'Internal Server Error');
     }
 
     return { success: true, data: filteredResult.data };

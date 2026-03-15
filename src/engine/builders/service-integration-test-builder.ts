@@ -3,7 +3,7 @@ import { BaseBuilder } from './base-builder.js';
 import { ts } from '../primitives/statements/factory.js';
 import { TemplateLoader } from '../../utils/template-loader.js';
 
-export class ServiceTestBuilder extends BaseBuilder {
+export class ServiceIntegrationTestBuilder extends BaseBuilder {
   constructor(
     private actionBase: string,
     private actionName: string,
@@ -30,8 +30,12 @@ export class ServiceTestBuilder extends BaseBuilder {
     const imports: ImportConfig[] = [
       { moduleSpecifier: 'vitest', namedImports: ['describe', 'it', 'expect'] },
       {
-        moduleSpecifier: '../../../../../tests/integration/helpers/context',
+        moduleSpecifier: '@tests/integration/helpers/context',
         namedImports: ['createMockContext'],
+      },
+      {
+        moduleSpecifier: '@tests/integration/lib/factory',
+        namedImports: ['Factory'],
       },
       {
         moduleSpecifier: `../../../src/actions/${this.actionBase}`,

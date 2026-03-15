@@ -6,6 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { ts } from '../primitives/statements/factory.js';
+import { HookUnitTestBuilder } from './test/hook-unit-test-builder.js';
 
 export interface HookTemplateConfig {
   event: string;
@@ -87,6 +88,14 @@ export class HookBuilder extends BaseBuilder {
     };
 
     Reconciler.reconcile(file, definition);
+
+    // Generate unit test
+    const testFileName = `tests/unit/hooks/${hook.event.replace(/\./g, '-')}-${hook.action.replace(/\./g, '-')}.test.ts`;
+    const testFile = project.createSourceFile(testFileName, '', { overwrite: true });
+    new HookUnitTestBuilder(
+      `${hook.event}-${hook.action}`,
+      `../../../src/hooks/${hook.event.replace(/\./g, '-')}-${hook.action.replace(/\./g, '-')}`,
+    ).ensure(testFile);
   }
 
   private getHeader(): string {

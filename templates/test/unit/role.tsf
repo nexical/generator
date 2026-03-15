@@ -1,0 +1,81 @@
+import { fragment } from '@nexical/generator';
+
+declare const className: string;
+declare const rolePath: string;
+declare const roleName: string;
+declare const compatibleRoles: string;
+
+export default fragment/* ts */`
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ${className} } from '${rolePath}';
+import { db } from '@/lib/core/db';
+
+vi.mock('@/lib/core/db', () => ({
+  db: {
+    job: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn() },
+    agent: { findUnique: vi.fn() },
+    team: { findUnique: vi.fn() },
+  },
+}));
+
+describe('${className}', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+    it('should be correctly defined', () => {
+        const role = new ${className}();
+        expect(role.name).toBe('${roleName}');
+        expect(role.permissions).toBeDefined();
+        expect(Array.isArray(role.permissions)).toBe(true);
+    });
+
+    it('should pass check for exactly matching role', async () => {
+        const role = new ${className}();
+        const mockContext = {
+            locals: {
+                actor: { role: '${roleName}', id: 'test-user' }
+            },
+            params: { id: 'test-id' },
+            url: new URL('http://localhost/api/test?foo=bar')
+        } as any;
+        
+        await expect(role.check(mockContext, {}, {})).resolves.not.toThrow();
+    });
+
+    it('should pass check for USER_ADMIN', async () => {
+        const role = new ${className}();
+        const mockContext = {
+            locals: {
+                actor: { role: 'USER_ADMIN', id: 'admin-user' }
+            },
+            params: { id: 'test-id' },
+            url: new URL('http://localhost/api/test')
+        } as any;
+        
+        await expect(role.check(mockContext, {}, {})).resolves.not.toThrow();
+    });
+
+    it('should throw error for unauthorized role', async () => {
+        const role = new ${className}();
+        const mockContext = {
+            locals: {
+                actor: { role: 'WRONG_ROLE', id: 'wrong-user' }
+            },
+            params: { id: 'test-id' },
+            url: new URL('http://localhost/api/test')
+        } as any;
+        
+        await expect(role.check(mockContext, {}, {})).rejects.toThrow('Forbidden');
+    });
+
+    it('should throw error if no actor found', async () => {
+        const role = new ${className}();
+        const mockContext = {
+            locals: {}
+        } as any;
+        
+        await expect(role.check(mockContext, {}, {})).rejects.toThrow('Unauthorized: No actor found');
+    });
+});
+`

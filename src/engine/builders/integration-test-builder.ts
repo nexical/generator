@@ -10,7 +10,7 @@ import { ts } from '../primitives/statements/factory.js';
 
 type TestOperation = 'create' | 'list' | 'get' | 'update' | 'delete';
 
-export class TestBuilder extends BaseBuilder {
+export class IntegrationTestBuilder extends BaseBuilder {
   constructor(
     private model: ModelDef,
     private moduleName: string,

@@ -29,7 +29,7 @@ export class TemplateLoader {
     this.activeModulePath = modulePath;
   }
 
-  static load(path: string, variables: Record<string, string> = {}): ParsedStatement {
+  static load(path: string, variables: Record<string, unknown> = {}): ParsedStatement {
     let fullPath = join(this.templatesDir, path);
     // If an active module path is set, check if it has an override for this template
     if (this.activeModulePath) {

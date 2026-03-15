@@ -1,0 +1,15 @@
+import { fragment } from '@nexical/generator';
+
+declare const configPath: string;
+declare const configName: string;
+
+export default fragment/* ts */`
+import { describe, it, expect, vi } from 'vitest';
+import * as config from '\${configPath}';
+
+describe('\${configName}', () => {
+    it('should be correctly exported', () => {
+        expect(config).toBeDefined();
+    });
+});
+`

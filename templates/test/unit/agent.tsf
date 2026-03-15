@@ -1,0 +1,15 @@
+import { fragment } from '@nexical/generator';
+
+declare const className: string;
+
+export default fragment/* ts */`
+import { describe, it, expect, vi } from 'vitest';
+import { \${className} } from '\${agentPath}';
+
+describe('\${className}', () => {
+    it('should be instantiable', () => {
+        // We just check if we can import and see the class
+        expect(\${className}).toBeDefined();
+    });
+});
+`

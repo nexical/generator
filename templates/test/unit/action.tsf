@@ -1,0 +1,254 @@
+import { fragment } from '@nexical/generator';
+
+declare const actionName: string;
+declare const actionPath: string;
+declare const servicesImports: string;
+declare const servicesMocks: string;
+declare const services: { name: string, path: string }[];
+declare const entityName: string;
+declare const camelEntity: string;
+
+export default fragment/* ts */`
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ${actionName} } from '${actionPath}';
+import { db } from '@/lib/core/db';
+import { Logger } from '@/lib/core/logger';
+${servicesImports}
+
+vi.mock('@/lib/core/db', () => {
+    const mockModelProps = {
+        id: '1',
+        type: 'TASK',
+        email: 'test@example.com',
+        status: '${defaultStatus}',
+        name: 'Test Name',
+        userId: 'user-1',
+        teamId: 'team-1',
+        actorId: 'ne_pat_test',
+        actorType: 'user',
+        lockedBy: 'ne_pat_test',
+        payload: {},
+        capabilities: [],
+        progress: 0,
+        retryCount: 0,
+        maxRetries: 3,
+        originalJobId: '1',
+        reason: 'Test Reason',
+    };
+
+    const isExistenceCheck = (where: any): boolean => {
+      if (!where) return false;
+      const fields = [
+        'email',
+        'username',
+        'teamId_userId',
+        'userId_teamId',
+        'teamId_email',
+        'email_teamId',
+        'token',
+      ];
+      const whereKeys = Object.keys(where);
+      if (whereKeys.some((k) => fields.includes(k))) return true;
+      if (whereKeys.some((k) => k.includes('_'))) return true;
+      if (where.OR && Array.isArray(where.OR)) return where.OR.some((c: any) => isExistenceCheck(c));
+      if (where.AND && Array.isArray(where.AND)) return where.AND.some((c: any) => isExistenceCheck(c));
+      if (where.userId && where.teamId) return true;
+      return false;
+    };
+
+    const mockModel = {
+        findMany: vi.fn().mockResolvedValue([mockModelProps]),
+        findUnique: vi.fn().mockImplementation((args: any) => {
+            if (isExistenceCheck(args?.where) && !args?.where?.id) return null;
+            return {
+                ...mockModelProps,
+                ...args?.where,
+            };
+        }),
+        findFirst: vi.fn().mockImplementation((args: any) => {
+            if (isExistenceCheck(args?.where) && !args?.where?.id) return null;
+            return {
+                ...mockModelProps,
+                ...args?.where,
+            };
+        }),
+        create: vi.fn().mockResolvedValue(mockModelProps),
+        update: vi.fn().mockResolvedValue(mockModelProps),
+        delete: vi.fn().mockResolvedValue(mockModelProps),
+        count: vi.fn().mockResolvedValue(1),
+        upsert: vi.fn().mockResolvedValue(mockModelProps),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        groupBy: vi.fn().mockResolvedValue([{ _count: { id: 1 }, status: 'ACTIVE' }]),
+        aggregate: vi.fn().mockResolvedValue({ _count: { id: 1 }, _avg: { value: 0 } }),
+        ...mockModelProps,
+    };
+
+    const handler = {
+        get: (target: any, prop: string): any => {
+            if (prop === '$transaction') {
+                return vi.fn().mockImplementation(async (input) => {
+                    if (Array.isArray(input)) return Promise.all(input);
+                    return typeof input === 'function' ? input(new Proxy({}, handler)) : input;
+                });
+            }
+            if (typeof prop === 'string' && !prop.startsWith('$')) {
+                return mockModel;
+            }
+            return target[prop];
+        },
+    };
+
+    return {
+        db: new Proxy({}, handler),
+    };
+});
+
+vi.mock('@/lib/core/config', () => ({
+  config: {
+    PUBLIC_API_URL: 'http://localhost:3000',
+    NODE_ENV: 'test',
+  },
+  createConfig: vi.fn().mockImplementation((schema) => ({
+    parse: vi.fn().mockImplementation((d) => d),
+    ...schema,
+  })),
+  getProcessEnv: vi.fn().mockImplementation((k) => k),
+}));
+
+vi.mock('@/lib/core/logger', () => ({
+    Logger: {
+        error: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+    },
+}));
+
+vi.mock('@/lib/modules/hooks', () => ({
+    HookSystem: {
+        dispatch: vi.fn().mockResolvedValue(undefined),
+        filter: vi.fn().mockImplementation((name, data) => Promise.resolve(data)),
+        on: vi.fn(),
+    },
+}));
+
+vi.mock('@/lib/email/email-registry', () => ({
+    EmailRegistry: {
+        render: vi.fn().mockResolvedValue('<html></html>'),
+    },
+}));
+
+vi.mock('@/lib/email/email-sender', () => ({
+    sendEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/lib/registries/role-registry', () => ({
+  roleRegistry: {
+    get: vi.fn().mockReturnValue({ check: vi.fn().mockResolvedValue(undefined) }),
+    check: vi.fn().mockResolvedValue(undefined),
+  }
+}));
+
+${servicesMocks}
+
+describe('${actionName}', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    const commonServiceMethods = [
+        'create', 'get', 'list', 'update', 'delete', 'upsert', 'count', 'run',
+        'createKey', 'register', 'login', 'logout', 'invite', 'inviteMember',
+        'verifyEmail', 'requestPasswordReset', 'resetPassword', 'validateResetToken',
+        'cancel', 'complete', 'fail', 'progress', 'heartbeat', 'registerAgent', 'poll',
+        'acceptInvitation', 'rejectInvitation', 'removeMember', 'updateRole', 'getByEmail', 'getById', 'updateProfile',
+        'getFullSchema', 'updateProgress', 'emitMetrics', 'retry', 'schedule', 'execute',
+        'checkStaleAgents', 'getJobMetrics', 'getAgentMetrics', 'pollJobs', 'listInvitations', 'resendInvitation',
+        'validate', 'verify', 'send', 'process', 'handle'
+    ];
+
+    it('should be defined', () => {
+        expect(${actionName}).toBeDefined();
+    });
+
+    it('should run (smoke test)', async () => {
+        \${services.map(s => \`
+        const \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(\${s.name} as any);
+        commonServiceMethods.forEach(m => {
+            if (\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock[m]) \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock[m].mockResolvedValue({ success: true, data: { id: '1' } });
+        });
+        \`).join('\n')}
+        const mockContext = {
+            locals: {
+                actor: { id: 'user-1', type: 'user', email: 'test@example.com' },
+            },
+            request: new Request('http://localhost'),
+            params: { id: 'test-id', role: 'member' },
+        } as any;
+
+        const result = await ${actionName}.run({ 
+          id: '1', 
+          userId: 'user-1', 
+          teamId: 'team-1',
+          token: 'test-token', 
+          email: 'test@example.com', 
+          name: 'Test',
+          role: 'TEAM_MEMBER'
+        } as any, mockContext);
+        expect(result).toBeDefined();
+    });
+
+    \${services.length > 0 ? \`
+    it('should call \${services[0].name} on success', async () => {
+        const mockData = { id: '1' };
+        \${services.map(s => \`
+        const \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(\${s.name} as any);
+        commonServiceMethods.forEach(m => {
+            if (\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock[m]) \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock[m].mockResolvedValue({ success: true, data: mockData });
+        });
+        \`).join('\n')}
+
+        const mockContext = {
+            locals: {
+                actor: { id: 'user-1', type: 'user', email: 'test@example.com' },
+            },
+            request: new Request('http://localhost'),
+            params: { id: 'test-id' },
+        } as any;
+
+        const result = await \${actionName}.run({ 
+          id: '1', 
+          userId: 'user-1', 
+          token: 'test-token', 
+          email: 'test@example.com', 
+          name: 'Test' 
+        } as any, mockContext);
+        expect(result.success).toBe(true);
+    });
+
+    it('should return error when \${services[0].name} fails', async () => {
+        const serviceMock = vi.mocked(\${services[0].name} as any);
+        commonServiceMethods.forEach(m => {
+            if (serviceMock[m]) serviceMock[m].mockResolvedValue({ success: false, error: 'Service error' });
+        });
+
+        const mockContext = {
+            locals: {
+                actor: { id: 'user-1', type: 'user', email: 'test@example.com' },
+            },
+            request: new Request('http://localhost'),
+            params: { id: 'test-id' },
+        } as any;
+
+        const result = await \${actionName}.run({ 
+          id: '1', 
+          userId: 'user-1', 
+          token: 'test-token', 
+          email: 'test@example.com', 
+          name: 'Test' 
+        } as any, mockContext);
+        expect(result.success).toBe(false);
+    });\` : ''}
+});
+`

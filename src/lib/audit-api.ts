@@ -17,7 +17,7 @@ import { ApiBuilder } from '../engine/builders/api-builder.js';
 import { SdkBuilder } from '../engine/builders/sdk-builder.js';
 import { SdkIndexBuilder } from '../engine/builders/sdk-index-builder.js';
 import { InitBuilder } from '../engine/builders/init-builder.js';
-import { TestBuilder } from '../engine/builders/test-builder.js';
+import { IntegrationTestBuilder } from '../engine/builders/integration-test-builder.js';
 import { ActionBuilder } from '../engine/builders/action-builder.js';
 import { TypeBuilder } from '../engine/builders/type-builder.js';
 import { FactoryBuilder } from '../engine/builders/factory-builder.js';
@@ -355,7 +355,7 @@ export async function auditModule(
           ];
           for (const op of ops) {
             validate(
-              new TestBuilder(model, name, op),
+              new IntegrationTestBuilder(model, name, op),
               getFile(`tests/integration/api/${kebabName}/${op}.test.ts`),
               `${entityName}Test ${op}`,
             );

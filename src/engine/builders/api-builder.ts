@@ -43,13 +43,13 @@ export class ApiBuilder extends BaseBuilder {
   private getRole(action: string): string {
     // ... existing getRole logic ...
     const roleConfig = this.model.role;
-    if (!roleConfig) return 'member';
+    if (!roleConfig) return 'USER_EMPLOYEE';
     if (typeof roleConfig === 'string') return roleConfig;
-    return roleConfig[action] || 'member';
+    return roleConfig[action] || 'USER_EMPLOYEE';
   }
 
-  private generateZodSchema(): string {
-    const fields = Object.entries(this.model.fields)
+  private generateZodSchema(targetModel: ModelDef = this.model): string {
+    const fields = Object.entries(targetModel.fields)
       .filter(([name, f]) => {
         const typeName = f.type.replace('[]', '');
         const isModel = this.allModels.some((m) => m.name === typeName);
@@ -728,9 +728,13 @@ export class ApiBuilder extends BaseBuilder {
           entityName: this.model.name,
           lowerEntity: this.model.name.charAt(0).toLowerCase() + this.model.name.slice(1),
           method,
-          role: role || 'member',
+          role: role || 'USER_EMPLOYEE',
           actionClassName,
           docs: customDocs,
+          zodSchema:
+            input && !['none', 'void', 'unknown', 'any'].includes(input)
+              ? this.generateZodSchema(this.allModels.find((m) => m.name === input))
+              : 'null',
         }),
       });
     }
@@ -749,6 +753,10 @@ export class ApiBuilder extends BaseBuilder {
 
     if (sourceText.includes('HookSystem')) {
       finalImports.push({ moduleSpecifier: '@/lib/modules/hooks', namedImports: ['HookSystem'] });
+    }
+
+    if (sourceText.includes('z.')) {
+      finalImports.push({ moduleSpecifier: 'zod', namedImports: ['z'] });
     }
 
     if (

@@ -38,13 +38,7 @@ defineApi(async (context, actor) => {
     const result = await ${serviceName}.update(id, validated, select, actor);
 
     if (!result.success) {
-        if (
-            result.error?.code === 'NOT_FOUND' || 
-            (typeof result.error === 'string' && result.error.includes('not_found'))
-        ) {
-            return new Response(JSON.stringify({ error: result.error }), { status: 404 });
-        }
-        return new Response(JSON.stringify({ error: result.error }), { status: 400 });
+        throw new Error(result.error || 'Internal Server Error');
     }
 
     return new Response(JSON.stringify({ success: true, data: result.data }), { status: 200 });

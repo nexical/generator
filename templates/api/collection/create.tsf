@@ -36,7 +36,7 @@ defineApi(async (context, actor) => {
     const result = await ${serviceName}.create(validated, select, actor);
 
     if (!result.success) {
-        return new Response(JSON.stringify({ error: result.error }), { status: 400 });
+        throw new Error(result.error || 'Internal Server Error');
     }
 
     return new Response(JSON.stringify({ success: true, data: result.data }), { status: 201 });

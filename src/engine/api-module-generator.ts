@@ -6,9 +6,9 @@ import { ApiBuilder } from './builders/api-builder.js';
 import { SdkBuilder } from './builders/sdk-builder.js';
 import { SdkIndexBuilder } from './builders/sdk-index-builder.js';
 import { InitBuilder } from './builders/init-builder.js';
-import { TestBuilder } from './builders/test-builder.js';
+import { IntegrationTestBuilder } from './builders/integration-test-builder.js';
 import { ActionBuilder } from './builders/action-builder.js';
-import { ServiceTestBuilder } from './builders/service-test-builder.js';
+import { ServiceIntegrationTestBuilder } from './builders/service-integration-test-builder.js';
 import { TypeBuilder } from './builders/type-builder.js';
 import { FactoryBuilder } from './builders/factory-builder.js';
 import { ActorBuilder } from './builders/actor-builder.js';
@@ -18,8 +18,18 @@ import { EmailBuilder } from './builders/email-builder.js';
 import { AgentBuilder } from './builders/agent-builder.js';
 import { HookBuilder } from './builders/hook-builder.js';
 import { RoleBuilder } from './builders/role-builder.js';
+import { ApiUnitTestBuilder } from './builders/test/api-unit-test-builder.js';
+import { ActionUnitTestBuilder } from './builders/test/action-unit-test-builder.js';
+import { ServiceUnitTestBuilder } from './builders/test/service-unit-test-builder.js';
+import { SdkUnitTestBuilder } from './builders/test/sdk-unit-test-builder.js';
+import { RoleUnitTestBuilder } from './builders/test/role-unit-test-builder.js';
+import { HookUnitTestBuilder } from './builders/test/hook-unit-test-builder.js';
+import { AgentUnitTestBuilder } from './builders/test/agent-unit-test-builder.js';
+import { ConfigUnitTestBuilder } from './builders/test/config-unit-test-builder.js';
+import { MiddlewareUnitTestBuilder } from './builders/test/middleware-unit-test-builder.js';
+import { PermissionUnitTestBuilder } from './builders/test/permission-unit-test-builder.js';
 import { type CustomRoute, type ModelDef, type ModuleConfig, type AccessConfig } from './types.js';
-import { toKebabCase } from '../utils/string.js';
+import { toKebabCase, toPascalCase } from '../utils/string.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import { parse } from 'yaml';
@@ -54,17 +64,47 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
     const processedModels = new Set(models.map((m) => m.name));
 
+    // 0. Pre-collect all services for mocking in actions
+    const allServices: { name: string; path: string }[] = [];
+    for (const model of models) {
+      if (model.db && !model.extended) {
+        const kebabName = toKebabCase(model.name);
+        allServices.push({
+          name: `${model.name}Service`,
+          path: `../../../src/services/${kebabName}-service`,
+        });
+      }
+    }
+
     // 2. Services, API Pages, SDK
     for (const model of models) {
-      // Skip if explicitly disabled
       if (!model.db && !model.api) continue;
       const name = model.name;
       const kebabName = toKebabCase(name);
 
       // Services
       if (model.db && !model.extended) {
+        logger.info(`[ApiModuleGenerator] Generating Service & Tests for: ${name}`);
         const serviceFile = this.getOrCreateFile(`src/services/${kebabName}-service.ts`);
         new ServiceBuilder(model).ensure(serviceFile);
+
+        const serviceUnitTestFile = this.getOrCreateFile(
+          `tests/unit/services/${kebabName}-service.test.ts`,
+        );
+        serviceUnitTestFile.replaceWithText(''); // Prevent duplication
+        const serviceRelPath = `src/services/${kebabName}-service.ts`;
+        const discoveredMethods = this.discoverMethods(serviceRelPath);
+        logger.info(
+          `[ApiModuleGenerator] Discovered ${Object.keys(discoveredMethods).length} methods for ${name}Service`,
+        );
+        new ServiceUnitTestBuilder(
+          `${name}Service`,
+          name,
+          `../../../src/services/${kebabName}-service`,
+          discoveredMethods,
+          models.map((m) => m.name),
+          models,
+        ).ensure(serviceUnitTestFile);
       }
 
       // APIs
@@ -73,8 +113,32 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const apiColFile = this.getOrCreateFile(`src/pages/api/${kebabName}/index.ts`);
           new ApiBuilder(model, models, this.moduleName, 'collection').ensure(apiColFile);
 
+          const apiColUnitTestFile = this.getOrCreateFile(
+            `tests/unit/pages/api/${kebabName}/index.test.ts`,
+          );
+          new ApiUnitTestBuilder(
+            this.moduleName,
+            name,
+            `../../../../../src/pages/api/${kebabName}/index`,
+            [{ method: 'GET' }],
+            `${name}Service`,
+            `../../../../../src/services/${kebabName}-service`,
+          ).ensure(apiColUnitTestFile);
+
           const apiIndFile = this.getOrCreateFile(`src/pages/api/${kebabName}/[id].ts`);
           new ApiBuilder(model, models, this.moduleName, 'individual').ensure(apiIndFile);
+
+          const apiIndUnitTestFile = this.getOrCreateFile(
+            `tests/unit/pages/api/${kebabName}/[id].test.ts`,
+          );
+          new ApiUnitTestBuilder(
+            this.moduleName,
+            name,
+            `../../../../../src/pages/api/${kebabName}/[id]`,
+            [{ method: 'GET' }],
+            `${name}Service`,
+            `../../../../../src/services/${kebabName}-service`,
+          ).ensure(apiIndUnitTestFile);
         }
 
         // Custom Routes
@@ -97,6 +161,40 @@ export class ApiModuleGenerator extends ModuleGenerator {
         for (const [routePath, routes] of Object.entries(groupedRoutes)) {
           const apiFile = this.getOrCreateFile(`src/pages/api/${kebabName}/${routePath}.ts`);
           new ApiBuilder(model, models, this.moduleName, 'custom', routes).ensure(apiFile);
+
+          // API Unit Tests (Grouped)
+          const apiUnitTestFile = this.getOrCreateFile(
+            `tests/unit/pages/api/${kebabName}/${routePath}.test.ts`,
+          );
+          const levels = routePath.split('/').length + 4;
+          const prefix = '../'.repeat(levels);
+
+          const unitTestRoutes = routes.map((route) => {
+            const kebabMethod = route.method.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+            const actionBase =
+              route.action ||
+              (kebabMethod.includes(kebabName) ? kebabMethod : `${kebabMethod}-${kebabName}`);
+            const methodPascal = route.method.charAt(0).toUpperCase() + route.method.slice(1);
+            const actionName = route.action
+              ? route.action
+                  .split('-')
+                  .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+                  .join('') + 'Action'
+              : (methodPascal.includes(name) ? methodPascal : `${methodPascal}${name}`) + 'Action';
+
+            return {
+              method: route.verb,
+              actionName,
+              actionPath: `${prefix}src/actions/${actionBase}`,
+            };
+          });
+
+          new ApiUnitTestBuilder(
+            this.moduleName,
+            name,
+            `${prefix}src/pages/api/${kebabName}/${routePath}`,
+            unitTestRoutes,
+          ).ensure(apiUnitTestFile);
 
           for (const route of routes) {
             // Validation: Strict Schema Enforcement
@@ -136,9 +234,20 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
             const serviceTestPath = `tests/integration/services/${actionBase}.test.ts`;
             const serviceTestFile = this.getOrCreateFile(serviceTestPath);
-            new ServiceTestBuilder(actionBase, actionName, inputType, outputType).ensure(
+            new ServiceIntegrationTestBuilder(actionBase, actionName, inputType, outputType).ensure(
               serviceTestFile,
             );
+
+            const actionUnitTestFile = this.getOrCreateFile(
+              `tests/unit/actions/${actionBase}.test.ts`,
+            );
+            new ActionUnitTestBuilder(
+              actionName,
+              `../../../src/actions/${actionBase}`,
+              actionFile,
+              [],
+              name,
+            ).ensure(actionUnitTestFile);
           }
         }
 
@@ -146,6 +255,21 @@ export class ApiModuleGenerator extends ModuleGenerator {
         if (!model.extended) {
           const sdkFile = this.getOrCreateFile(`src/sdk/${kebabName}-sdk.ts`);
           new SdkBuilder(model, modelRoutes).ensure(sdkFile);
+
+          const sdkUnitTestFile = this.getOrCreateFile(`tests/unit/sdk/${kebabName}-sdk.test.ts`);
+          sdkUnitTestFile.replaceWithText(''); // Prevent duplication
+
+          const sdkRelPath = `src/sdk/${kebabName}-sdk.ts`;
+          const discoveredMethods = this.discoverMethods(sdkRelPath);
+
+          new SdkUnitTestBuilder(
+            `${name}SDK`,
+            `../../../src/sdk/${kebabName}-sdk`,
+            name,
+            modelRoutes,
+            model.db,
+            discoveredMethods,
+          ).ensure(sdkUnitTestFile);
         }
 
         // Tests
@@ -174,7 +298,9 @@ export class ApiModuleGenerator extends ModuleGenerator {
             const testFile = this.getOrCreateFile(
               `tests/integration/api/generated/${kebabName}/${op}.test.ts`,
             );
-            new TestBuilder(model, this.moduleName, op, config.test?.roles || {}).ensure(testFile);
+            new IntegrationTestBuilder(model, this.moduleName, op, config.test?.roles || {}).ensure(
+              testFile,
+            );
           }
         }
       }
@@ -234,6 +360,46 @@ export class ApiModuleGenerator extends ModuleGenerator {
           routes,
         ).ensure(apiFile);
 
+        // API Unit Tests (Grouped)
+        const apiUnitTestFile = this.getOrCreateFile(
+          isRoot
+            ? `tests/unit/pages/api/${fileName}.test.ts`
+            : `tests/unit/pages/api/${kebabEntity}/${fileName}.test.ts`,
+        );
+
+        const levels = (isRoot ? 0 : 1) + fileName.split('/').length + 3;
+        const prefix = '../'.repeat(levels);
+
+        const unitTestRoutes = routes.map((route) => {
+          const kebabMethod = route.method.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+          const actionBase =
+            route.action ||
+            (kebabMethod.includes(kebabEntity) ? kebabMethod : `${kebabMethod}-${kebabEntity}`);
+          const methodPascal = route.method.charAt(0).toUpperCase() + route.method.slice(1);
+          const actionName = route.action
+            ? route.action
+                .split('-')
+                .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+                .join('') + 'Action'
+            : (methodPascal.includes(entityName) ? methodPascal : `${methodPascal}${entityName}`) +
+              'Action';
+
+          return {
+            method: route.verb,
+            actionName,
+            actionPath: `${prefix}src/actions/${actionBase}`,
+          };
+        });
+
+        new ApiUnitTestBuilder(
+          this.moduleName,
+          entityName,
+          isRoot
+            ? `${prefix}src/pages/api/${fileName}`
+            : `${prefix}src/pages/api/${kebabEntity}/${fileName}`,
+          unitTestRoutes,
+        ).ensure(apiUnitTestFile);
+
         for (const route of routes) {
           // Validation: Strict Schema Enforcement
           if (!route.input) {
@@ -273,9 +439,21 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
           const serviceTestPath = `tests/integration/services/${actionBase}.test.ts`;
           const serviceTestFile = this.getOrCreateFile(serviceTestPath);
-          new ServiceTestBuilder(actionBase, actionName, inputType, outputType).ensure(
+          new ServiceIntegrationTestBuilder(actionBase, actionName, inputType, outputType).ensure(
             serviceTestFile,
           );
+
+          const actionUnitTestFile = this.getOrCreateFile(
+            `tests/unit/actions/${actionBase}.test.ts`,
+          );
+          actionUnitTestFile.replaceWithText(''); // Prevent duplication
+          new ActionUnitTestBuilder(
+            actionName,
+            `../../../src/actions/${actionBase}`,
+            actionFile,
+            [],
+            entityName,
+          ).ensure(actionUnitTestFile);
         }
       }
 
@@ -283,6 +461,23 @@ export class ApiModuleGenerator extends ModuleGenerator {
       const sdkPath = isRoot ? `src/sdk/root-sdk.ts` : `src/sdk/${kebabEntity}-sdk.ts`;
       const sdkFile = this.getOrCreateFile(sdkPath);
       new SdkBuilder(virtualModel, routes).ensure(sdkFile);
+
+      const sdkUnitTestPath = isRoot
+        ? `tests/unit/sdk/root-sdk.test.ts`
+        : `tests/unit/sdk/${kebabEntity}-sdk.test.ts`;
+      const sdkUnitTestFile = this.getOrCreateFile(sdkUnitTestPath);
+      sdkUnitTestFile.replaceWithText(''); // Prevent duplication
+
+      const discoveredMethods = this.discoverMethods(sdkPath);
+
+      new SdkUnitTestBuilder(
+        isRoot ? 'RootSDK' : `${entityName}SDK`,
+        isRoot ? `../../../src/sdk/root-sdk` : `../../../src/sdk/${kebabEntity}-sdk`,
+        entityName,
+        routes,
+        false,
+        discoveredMethods,
+      ).ensure(sdkUnitTestFile);
     }
 
     // 4. Security Config (Roles & Permissions)
@@ -366,6 +561,12 @@ export class ApiModuleGenerator extends ModuleGenerator {
     ]);
     new MiddlewareBuilder(models, [...allCustomRoutes, ...modelRoutes]).ensure(middlewareFile);
 
+    const middlewareUnitTestFile = this.getOrCreateFile('tests/unit/middleware.test.ts');
+    middlewareUnitTestFile.replaceWithText(''); // Prevent duplication
+    new MiddlewareUnitTestBuilder(this.moduleName, '../../src/middleware', models).ensure(
+      middlewareUnitTestFile,
+    );
+
     // 9. Access Control (Roles & Permissions)
     if (fs.existsSync(accessYamlPath)) {
       logger.info(`[ModuleGenerator] Found access.yaml. Generating Security Layer...`);
@@ -405,6 +606,18 @@ export class ApiModuleGenerator extends ModuleGenerator {
             new RoleBuilder({ name: roleName, definition: roleDef, compatibleRoles }).ensure(
               roleFile,
             );
+
+            const roleUnitTestFile = this.getOrCreateFile(
+              `tests/unit/roles/${roleName.toLowerCase()}.test.ts`,
+            );
+            roleUnitTestFile.replaceWithText(''); // Prevent duplication
+            const pascalName = toPascalCase(roleName);
+            const className = `${pascalName}Role`;
+            new RoleUnitTestBuilder(
+              className,
+              roleName,
+              `../../../src/roles/${roleName.toLowerCase()}`,
+            ).ensure(roleUnitTestFile);
           }
         }
 
@@ -425,6 +638,10 @@ export class ApiModuleGenerator extends ModuleGenerator {
             permissions: accessConfig.permissions,
             rolePermissions,
           });
+
+          const permUnitTestFile = this.getOrCreateFile('tests/unit/permissions.test.ts');
+          permUnitTestFile.replaceWithText(''); // Prevent duplication
+          new PermissionUnitTestBuilder(this.moduleName).ensure(permUnitTestFile);
         }
       }
     }
@@ -435,10 +652,20 @@ export class ApiModuleGenerator extends ModuleGenerator {
     this.cleanup('src/pages/api', /\.ts$/);
     this.cleanup('src/sdk', /\.ts$/);
     this.cleanup('tests/integration/api/generated', /\.test\.ts$/);
+    this.cleanup('tests/unit/services', /\.test\.ts$/);
+    this.cleanup('tests/unit/actions', /\.test\.ts$/);
+    this.cleanup('tests/unit/sdk', /\.test\.ts$/);
+    this.cleanup('tests/unit/pages/api', /\.test\.ts$/);
+    this.cleanup('tests/unit/roles', /\.test\.ts$/);
+    this.cleanup('tests/unit/hooks', /\.test\.ts$/);
+    this.cleanup('tests/unit', /^permissions\.test\.ts$/);
 
     // Remove old duplicated actor-types if they exist
     const oldActorTypes = path.join(this.modulePath, 'tests/integration/actor-types.ts');
     if (fs.existsSync(oldActorTypes)) fs.unlinkSync(oldActorTypes);
+
+    // 11. Coverage Sweeper (Identify uncovered hooks, agents, config)
+    this.runCoverageSweeper();
 
     // 10. Run Custom Builders
     await this.runCustomBuilders({ models, customRoutes, accessConfig });
@@ -448,9 +675,142 @@ export class ApiModuleGenerator extends ModuleGenerator {
     logger.info(`[ModuleGenerator] API Generation for ${this.moduleName} complete.`);
   }
 
+  private discoverMethods(filePath: string): Record<string, number> {
+    const fullPath = path.isAbsolute(filePath) ? filePath : path.join(this.modulePath, filePath);
+
+    // Check in-memory project first
+    const sourceFile = this.project.getSourceFile(fullPath);
+    let content = '';
+    if (sourceFile) {
+      content = sourceFile.getFullText();
+    } else if (fs.existsSync(fullPath)) {
+      content = fs.readFileSync(fullPath, 'utf-8');
+    }
+
+    const defaultMethods = {
+      list: 1,
+      get: 1,
+      create: 1,
+      update: 2,
+      delete: 1,
+      upsert: 1,
+      count: 1,
+    };
+
+    if (!content) return defaultMethods;
+
+    // Find all methods (static or instance) that look like service methods
+    // Regex matches: async methodName(params)
+    const methodRegex =
+      /(?:public|private|protected)?\s*(?:static\s+)?async\s+(\w+)\s*\(([^)]*)\)/g;
+    const methods: Record<string, number> = {};
+    let match;
+    while ((match = methodRegex.exec(content)) !== null) {
+      const methodName = match[1];
+      const params = match[2].trim();
+
+      if (!['init', 'run', 'constructor'].includes(methodName)) {
+        // Count parameters by counting commas and adding 1 (if not empty)
+        const paramCount = params ? params.split(',').length : 0;
+        methods[methodName] = paramCount;
+      }
+    }
+
+    return Object.keys(methods).length > 0 ? methods : defaultMethods;
+  }
+
   public debugBaseRoleText(accessConfig: AccessConfig): string {
     return TemplateLoader.load('roles/base-role.tsf', {
       accessConfig: JSON.stringify(accessConfig),
     }).raw;
+  }
+
+  private runCoverageSweeper() {
+    this.sweepDirectory('src/hooks', 'tests/unit/hooks', (name, relPath, testFile) => {
+      if (testFile.getText() === '' || testFile.getText().includes('GENERATED CODE')) {
+        testFile.replaceWithText('');
+        new HookUnitTestBuilder(name, relPath).ensure(testFile);
+      }
+    });
+    this.sweepDirectory('src/agent', 'tests/unit/agent', (name, relPath, testFile) => {
+      if (testFile.getText() === '' || testFile.getText().includes('GENERATED CODE')) {
+        testFile.replaceWithText('');
+        const className = toPascalCase(name);
+        new AgentUnitTestBuilder(className, relPath).ensure(testFile);
+      }
+    });
+    this.sweepDirectory('src/config', 'tests/unit/config', (name, relPath, testFile) => {
+      if (testFile.getText() === '' || testFile.getText().includes('GENERATED CODE')) {
+        testFile.replaceWithText('');
+        new ConfigUnitTestBuilder(name, relPath).ensure(testFile);
+      }
+    });
+    this.sweepDirectory('src/services', 'tests/unit/services', (name, relPath, testFile) => {
+      if (testFile.getText() === '' || testFile.getText().includes('GENERATED CODE')) {
+        testFile.replaceWithText('');
+        const discoveredMethods = this.discoverMethods(relPath.replace('../../../', '') + '.ts');
+        const className = toPascalCase(name);
+        const entityName = name.replace(/-service$/, '').replace(/Service$/, '');
+
+        // Find models.yaml in the current module
+        const modelsYamlPath = path.join(this.modulePath, 'models.yaml');
+        const validModelNames = fs.existsSync(modelsYamlPath)
+          ? ModelParser.parse(modelsYamlPath).models.map((m) => m.name)
+          : [];
+
+        new ServiceUnitTestBuilder(
+          className,
+          entityName,
+          relPath,
+          discoveredMethods,
+          validModelNames,
+          ModelParser.parse(modelsYamlPath).models,
+        ).ensure(testFile);
+      }
+    });
+  }
+
+  private sweepDirectory(
+    srcDirRel: string,
+    testDirRel: string,
+    builder: (name: string, relPath: string, testFile: SourceFile) => void,
+  ) {
+    const srcDir = path.join(this.modulePath, srcDirRel);
+    if (!fs.existsSync(srcDir)) return;
+
+    const files = fs.readdirSync(srcDir);
+    for (const file of files) {
+      if (file.endsWith('.ts') && !file.endsWith('.d.ts')) {
+        const fullSrcPath = path.join(srcDir, file);
+        const content = fs.readFileSync(fullSrcPath, 'utf-8');
+
+        // Safety: Skip React hooks (misplaced in backend)
+        if (content.includes('import { useState') || content.includes("from 'react'")) {
+          continue;
+        }
+
+        // Safety: Skip hooks without init (only for src/hooks)
+        if (srcDirRel === 'src/hooks') {
+          if (!content.includes('export const init') && !content.includes('static init()')) {
+            continue;
+          }
+        }
+
+        const name = path.basename(file, '.ts');
+        const kebabName = toKebabCase(name);
+        const testFileName = `${kebabName}.test.ts`;
+        const testFilePath = path.join(testDirRel, testFileName);
+
+        const testFile = this.getOrCreateFile(testFilePath);
+
+        // Relative path from test file to src file
+        // tests/unit/hooks/foo.test.ts -> ../../../src/hooks/foo
+        const levels = testDirRel.split('/').length;
+        const prefix = '../'.repeat(levels);
+        const relPath = `${prefix}${srcDirRel}/${name}`;
+
+        builder(name, relPath, testFile);
+      }
+    }
   }
 }
