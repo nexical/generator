@@ -3,6 +3,7 @@ import { fragment } from '@nexical/generator';
 declare const serviceName: string;
 declare const servicePath: string;
 declare const tests: string;
+declare const mockModelProps: unknown;
 
 export default fragment/* ts */`
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -23,38 +24,21 @@ vi.mock('@/lib/core/config', () => ({
 }));
 
 vi.mock('@/lib/core/db', () => {
-    const mockModelProps = {
-        id: '1',
-        type: 'TASK',
-        email: 'test@example.com',
-        status: '${defaultStatus}',
-        name: 'Test Name',
-        userId: 'ne_pat_test',
-        teamId: 'team-1',
-        actorId: 'ne_pat_test',
-        actorType: 'user',
-        lockedBy: 'ne_pat_test',
-        payload: {},
-        capabilities: [],
-        progress: 0,
-        retryCount: 0,
-        maxRetries: 3,
-        originalJobId: '1',
-        reason: 'Test Reason',
-    };
+    const mockModelProps = ${mockModelProps};
 
     const isExistenceCheck = (where: any): boolean => {
         if (!where) return false;
+        if (where.id) return false; // If searching by ID, assume we want the record to exist
         const fields = [
-        'email',
-        'username',
-        'teamId_userId',
-        'userId_teamId',
-        'teamId_email',
-        'email_teamId',
-        'token',
-      ];
-  const whereKeys = Object.keys(where);
+            'email',
+            'username',
+            'teamId_userId',
+            'userId_teamId',
+            'teamId_email',
+            'email_teamId',
+            // 'token', // Removed token from existence check as it's often used to fetch existing invitations
+        ];
+        const whereKeys = Object.keys(where);
         if (whereKeys.some((k) => fields.includes(k))) return true;
         if (whereKeys.some((k) => k.includes('_'))) return true;
         if (where.OR && Array.isArray(where.OR)) return where.OR.some((c: any) => isExistenceCheck(c));

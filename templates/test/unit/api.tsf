@@ -8,8 +8,8 @@ declare const renderedTests: string;
 export default fragment/* ts */`
 describe('${modelName} API - ${method} ${endpointPath}', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
-        vi.mocked(ApiGuard.protect).mockResolvedValue(undefined);
+        vi.resetAllMocks();
+        vi.mocked(ApiGuard.protect).mockResolvedValue(undefined as any);
     });
 
     ${renderedTests}

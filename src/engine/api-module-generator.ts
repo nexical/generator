@@ -117,6 +117,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const apiColUnitTestFile = this.getOrCreateFile(
             `tests/unit/pages/api/${kebabName}/index.test.ts`,
           );
+          apiColUnitTestFile.replaceWithText(''); // Prevent duplication
           new ApiUnitTestBuilder(
             this.moduleName,
             name,
@@ -132,6 +133,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const apiIndUnitTestFile = this.getOrCreateFile(
             `tests/unit/pages/api/${kebabName}/[id].test.ts`,
           );
+          apiIndUnitTestFile.replaceWithText(''); // Prevent duplication
           new ApiUnitTestBuilder(
             this.moduleName,
             name,
@@ -167,6 +169,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const apiUnitTestFile = this.getOrCreateFile(
             `tests/unit/pages/api/${kebabName}/${routePath}.test.ts`,
           );
+          apiUnitTestFile.replaceWithText(''); // Prevent duplication
           const levels = routePath.split('/').length + 4;
           const prefix = '../'.repeat(levels);
 
@@ -368,6 +371,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             ? `tests/unit/pages/api/${fileName}.test.ts`
             : `tests/unit/pages/api/${kebabEntity}/${fileName}.test.ts`,
         );
+        apiUnitTestFile.replaceWithText(''); // Prevent duplication
 
         const levels = (isRoot ? 0 : 1) + fileName.split('/').length + 3;
         const prefix = '../'.repeat(levels);

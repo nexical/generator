@@ -366,6 +366,7 @@ export class ApiBuilder extends BaseBuilder {
       imports.push({
         moduleSpecifier: '@/lib/api',
         namedImports: [this.moduleTypesNamespace],
+        isTypeOnly: false,
       });
     }
 
@@ -539,6 +540,7 @@ export class ApiBuilder extends BaseBuilder {
       imports.push({
         moduleSpecifier: '@/lib/api',
         namedImports: [this.moduleTypesNamespace],
+        isTypeOnly: false,
       });
     }
 
@@ -766,6 +768,7 @@ export class ApiBuilder extends BaseBuilder {
       finalImports.push({
         moduleSpecifier: '@/lib/api',
         namedImports: [this.moduleTypesNamespace],
+        isTypeOnly: false,
       });
     }
 

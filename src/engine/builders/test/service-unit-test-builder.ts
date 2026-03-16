@@ -1,4 +1,4 @@
-import { type FileDefinition, type NodeContainer } from '../../types.js';
+import { type FileDefinition, type NodeContainer, type ModelField } from '../../types.js';
 import { BaseBuilder } from '../base-builder.js';
 import { TemplateLoader } from '../../../utils/template-loader.js';
 
@@ -7,6 +7,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
   private errorPrefix: string = '';
   private isModelValid: boolean = false;
   private defaultStatus: string = 'PENDING';
+  private serviceFileName: string = '';
 
   constructor(
     private serviceName: string,
@@ -14,7 +15,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
     private servicePath: string, // Relative path from test to service
     private methods: Record<string, number> = { list: 1, get: 1, create: 1, update: 2, delete: 1 },
     private validModels: string[] = [],
-    private models: { name: string }[] = [],
+    private models: { name: string; fields?: Record<string, ModelField> }[] = [],
   ) {
     super();
 
@@ -42,6 +43,10 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
     this.isModelValid =
       this.models.some((m) => m.name.toLowerCase() === this.entityLowerName.toLowerCase()) ||
       ['job', 'deadLetterJob', 'user', 'teamMember', 'invitation'].includes(this.entityLowerName);
+
+    // servicePath is e.g. "../../../src/services/auth-service"
+    // We want "auth-service"
+    this.serviceFileName = this.servicePath.split('/').pop() || '';
   }
 
   private renderTests(): string {
@@ -192,7 +197,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
             method.toLowerCase().includes('sleep');
           if (isLongRunning) return '';
 
-          const args = [];
+          const args: string[] = [];
           const defaultObj = `{ id: 'ne_pat_test', email: 'test@example.com', name: 'Test', token: 'token', teamId: '1', role: 'TEAM_MEMBER', status: '${this.defaultStatus}', password: 'password', confirmPassword: 'password' }`;
           const m = method.toLowerCase();
 
@@ -246,6 +251,14 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
             args.push(argContent);
           }
 
+          // Always add actor if it's an orchestrator/dead-letter service and not already added
+          const isOrchestrator =
+            this.serviceName.toLowerCase().includes('orchestrator') ||
+            this.serviceName.toLowerCase().includes('deadletter');
+          if (isOrchestrator && !args.some((a) => a.includes("'ne_pat_test'"))) {
+            args.push("'ne_pat_test'");
+          }
+
           const dbErrorMocks = this.isModelValid
             ? `
             try {
@@ -258,7 +271,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
         it('should run ${method} successfully', async () => {
             const result = await (${this.serviceName} as any).${method}(${args.join(', ')});
             if (result && typeof result === 'object' && 'success' in result) {
-                expect(result.success).toBe(true);
+                expect(result.success, (result as any).error).toBe(true);
             }
             ${
               method.toLowerCase().startsWith('count')
@@ -295,17 +308,57 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
       .join('\n');
   }
 
-  protected getSchema(_node?: NodeContainer): FileDefinition {
+  public render(): FileDefinition {
+    const methodsTests = this.renderTests();
+    const mockModel = this.models.find((m) => m.name === this.entityName);
+    const mockModelProps: Record<string, string> = {
+      id: "'1'",
+      email: "'test@example.com'",
+      name: "'test'",
+      status: `'${this.defaultStatus}'`,
+      role: "'TEAM_MEMBER'",
+      token: "'test-token'",
+      expires: 'new Date(Date.now() + 86400000)',
+      actorId: "'ne_pat_test'",
+      lockedBy: "'ne_pat_test'",
+      createdAt: 'new Date()',
+      updatedAt: 'new Date()',
+    };
+
+    if (mockModel?.fields) {
+      for (const [fieldName, field] of Object.entries(mockModel.fields)) {
+        if (field.isList || field.isRelation) continue;
+        if (fieldName === 'id' || fieldName === 'createdAt' || fieldName === 'updatedAt') continue;
+
+        const type = field.type;
+        if (type === 'String') mockModelProps[fieldName] = "'test'";
+        else if (type === 'Int' || type === 'Float') mockModelProps[fieldName] = '1';
+        else if (type === 'Boolean') mockModelProps[fieldName] = 'true';
+        else if (type === 'DateTime') mockModelProps[fieldName] = 'new Date()';
+        else if (type === 'Json') mockModelProps[fieldName] = '{}';
+        else mockModelProps[fieldName] = "'test-enum'"; // Fallback for enums
+      }
+    }
+
+    const mockPropsString = Object.entries(mockModelProps)
+      .map(([k, v]) => `    ${k}: ${v},`)
+      .join('\n');
+
     return {
       header: '// GENERATED CODE - DO NOT MODIFY',
       statements: [
         TemplateLoader.load('test/unit/service.tsf', {
           serviceName: this.serviceName,
           servicePath: this.servicePath,
-          tests: this.renderTests(),
-          defaultStatus: this.defaultStatus,
-        }),
+          tests: methodsTests,
+          mockModelProps: `{\n${mockPropsString}\n  }`,
+        }).raw,
       ],
     };
+  }
+
+  protected getSchema(_node?: NodeContainer): FileDefinition {
+    // This is technically unused by the current render mode, but required by abstract class
+    return this.render();
   }
 }

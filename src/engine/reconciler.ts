@@ -300,15 +300,25 @@ export class Reconciler {
                       currentNormalizedExisting.includes(searchPattern) ||
                       currentNormalizedExisting.includes(altSearchPattern)
                     ) {
-                      console.info(`[Reconciler] Skipping existing block by name: ${nameMatch[2]}`);
-                      return;
+                      // Only skip if the file is NOT a generated file.
+                      // For generated files, we want to allow the builder to update the tests.
+                      const isGeneratedFile = sourceFile.getText().includes('GENERATED CODE');
+                      if (!isGeneratedFile) {
+                        console.info(
+                          `[Reconciler] Skipping existing block by name: ${nameMatch[2]}`,
+                        );
+                        return;
+                      }
                     }
                   }
                 }
 
                 if (currentNormalizedExisting.includes(normalizedSignature)) {
-                  console.info(`[Reconciler] Skipping existing block by signature: ${signature}`);
-                  return;
+                  const isGeneratedFile = sourceFile.getText().includes('GENERATED CODE');
+                  if (!isGeneratedFile) {
+                    console.info(`[Reconciler] Skipping existing block by signature: ${signature}`);
+                    return;
+                  }
                 }
               }
             }

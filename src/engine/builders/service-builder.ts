@@ -155,7 +155,7 @@ export class ServiceBuilder extends BaseBuilder {
       { moduleSpecifier: '@/lib/core/db', namedImports: ['db'] },
       { moduleSpecifier: '@/types/service', namedImports: ['ServiceResponse'], isTypeOnly: true },
       { moduleSpecifier: '@/lib/modules/hooks', namedImports: ['HookSystem'] },
-      { moduleSpecifier: '@prisma/client', namedImports: [entityName, 'Prisma'], isTypeOnly: true },
+      { moduleSpecifier: '@prisma/client', namedImports: [entityName, 'Prisma'] },
       { moduleSpecifier: '@/lib/api/api-docs', namedImports: ['ApiActor'], isTypeOnly: true },
     ];
 
