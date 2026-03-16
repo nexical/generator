@@ -73,15 +73,17 @@ describe('ServiceUnitTestBuilder', () => {
 
     expect(tests).toContain("describe('updateProgress', () => {");
     expect(tests).toContain(
-      "await (OrchestrationService as any).updateProgress('ne_pat_test', 50)",
+      "await (OrchestrationService as unknown as Record<string, (...args: unknown[]) => unknown>).updateProgress('ne_pat_test', 50)",
     );
     expect(tests).toContain(
-      "await (OrchestrationService as any).complete('ne_pat_test', { result: 'ok' } as any, 'ne_pat_test', 'user')",
+      "await (OrchestrationService as unknown as Record<string, (...args: unknown[]) => unknown>).complete('ne_pat_test', { result: 'ok' } as Record<string, unknown>, 'ne_pat_test', 'user')",
     );
     expect(tests).toContain(
-      "await (OrchestrationService as any).poll('agent-1', ['TASK'] as any, 'ne_pat_test', 'user')",
+      "await (OrchestrationService as unknown as Record<string, (...args: unknown[]) => unknown>).poll('agent-1', ['TASK'] as unknown[], 'ne_pat_test', 'user')",
     );
-    expect(tests).toContain("await (OrchestrationService as any).cancel('ne_pat_test' as any)");
+    expect(tests).toContain(
+      "await (OrchestrationService as unknown as Record<string, (...args: unknown[]) => unknown>).cancel('ne_pat_test' as unknown)",
+    );
   });
 
   it('should handle DeadLetterQueueService specially', () => {
@@ -165,9 +167,11 @@ describe('ServiceUnitTestBuilder', () => {
     expect(tests).toContain("describe('checkStaleAgents', () => {");
     // checkStaleAgents first param uses defaultObj because it's not in the useString whitelist for i=0
     expect(tests).toContain(
-      "await (UserService as any).checkStaleAgents({ id: 'ne_pat_test', email: 'test@example.com', name: 'Test', token: 'token', teamId: '1', role: 'TEAM_MEMBER', status: 'PENDING', password: 'password', confirmPassword: 'password' } as any, 'ne_pat_test' as any)",
+      "await (UserService as unknown as Record<string, (...args: unknown[]) => unknown>).checkStaleAgents({ id: 'ne_pat_test', email: 'test@example.com', name: 'Test', token: 'token', teamId: '1', role: 'TEAM_MEMBER', status: 'PENDING', password: 'password', confirmPassword: 'password' } as Record<string, unknown>, 'ne_pat_test' as unknown)",
     );
-    expect(tests).toContain("await (UserService as any).heartbeat('ne_pat_test' as any)");
+    expect(tests).toContain(
+      "await (UserService as unknown as Record<string, (...args: unknown[]) => unknown>).heartbeat('ne_pat_test' as unknown)",
+    );
   });
 
   it('should cover count and get method name branches', () => {
