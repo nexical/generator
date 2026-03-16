@@ -59,7 +59,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
           successTest = `
         it('should return a list of ${this.entityName}s', async () => {
             const mockData = [{ id: '1' }];
-            vi.mocked(db.${this.entityLowerName}.findMany).mockResolvedValue(mockData as any);
+            vi.mocked(db.${this.entityLowerName}.findMany).mockResolvedValue(mockData as unknown as Record<string, unknown>[]);
 
             const result = await ${this.serviceName}.list();
 
@@ -81,7 +81,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
           successTest = `
         it('should return a single ${this.entityName}', async () => {
             const mockData = { id: '1' };
-            vi.mocked(db.${this.entityLowerName}.findUnique).mockResolvedValue(mockData as any);
+            vi.mocked(db.${this.entityLowerName}.findUnique).mockResolvedValue(mockData as unknown as Record<string, unknown>);
 
             const result = await ${this.serviceName}.get('1');
 
@@ -113,9 +113,9 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
           successTest = `
         it('should create a new ${this.entityName}', async () => {
             const mockData = { id: '1', name: 'test' };
-            vi.mocked(db.${this.entityLowerName}.create).mockResolvedValue(mockData as any);
+            vi.mocked(db.${this.entityLowerName}.create).mockResolvedValue(mockData as unknown as Record<string, unknown>);
 
-            const result = await ${this.serviceName}.create({ name: 'test' } as any);
+            const result = await ${this.serviceName}.create({ name: 'test' } as Record<string, unknown>);
 
             expect(result.success).toBe(true);
             expect(result.data).toEqual(mockData);
@@ -125,7 +125,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
         it('should handle errors when creating', async () => {
             vi.mocked(db.${this.entityLowerName}.create).mockRejectedValue(new Error('DB Error'));
 
-            const result = await ${this.serviceName}.create({} as any);
+            const result = await ${this.serviceName}.create({} as Record<string, unknown>);
 
             expect(result.success).toBe(false);
             expect(result.error).toBe('${this.errorPrefix}.service.error.create_failed');
@@ -134,9 +134,9 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
           successTest = `
         it('should update an existing ${this.entityName}', async () => {
             const mockData = { id: '1', name: 'updated' };
-            vi.mocked(db.${this.entityLowerName}.update).mockResolvedValue(mockData as any);
+            vi.mocked(db.${this.entityLowerName}.update).mockResolvedValue(mockData as unknown as Record<string, unknown>);
 
-            const result = await ${this.serviceName}.update('1', { name: 'updated' } as any);
+            const result = await ${this.serviceName}.update('1', { name: 'updated' } as Record<string, unknown>);
 
             expect(result.success).toBe(true);
             expect(result.data).toEqual(mockData);
@@ -146,7 +146,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
         it('should handle errors when updating', async () => {
             vi.mocked(db.${this.entityLowerName}.update).mockRejectedValue(new Error('DB Error'));
 
-            const result = await ${this.serviceName}.update('1', {} as any);
+            const result = await ${this.serviceName}.update('1', {} as Record<string, unknown>);
 
             expect(result.success).toBe(false);
             expect(result.error).toBe('${this.errorPrefix}.service.error.update_failed');
@@ -154,7 +154,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
         } else if (this.isModelValid && method === 'delete') {
           successTest = `
         it('should delete an ${this.entityName}', async () => {
-            vi.mocked(db.${this.entityLowerName}.delete).mockResolvedValue({} as any);
+            vi.mocked(db.${this.entityLowerName}.delete).mockResolvedValue({} as unknown as Record<string, unknown>);
 
             const result = await ${this.serviceName}.delete('1');
 
@@ -202,21 +202,21 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
           const m = method.toLowerCase();
 
           for (let i = 0; i < paramCount; i++) {
-            let argContent = `${defaultObj} as any`;
+            let argContent = `${defaultObj} as Record<string, unknown>`;
 
             if (m === 'updateprogress') {
               if (i === 1) argContent = '50';
               else argContent = "'ne_pat_test'";
             } else if (m === 'poll') {
               if (i === 0) argContent = "'agent-1'";
-              else if (i === 1) argContent = "['TASK'] as any";
+              else if (i === 1) argContent = "['TASK'] as unknown[]";
               else if (i === 2) argContent = "'ne_pat_test'";
               else if (i === 3) argContent = "'user'";
             } else if (m === 'register' && i === 0) {
               argContent = defaultObj;
             } else if (m.includes('complete') || m.includes('fail') || m.includes('retry')) {
               if (i === 0) argContent = "'ne_pat_test'";
-              else if (i === 1) argContent = "{ result: 'ok' } as any";
+              else if (i === 1) argContent = "{ result: 'ok' } as Record<string, unknown>";
               else if (i === 2) argContent = "'ne_pat_test'";
               else if (i === 3) argContent = "'user'";
             } else {
@@ -245,7 +245,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
                   m.includes('checkstaleagents');
               }
 
-              if (useString) argContent = "'ne_pat_test' as any";
+              if (useString) argContent = "'ne_pat_test' as unknown";
             }
 
             args.push(argContent);
@@ -264,14 +264,14 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
             try {
               vi.mocked(db.${this.entityLowerName}.findFirst).mockRejectedValueOnce(new Error('DB Error'));
               vi.mocked(db.${this.entityLowerName}.findUnique).mockRejectedValueOnce(new Error('DB Error'));
-            } catch (e) {}`
+            } catch { }`
             : '';
 
           successTest = `
         it('should run ${method} successfully', async () => {
-            const result = await (${this.serviceName} as any).${method}(${args.join(', ')});
+            const result = await (${this.serviceName} as unknown as Record<string, (...args: unknown[]) => unknown>).${method}(${args.join(', ')});
             if (result && typeof result === 'object' && 'success' in result) {
-                expect(result.success, (result as any).error).toBe(true);
+                expect((result as Record<string, unknown>).success, (result as Record<string, unknown>).error as string).toBe(true);
             }
             ${
               method.toLowerCase().startsWith('count')
@@ -289,11 +289,11 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
             try {
               ${dbErrorMocks}
               
-              const result = await (${this.serviceName} as any).${method}(${args.join(', ')});
+              const result = await (${this.serviceName} as unknown as Record<string, (...args: unknown[]) => unknown>).${method}(${args.join(', ')});
               if (result && typeof result === 'object' && 'success' in result) {
                   expect(result.success).toBe(false);
               }
-            } catch (e) {
+            } catch {
                 // If it throws, that's also a valid error handling path
             }
         });`;

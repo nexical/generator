@@ -27,7 +27,7 @@ export class ApiUnitTestBuilder extends BaseBuilder {
       successMock = `vi.mocked(${actionName}.run).mockResolvedValue({
       success: true,
       data: { id: 'test-id' },
-    } as any);`;
+    } as Record<string, unknown>);`;
     } else if (serviceName) {
       successMock = `
     const serviceMethod = '${method}'.toLowerCase() === 'post' ? 'create' :
@@ -35,10 +35,10 @@ export class ApiUnitTestBuilder extends BaseBuilder {
                          '${method}'.toLowerCase() === 'put' ? 'update' :
                          '${method}'.toLowerCase() === 'delete' ? 'delete' : 'list';
     
-    vi.mocked((${serviceName} as any)[serviceMethod]).mockResolvedValue({
+    vi.mocked((${serviceName} as Record<string, unknown>)[serviceMethod]).mockResolvedValue({
       success: true,
       data: { id: 'test-id' },
-    } as any);`;
+    } as Record<string, unknown>);`;
     }
 
     let failureMock = '';
@@ -46,7 +46,7 @@ export class ApiUnitTestBuilder extends BaseBuilder {
       failureMock = `vi.mocked(${actionName}.run).mockResolvedValue({
       success: false,
       error: 'Something went wrong',
-    } as any);`;
+    } as Record<string, unknown>);`;
     } else if (serviceName) {
       failureMock = `
     const serviceMethod = '${method}'.toLowerCase() === 'post' ? 'create' :
@@ -54,10 +54,10 @@ export class ApiUnitTestBuilder extends BaseBuilder {
                          '${method}'.toLowerCase() === 'put' ? 'update' :
                          '${method}'.toLowerCase() === 'delete' ? 'delete' : 'list';
     
-    vi.mocked((${serviceName} as any)[serviceMethod]).mockResolvedValue({
+    vi.mocked((${serviceName} as Record<string, unknown>)[serviceMethod]).mockResolvedValue({
       success: false,
       error: 'Something went wrong',
-    } as any);`;
+    } as Record<string, unknown>);`;
     }
 
     return `
@@ -91,7 +91,7 @@ export class ApiUnitTestBuilder extends BaseBuilder {
         expect(response.status).toBe(200);
         expect(body.success).toBe(true);
     } else {
-        expect((response as any).success).toBe(true);
+        expect((response as unknown as Record<string, boolean>).success).toBe(true);
     }
   });
 
@@ -117,7 +117,7 @@ export class ApiUnitTestBuilder extends BaseBuilder {
         if (response instanceof Response) {
             expect([400, 500]).toContain(response.status);
         }
-    } catch (e) {
+    } catch {
         // Expected if it throws on invalid json
     }
   });

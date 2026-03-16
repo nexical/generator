@@ -9,7 +9,7 @@ export default fragment/* ts */`
 describe('${modelName} API - ${method} ${endpointPath}', () => {
     beforeEach(() => {
         vi.resetAllMocks();
-        vi.mocked(ApiGuard.protect).mockResolvedValue(undefined as any);
+        vi.mocked(ApiGuard.protect).mockResolvedValue(undefined);
     });
 
     ${renderedTests}

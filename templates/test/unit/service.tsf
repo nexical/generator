@@ -26,7 +26,7 @@ vi.mock('@/lib/core/config', () => ({
 vi.mock('@/lib/core/db', () => {
     const mockModelProps = ${mockModelProps};
 
-    const isExistenceCheck = (where: any): boolean => {
+    const isExistenceCheck = (where: Record<string, unknown>): boolean => {
         if (!where) return false;
         if (where.id) return false; // If searching by ID, assume we want the record to exist
         const fields = [
@@ -41,25 +41,25 @@ vi.mock('@/lib/core/db', () => {
         const whereKeys = Object.keys(where);
         if (whereKeys.some((k) => fields.includes(k))) return true;
         if (whereKeys.some((k) => k.includes('_'))) return true;
-        if (where.OR && Array.isArray(where.OR)) return where.OR.some((c: any) => isExistenceCheck(c));
-        if (where.AND && Array.isArray(where.AND)) return where.AND.some((c: any) => isExistenceCheck(c));
+        if (where.OR && Array.isArray(where.OR)) return (where.OR as Record<string, unknown>[]).some((c) => isExistenceCheck(c));
+        if (where.AND && Array.isArray(where.AND)) return (where.AND as Record<string, unknown>[]).some((c) => isExistenceCheck(c));
         if (where.userId && where.teamId) return true;
         return false;
     };
 
     const mockModel = {
         findMany: vi.fn().mockResolvedValue([mockModelProps]),
-        findUnique: vi.fn().mockImplementation((args: any) => {
+        findUnique: vi.fn().mockImplementation((args: { where: Record<string, unknown> }) => {
             if (isExistenceCheck(args?.where) && !args?.where?.id) return null;
             return {
-                ...mockModelProps,
+                ...(mockModelProps as Record<string, unknown>),
                 ...args?.where,
             };
         }),
-        findFirst: vi.fn().mockImplementation((args: any) => {
+        findFirst: vi.fn().mockImplementation((args: { where: Record<string, unknown> }) => {
             if (isExistenceCheck(args?.where) && !args?.where?.id) return null;
             return {
-                ...mockModelProps,
+                ...(mockModelProps as Record<string, unknown>),
                 ...args?.where,
             };
         }),
@@ -72,15 +72,15 @@ vi.mock('@/lib/core/db', () => {
         deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
         groupBy: vi.fn().mockResolvedValue([{ _count: { id: 1 }, status: 'ACTIVE' }]),
         aggregate: vi.fn().mockResolvedValue({ _count: { id: 1 }, _avg: { value: 0 } }),
-        ...mockModelProps,
+        ...(mockModelProps as Record<string, unknown>),
     };
 
     const handler = {
-        get: (target: any, prop: string): any => {
+        get: (target: Record<string, unknown>, prop: string): unknown => {
             if (prop === '$transaction') {
                 return vi.fn().mockImplementation(async (input) => {
                     if (Array.isArray(input)) return Promise.all(input);
-                    return typeof input === 'function' ? input(new Proxy({}, handler)) : input;
+                    return typeof input === 'function' ? input(new Proxy({}, handler as ProxyHandler<object>)) : input;
                 });
             }
             if (typeof prop === 'string' && !prop.startsWith('$')) {

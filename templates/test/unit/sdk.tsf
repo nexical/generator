@@ -10,14 +10,14 @@ import { ${sdkName} } from '${sdkPath}';
 
 describe('${sdkName}', () => {
   let sdk: ${sdkName};
-  let mockClient: any;
+  let mockClient: { request: vi.Mock };
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockClient = {
       request: vi.fn().mockResolvedValue({ success: true, data: { id: 'test-id' } }),
     };
-    sdk = new ${sdkName}(mockClient as any);
+    sdk = new ${sdkName}(mockClient as unknown as any);
   });
 
   it('should initialize', () => {

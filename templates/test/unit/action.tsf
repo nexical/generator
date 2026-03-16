@@ -7,6 +7,7 @@ declare const servicesMocks: string;
 declare const services: { name: string, path: string }[];
 declare const entityName: string;
 declare const camelEntity: string;
+declare const defaultStatus: string;
 
 export default fragment/* ts */`
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -36,7 +37,7 @@ vi.mock('@/lib/core/db', () => {
         reason: 'Test Reason',
     };
 
-    const isExistenceCheck = (where: any): boolean => {
+    const isExistenceCheck = (where: Record<string, unknown>): boolean => {
       if (!where) return false;
       const fields = [
         'email',
@@ -50,22 +51,22 @@ vi.mock('@/lib/core/db', () => {
       const whereKeys = Object.keys(where);
       if (whereKeys.some((k) => fields.includes(k))) return true;
       if (whereKeys.some((k) => k.includes('_'))) return true;
-      if (where.OR && Array.isArray(where.OR)) return where.OR.some((c: any) => isExistenceCheck(c));
-      if (where.AND && Array.isArray(where.AND)) return where.AND.some((c: any) => isExistenceCheck(c));
+      if (where.OR && Array.isArray(where.OR)) return (where.OR as Record<string, unknown>[]).some((c) => isExistenceCheck(c));
+      if (where.AND && Array.isArray(where.AND)) return (where.AND as Record<string, unknown>[]).some((c) => isExistenceCheck(c));
       if (where.userId && where.teamId) return true;
       return false;
     };
 
     const mockModel = {
         findMany: vi.fn().mockResolvedValue([mockModelProps]),
-        findUnique: vi.fn().mockImplementation((args: any) => {
+        findUnique: vi.fn().mockImplementation((args: { where: Record<string, unknown> }) => {
             if (isExistenceCheck(args?.where) && !args?.where?.id) return null;
             return {
                 ...mockModelProps,
                 ...args?.where,
             };
         }),
-        findFirst: vi.fn().mockImplementation((args: any) => {
+        findFirst: vi.fn().mockImplementation((args: { where: Record<string, unknown> }) => {
             if (isExistenceCheck(args?.where) && !args?.where?.id) return null;
             return {
                 ...mockModelProps,
@@ -85,11 +86,11 @@ vi.mock('@/lib/core/db', () => {
     };
 
     const handler = {
-        get: (target: any, prop: string): any => {
+        get: (target: Record<string, unknown>, prop: string): unknown => {
             if (prop === '$transaction') {
                 return vi.fn().mockImplementation(async (input) => {
                     if (Array.isArray(input)) return Promise.all(input);
-                    return typeof input === 'function' ? input(new Proxy({}, handler)) : input;
+                    return typeof input === 'function' ? input(new Proxy({}, handler as ProxyHandler<object>)) : input;
                 });
             }
             if (typeof prop === 'string' && !prop.startsWith('$')) {
@@ -174,9 +175,9 @@ describe('${actionName}', () => {
 
     it('should run (smoke test)', async () => {
         \${services.map(s => \`
-        const \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(\${s.name} as any);
+        const \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(\${s.name});
         commonServiceMethods.forEach(m => {
-            if (\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock[m]) \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock[m].mockResolvedValue({ success: true, data: { id: '1' } });
+            if ((\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m]) (\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m].mockResolvedValue({ success: true, data: { id: '1' } });
         });
         \`).join('\n')}
         const mockContext = {
@@ -185,7 +186,7 @@ describe('${actionName}', () => {
             },
             request: new Request('http://localhost'),
             params: { id: 'test-id', role: 'member' },
-        } as any;
+        } as unknown as Record<string, unknown>;
 
         const result = await ${actionName}.run({ 
           id: '1', 
@@ -195,7 +196,7 @@ describe('${actionName}', () => {
           email: 'test@example.com', 
           name: 'Test',
           role: 'TEAM_MEMBER'
-        } as any, mockContext);
+        } as Record<string, unknown>, mockContext as unknown as any);
         expect(result).toBeDefined();
     });
 
@@ -203,9 +204,9 @@ describe('${actionName}', () => {
     it('should call \${services[0].name} on success', async () => {
         const mockData = { id: '1' };
         \${services.map(s => \`
-        const \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(\${s.name} as any);
+        const \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(\${s.name});
         commonServiceMethods.forEach(m => {
-            if (\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock[m]) \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock[m].mockResolvedValue({ success: true, data: mockData });
+            if ((\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m]) (\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m].mockResolvedValue({ success: true, data: mockData });
         });
         \`).join('\n')}
 
@@ -215,7 +216,7 @@ describe('${actionName}', () => {
             },
             request: new Request('http://localhost'),
             params: { id: 'test-id' },
-        } as any;
+        } as unknown as Record<string, unknown>;
 
         const result = await \${actionName}.run({ 
           id: '1', 
@@ -223,14 +224,14 @@ describe('${actionName}', () => {
           token: 'test-token', 
           email: 'test@example.com', 
           name: 'Test' 
-        } as any, mockContext);
+        } as Record<string, unknown>, mockContext as unknown as any);
         expect(result.success).toBe(true);
     });
 
     it('should return error when \${services[0].name} fails', async () => {
-        const serviceMock = vi.mocked(\${services[0].name} as any);
+        const serviceMock = vi.mocked(\${services[0].name});
         commonServiceMethods.forEach(m => {
-            if (serviceMock[m]) serviceMock[m].mockResolvedValue({ success: false, error: 'Service error' });
+            if ((serviceMock as unknown as Record<string, vi.Mock>)[m]) (serviceMock as unknown as Record<string, vi.Mock>)[m].mockResolvedValue({ success: false, error: 'Service error' });
         });
 
         const mockContext = {
@@ -239,7 +240,7 @@ describe('${actionName}', () => {
             },
             request: new Request('http://localhost'),
             params: { id: 'test-id' },
-        } as any;
+        } as unknown as Record<string, unknown>;
 
         const result = await \${actionName}.run({ 
           id: '1', 
@@ -247,7 +248,7 @@ describe('${actionName}', () => {
           token: 'test-token', 
           email: 'test@example.com', 
           name: 'Test' 
-        } as any, mockContext);
+        } as Record<string, unknown>, mockContext as unknown as any);
         expect(result.success).toBe(false);
     });\` : ''}
 });

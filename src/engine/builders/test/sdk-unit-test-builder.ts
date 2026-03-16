@@ -51,15 +51,15 @@ export class SdkUnitTestBuilder extends BaseBuilder {
   it('should call ${verb} ${path} on ${methodName}()', async () => {
     mockClient.request.mockResolvedValue({ success: true, data: {} });
     
-    const args: any[] = [];
+    const args: unknown[] = [];
     const pathParams = (('${path}').match(/\\[(\\w+)\\]/g) || []);
     pathParams.forEach(() => args.push('test-id'));
     
     if (['POST', 'PUT', 'PATCH'].includes('${verb}')) {
-      args.push({ name: 'test' } as any);
+      args.push({ name: 'test' } as Record<string, unknown>);
     }
     
-    await (sdk as any).${methodName}(...args);
+    await (sdk as unknown as Record<string, (...args: unknown[]) => Promise<unknown>>).${methodName}(...args);
     
     expect(mockClient.request).toHaveBeenCalled();
     const [callVerb, callPath] = mockClient.request.mock.calls[0];
@@ -75,15 +75,15 @@ export class SdkUnitTestBuilder extends BaseBuilder {
   it('should handle failure on ${methodName}()', async () => {
     mockClient.request.mockResolvedValue({ success: false, error: 'API Error' });
     
-    const args: any[] = [];
+    const args: unknown[] = [];
     const pathParams = (('${path}').match(/\\[(\\w+)\\]/g) || []);
     pathParams.forEach(() => args.push('test-id'));
     
     if (['POST', 'PUT', 'PATCH'].includes('${verb}')) {
-      args.push({ name: 'test' } as any);
+      args.push({ name: 'test' } as Record<string, unknown>);
     }
     
-    const result = await (sdk as any).${methodName}(...args);
+    const result = await (sdk as unknown as Record<string, (...args: unknown[]) => Promise<unknown>>).${methodName}(...args);
     expect(result.success).toBe(false);
     expect(result.error).toBe('API Error');
   });`;

@@ -18,7 +18,7 @@ vi.mock('@/lib/core/db', () => {
     };
     return {
         db: new Proxy({}, {
-            get: (target, prop) => {
+            get: (target: Record<string, unknown>, prop: string): unknown => {
                 if (typeof prop === 'string' && !prop.startsWith('$')) {
                     return mockModel;
                 }
@@ -29,8 +29,8 @@ vi.mock('@/lib/core/db', () => {
 });
 
 describe('Middleware: ${moduleName}', () => {
-    let mockContext: any;
-    let mockNext: any;
+    let mockContext: Record<string, unknown>;
+    let mockNext: vi.Mock;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -58,15 +58,15 @@ describe('Middleware: ${moduleName}', () => {
 
     it('should call next() for public routes', async () => {
         mockContext.url = new URL('http://localhost/api/health');
-        const result = await onRequest(mockContext, mockNext);
+        await onRequest(mockContext as unknown as any, mockNext as unknown as any);
         expect(mockNext).toHaveBeenCalled();
     });
 
     \${models.some(m => m.actor?.strategy === 'login' || m.actor?.validStatus) ? \`
     it('should map actor from session when valid session exists', async () => {
-        mockContext.locals.session.get.mockResolvedValue({ id: 'user-1', type: 'user', email: 'test@example.com' });
+        (mockContext.locals as Record<string, any>).session.get.mockResolvedValue({ id: 'user-1', type: 'user', email: 'test@example.com' });
 
-        await onRequest(mockContext, mockNext);
+        await onRequest(mockContext as unknown as any, mockNext as unknown as any);
         expect(mockContext.locals.actor).toBeDefined();
         expect(mockContext.locals.actor.id).toBe('user-1');
         expect(mockNext).toHaveBeenCalled();
@@ -81,7 +81,7 @@ describe('Middleware: ${moduleName}', () => {
         mockContext.request.headers.set('Authorization', 'Bearer \${m.actor.prefix}valid-key');
         
         // Mock the token lookup
-        vi.mocked((db as any)[tokenModel].findFirst).mockResolvedValue({
+        vi.mocked((db as unknown as Record<string, unknown>)[tokenModel].findFirst).mockResolvedValue({
             id: 'token-1',
             [actorModel]: {
                 id: 'actor-1',
@@ -89,9 +89,9 @@ describe('Middleware: ${moduleName}', () => {
                 name: 'Test Actor',
                 status: 'ACTIVE'
             }
-        } as any);
+        });
 
-        await onRequest(mockContext, mockNext);
+        await onRequest(mockContext as unknown as any, mockNext as unknown as any);
         expect(mockContext.locals.actor).toBeDefined();
         expect(mockContext.locals.actor.id).toBe('actor-1');
         expect(mockNext).toHaveBeenCalled();
@@ -100,7 +100,7 @@ describe('Middleware: ${moduleName}', () => {
 
     it('should proceed even if unauthorized (Bouncer logic)', async () => {
         mockContext.request.headers.set('Authorization', 'Bearer invalid');
-        await onRequest(mockContext, mockNext);
+        await onRequest(mockContext as unknown as any, mockNext as unknown as any);
         expect(mockNext).toHaveBeenCalled();
     });
 });
