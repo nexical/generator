@@ -62,7 +62,10 @@ export class Reconciler {
         // or if we're in a strictly-managed part of the definition.
         const sourceText =
           isRealNode(source) && Node.isSourceFile(source) ? source.getFullText() : '';
-        if (sourceText.includes('GENERATED CODE')) {
+        if (
+          sourceText.includes('GENERATED CODE') &&
+          !sourceText.includes('INITIAL GENERATED CODE')
+        ) {
           source.getImportDeclarations().forEach((decl) => {
             const specifier = decl.getModuleSpecifierValue();
             const normalizedSpecifier = Normalizer.normalizeImport(specifier);
@@ -90,7 +93,8 @@ export class Reconciler {
       // We ONLY prune if it's a strictly managed file.
       // Files starting with "// INITIAL GENERATED CODE" are meant for manual editing
       // and should NOT have their imports or nodes pruned.
-      const isGenerated = sourceText.includes('GENERATED CODE - DO NOT MODIFY');
+      const isGenerated =
+        sourceText.includes('GENERATED CODE') && !sourceText.includes('INITIAL GENERATED CODE');
 
       if (isGenerated) {
         // Class Pruning
