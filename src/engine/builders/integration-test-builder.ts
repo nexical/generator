@@ -2,6 +2,7 @@ import {
   type ModelDef,
   type FileDefinition,
   type TestRoleConfig,
+  type ImportConfig,
   type NodeContainer,
 } from '../types.js';
 import { BaseBuilder } from './base-builder.js';
@@ -184,9 +185,31 @@ export class IntegrationTestBuilder extends BaseBuilder {
       });
     }
 
+    // Preserve existing manual imports
+    const existingImports = this.getExistingImports(node);
+    const importMap = new Map<string, ImportConfig>();
+
+    // Add generated imports first
+    imports.forEach((imp) => importMap.set(imp.moduleSpecifier, imp));
+
+    // Add existing imports if not already present or merge named imports
+    existingImports.forEach((existing) => {
+      const existingSpecifier = existing.moduleSpecifier;
+      if (importMap.has(existingSpecifier)) {
+        const generated = importMap.get(existingSpecifier)!;
+        if (existing.namedImports && generated.namedImports) {
+          const mergedNames = [...new Set([...generated.namedImports, ...existing.namedImports])];
+          generated.namedImports = mergedNames;
+          generated.isTypeOnly = generated.isTypeOnly && existing.isTypeOnly;
+        }
+      } else {
+        importMap.set(existingSpecifier, existing);
+      }
+    });
+
     return {
       header: '// GENERATED CODE - DO NOT MODIFY',
-      imports: imports,
+      imports: Array.from(importMap.values()),
       variables: [],
       statements: [
         ts`describe('${entityName} API - ${this.operation.charAt(0).toUpperCase() + this.operation.slice(1)}', () => {

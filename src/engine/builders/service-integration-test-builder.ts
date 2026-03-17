@@ -68,10 +68,32 @@ export class ServiceIntegrationTestBuilder extends BaseBuilder {
       });
     }
 
+    // Preserve existing manual imports
+    const existingImports = this.getExistingImports(_node);
+    const importMap = new Map<string, ImportConfig>();
+
+    // Add generated imports first
+    imports.forEach((imp) => importMap.set(imp.moduleSpecifier, imp));
+
+    // Add existing imports if not already present or merge named imports
+    existingImports.forEach((existing) => {
+      const existingSpecifier = existing.moduleSpecifier;
+      if (importMap.has(existingSpecifier)) {
+        const generated = importMap.get(existingSpecifier)!;
+        if (existing.namedImports && generated.namedImports) {
+          const mergedNames = [...new Set([...generated.namedImports, ...existing.namedImports])];
+          generated.namedImports = mergedNames;
+          generated.isTypeOnly = generated.isTypeOnly && existing.isTypeOnly;
+        }
+      } else {
+        importMap.set(existingSpecifier, existing);
+      }
+    });
+
     return {
       header:
         '// INITIAL GENERATED CODE - REVIEW AND MODIFY AS NEEDED FOR SERVICE INTEGRATION TESTS',
-      imports,
+      imports: Array.from(importMap.values()),
       variables: [],
       statements: [
         ts`describe('${this.actionName} - Service Integration', () => {

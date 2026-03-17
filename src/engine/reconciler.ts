@@ -80,13 +80,17 @@ export class Reconciler {
         }
       }
 
-      // --- Pruning Pass (Only for GENERATED files) ---
+      // --- Pruning Pass (Only for FULLY GENERATED files) ---
       const sourceText =
         isRealNode(sourceFile) &&
         (Node.isSourceFile(sourceFile) || Node.isModuleDeclaration(sourceFile))
           ? (sourceFile as Node).getFullText()
           : '';
-      const isGenerated = sourceText.includes('GENERATED CODE');
+
+      // We ONLY prune if it's a strictly managed file.
+      // Files starting with "// INITIAL GENERATED CODE" are meant for manual editing
+      // and should NOT have their imports or nodes pruned.
+      const isGenerated = sourceText.includes('GENERATED CODE - DO NOT MODIFY');
 
       if (isGenerated) {
         // Class Pruning
