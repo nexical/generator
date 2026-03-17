@@ -7,7 +7,7 @@
   "main": "dist/index.js",
   "scripts": {
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "build": "npm run clean && tsc -b tsconfig.build.json",
+    "build": "npm run clean && tsc -b tsconfig.build.json && cp -r templates dist/",
     "dev": "tsc -w",
     "test:unit": "vitest run -c vitest.unit.config.ts",
     "test:unit:watch": "vitest -c vitest.unit.config.ts",
