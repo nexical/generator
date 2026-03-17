@@ -9,7 +9,7 @@ declare const isVoidInput: boolean;
 declare const testBody: string;
 
 export default fragment/* ts */`
-it.skip('should execute successfully', async () => {
+it('should execute successfully', async () => {
     // 1. Setup prerequisite state using DataFactory
     // const prerequisite = await Factory.create('someModel', { ... });
     

@@ -28,7 +28,7 @@ export class ServiceIntegrationTestBuilder extends BaseBuilder {
     }).raw;
 
     const imports: ImportConfig[] = [
-      { moduleSpecifier: 'vitest', namedImports: ['describe', 'it', 'expect'] },
+      { moduleSpecifier: 'vitest', namedImports: ['describe', 'it', 'expect', 'beforeAll'] },
       {
         moduleSpecifier: '@tests/integration/helpers/context',
         namedImports: ['createMockContext'],
@@ -40,6 +40,10 @@ export class ServiceIntegrationTestBuilder extends BaseBuilder {
       {
         moduleSpecifier: `../../../src/actions/${this.actionBase}`,
         namedImports: [this.actionName],
+      },
+      {
+        moduleSpecifier: '../../../src/server-init',
+        namedImports: ['init'],
       },
     ];
 
@@ -71,6 +75,10 @@ export class ServiceIntegrationTestBuilder extends BaseBuilder {
       variables: [],
       statements: [
         ts`describe('${this.actionName} - Service Integration', () => {
+    beforeAll(async () => {
+        await init();
+    });
+
     ${testBody}
 })`,
       ],
