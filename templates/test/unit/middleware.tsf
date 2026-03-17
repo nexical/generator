@@ -6,6 +6,7 @@ declare const models: any[];
 
 export default fragment/* ts */`
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import { onRequest } from '${middlewarePath}';
 import { db } from '@/lib/core/db';
 
@@ -58,15 +59,15 @@ describe('Middleware: ${moduleName}', () => {
 
     it('should call next() for public routes', async () => {
         mockContext.url = new URL('http://localhost/api/health');
-        await onRequest(mockContext as unknown as any, mockNext as unknown as any);
+        await onRequest(mockContext as unknown as APIContext, mockNext as unknown as (context: APIContext) => Promise<Response>);
         expect(mockNext).toHaveBeenCalled();
     });
 
     \${models.some(m => m.actor?.strategy === 'login' || m.actor?.validStatus) ? \`
     it('should map actor from session when valid session exists', async () => {
-        (mockContext.locals as Record<string, any>).session.get.mockResolvedValue({ id: 'user-1', type: 'user', email: 'test@example.com' });
+        (mockContext.locals as Record<string, unknown>).session.get.mockResolvedValue({ id: 'user-1', type: 'user', email: 'test@example.com' });
 
-        await onRequest(mockContext as unknown as any, mockNext as unknown as any);
+        await onRequest(mockContext as unknown as APIContext, mockNext as unknown as (context: APIContext) => Promise<Response>);
         expect(mockContext.locals.actor).toBeDefined();
         expect(mockContext.locals.actor.id).toBe('user-1');
         expect(mockNext).toHaveBeenCalled();
@@ -91,7 +92,7 @@ describe('Middleware: ${moduleName}', () => {
             }
         });
 
-        await onRequest(mockContext as unknown as any, mockNext as unknown as any);
+        await onRequest(mockContext as unknown as APIContext, mockNext as unknown as (context: APIContext) => Promise<Response>);
         expect(mockContext.locals.actor).toBeDefined();
         expect(mockContext.locals.actor.id).toBe('actor-1');
         expect(mockNext).toHaveBeenCalled();
@@ -100,7 +101,7 @@ describe('Middleware: ${moduleName}', () => {
 
     it('should proceed even if unauthorized (Bouncer logic)', async () => {
         mockContext.request.headers.set('Authorization', 'Bearer invalid');
-        await onRequest(mockContext as unknown as any, mockNext as unknown as any);
+        await onRequest(mockContext as unknown as APIContext, mockNext as unknown as (context: APIContext) => Promise<Response>);
         expect(mockNext).toHaveBeenCalled();
     });
 });

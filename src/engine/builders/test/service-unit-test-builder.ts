@@ -264,7 +264,9 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
             try {
               vi.mocked(db.${this.entityLowerName}.findFirst).mockRejectedValueOnce(new Error('DB Error'));
               vi.mocked(db.${this.entityLowerName}.findUnique).mockRejectedValueOnce(new Error('DB Error'));
-            } catch { }`
+            } catch {
+              // Ignore expected errors during setup
+            }`
             : '';
 
           successTest = `
@@ -293,8 +295,9 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
               if (result && typeof result === 'object' && 'success' in result) {
                   expect(result.success).toBe(false);
               }
-            } catch {
+            } catch (error) {
                 // If it throws, that's also a valid error handling path
+                expect(error).toBeDefined();
             }
         });`;
         }

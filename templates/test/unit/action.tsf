@@ -11,6 +11,7 @@ declare const defaultStatus: string;
 
 export default fragment/* ts */`
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { APIContext } from 'astro';
 import { ${actionName} } from '${actionPath}';
 import { db } from '@/lib/core/db';
 import { Logger } from '@/lib/core/logger';
@@ -158,6 +159,7 @@ describe('${actionName}', () => {
         vi.clearAllMocks();
     });
 
+    ${services.length > 0 ? `
     const commonServiceMethods = [
         'create', 'get', 'list', 'update', 'delete', 'upsert', 'count', 'run',
         'createKey', 'register', 'login', 'logout', 'invite', 'inviteMember',
@@ -168,18 +170,19 @@ describe('${actionName}', () => {
         'checkStaleAgents', 'getJobMetrics', 'getAgentMetrics', 'pollJobs', 'listInvitations', 'resendInvitation',
         'validate', 'verify', 'send', 'process', 'handle'
     ];
+    ` : ''}
 
     it('should be defined', () => {
         expect(${actionName}).toBeDefined();
     });
 
     it('should run (smoke test)', async () => {
-        \${services.map(s => \`
-        const \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(\${s.name});
+        ${services.map(s => `
+        const ${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(${s.name});
         commonServiceMethods.forEach(m => {
-            if ((\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m]) (\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m].mockResolvedValue({ success: true, data: { id: '1' } });
+            if ((${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m]) (${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m].mockResolvedValue({ success: true, data: { id: '1' } });
         });
-        \`).join('\n')}
+        `).join('\n')}
         const mockContext = {
             locals: {
                 actor: { id: 'user-1', type: 'user', email: 'test@example.com' },
@@ -196,19 +199,19 @@ describe('${actionName}', () => {
           email: 'test@example.com', 
           name: 'Test',
           role: 'TEAM_MEMBER'
-        } as Record<string, unknown>, mockContext as unknown as any);
+        } as Record<string, unknown>, mockContext as unknown as APIContext);
         expect(result).toBeDefined();
     });
 
-    \${services.length > 0 ? \`
-    it('should call \${services[0].name} on success', async () => {
+    ${services.length > 0 ? `
+    it('should call ${services[0].name} on success', async () => {
         const mockData = { id: '1' };
-        \${services.map(s => \`
-        const \${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(\${s.name});
+        ${services.map(s => `
+        const ${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock = vi.mocked(${s.name});
         commonServiceMethods.forEach(m => {
-            if ((\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m]) (\${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m].mockResolvedValue({ success: true, data: mockData });
+            if ((${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m]) (${s.name.charAt(0).toLowerCase() + s.name.slice(1)}Mock as unknown as Record<string, vi.Mock>)[m].mockResolvedValue({ success: true, data: mockData });
         });
-        \`).join('\n')}
+        `).join('\n')}
 
         const mockContext = {
             locals: {
@@ -218,18 +221,18 @@ describe('${actionName}', () => {
             params: { id: 'test-id' },
         } as unknown as Record<string, unknown>;
 
-        const result = await \${actionName}.run({ 
+        const result = await ${actionName}.run({ 
           id: '1', 
           userId: 'user-1', 
           token: 'test-token', 
           email: 'test@example.com', 
           name: 'Test' 
-        } as Record<string, unknown>, mockContext as unknown as any);
+        } as Record<string, unknown>, mockContext as unknown as APIContext);
         expect(result.success).toBe(true);
     });
 
-    it('should return error when \${services[0].name} fails', async () => {
-        const serviceMock = vi.mocked(\${services[0].name});
+    it('should return error when ${services[0].name} fails', async () => {
+        const serviceMock = vi.mocked(${services[0].name});
         commonServiceMethods.forEach(m => {
             if ((serviceMock as unknown as Record<string, vi.Mock>)[m]) (serviceMock as unknown as Record<string, vi.Mock>)[m].mockResolvedValue({ success: false, error: 'Service error' });
         });
@@ -242,14 +245,14 @@ describe('${actionName}', () => {
             params: { id: 'test-id' },
         } as unknown as Record<string, unknown>;
 
-        const result = await \${actionName}.run({ 
+        const result = await ${actionName}.run({ 
           id: '1', 
           userId: 'user-1', 
           token: 'test-token', 
           email: 'test@example.com', 
           name: 'Test' 
-        } as Record<string, unknown>, mockContext as unknown as any);
+        } as Record<string, unknown>, mockContext as unknown as APIContext);
         expect(result.success).toBe(false);
-    });\` : ''}
+    });` : ''}
 });
 `

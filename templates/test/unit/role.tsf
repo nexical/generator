@@ -38,7 +38,7 @@ describe('${className}', () => {
             },
             params: { id: 'test-id' },
             url: new URL('http://localhost/api/test?foo=bar')
-        } as any;
+        } as Record<string, unknown>;
         
         await expect(role.check(mockContext, {}, {})).resolves.not.toThrow();
     });
@@ -51,7 +51,7 @@ describe('${className}', () => {
             },
             params: { id: 'test-id' },
             url: new URL('http://localhost/api/test')
-        } as any;
+        } as Record<string, unknown>;
         
         await expect(role.check(mockContext, {}, {})).resolves.not.toThrow();
     });
@@ -64,7 +64,7 @@ describe('${className}', () => {
             },
             params: { id: 'test-id' },
             url: new URL('http://localhost/api/test')
-        } as any;
+        } as Record<string, unknown>;
         
         await expect(role.check(mockContext, {}, {})).rejects.toThrow('Forbidden');
     });
@@ -73,7 +73,7 @@ describe('${className}', () => {
         const role = new ${className}();
         const mockContext = {
             locals: {}
-        } as any;
+        } as Record<string, unknown>;
         
         await expect(role.check(mockContext, {}, {})).rejects.toThrow('Unauthorized: No actor found');
     });

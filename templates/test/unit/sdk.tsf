@@ -17,7 +17,7 @@ describe('${sdkName}', () => {
     mockClient = {
       request: vi.fn().mockResolvedValue({ success: true, data: { id: 'test-id' } }),
     };
-    sdk = new ${sdkName}(mockClient as unknown as any);
+    sdk = new ${sdkName}(mockClient as unknown as Record<string, unknown>);
   });
 
   it('should initialize', () => {

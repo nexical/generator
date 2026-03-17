@@ -246,6 +246,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             const actionUnitTestFile = this.getOrCreateFile(
               `tests/unit/actions/${actionBase}.test.ts`,
             );
+            actionUnitTestFile.replaceWithText(''); // Prevent duplication
             new ActionUnitTestBuilder(
               actionName,
               `../../../src/actions/${actionBase}`,
@@ -718,7 +719,12 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
       if (!['init', 'run', 'constructor'].includes(methodName)) {
         // Count parameters by counting commas and adding 1 (if not empty)
-        const paramCount = params ? params.split(',').length : 0;
+        const paramCount = params
+          ? params
+              .split(',')
+              .map((p) => p.trim())
+              .filter((p) => p.length > 0).length
+          : 0;
         methods[methodName] = paramCount;
       }
     }

@@ -25,7 +25,7 @@ describe('Permission', () => {
 
     it('should call Permission.check and not throw', () => {
         // Smoke test for the permission check mapping
-        expect(() => Permission.check('user:list' as any, 'USER_ADMIN')).not.toThrow();
+        expect(() => Permission.check('user:list' as unknown as Parameters<typeof Permission.check>[0], 'USER_ADMIN')).not.toThrow();
     });
 });`,
       ],
