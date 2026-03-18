@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { InterfacePrimitive } from '../../../../src/engine/primitives/nodes/interface.js';
-import { VariablePrimitive } from '../../../../src/engine/primitives/nodes/variable.js';
+import { InterfacePrimitive } from '@nexical/generator/engine/primitives/nodes/interface.js';
+import { VariablePrimitive } from '@nexical/generator/engine/primitives/nodes/variable.js';
 
 describe('Coverage Boost Primitives', { timeout: 60000 }, () => {
   describe('InterfacePrimitive', () => {

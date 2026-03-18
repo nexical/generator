@@ -12,15 +12,17 @@ export default defineConfig({
         find: /^@nexical\/generator\/(.*)\.js$/,
         replacement: path.resolve(__dirname, 'src/$1.ts'),
       },
-      { find: /^@nexical\/generator\/(.*)/, replacement: path.resolve(__dirname, 'src/$1') },
+      { find: /^@nexical\/generator\/(.*)$/, replacement: path.resolve(__dirname, 'src/$1') },
       {
-        find: /^@nexical\/generator-tests\/(.*)/,
+        find: /^@nexical\/generator-tests\/(.*)$/,
         replacement: path.resolve(__dirname, 'tests/unit/$1'),
       },
       {
-        find: /^@nexical\/cli-core/,
+        find: /^@nexical\/cli-core$/,
         replacement: path.resolve(__dirname, 'src/lib/cli-core.ts'),
       },
+      { find: /^@\/(.*)\.js$/, replacement: path.resolve(__dirname, 'src/$1.ts') },
+      { find: /^@\/(.*)$/, replacement: path.resolve(__dirname, 'src/$1') },
     ],
     coverage: {
       enabled: true,

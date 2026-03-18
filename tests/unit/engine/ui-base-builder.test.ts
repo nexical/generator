@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UiBaseBuilder } from '../../../src/engine/builders/ui/ui-base-builder.js';
+import { UiBaseBuilder } from '@nexical/generator/engine/builders/ui/ui-base-builder.js';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import os from 'node:os';
@@ -7,7 +7,11 @@ import os from 'node:os';
 // Concrete implementation for testing
 class TestUiBuilder extends UiBaseBuilder {
   constructor(moduleName: string, config: unknown, modulePath: string) {
-    super(moduleName, config as import('../../../src/engine/types.js').ModuleConfig, modulePath);
+    super(
+      moduleName,
+      config as import('@nexical/generator/engine/types.js').ModuleConfig,
+      modulePath,
+    );
   }
 
   async build(): Promise<void> {}

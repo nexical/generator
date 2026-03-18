@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { QueryBuilder } from '../../../../src/engine/builders/query-builder.js';
+import { QueryBuilder } from '@nexical/generator/engine/builders/query-builder.js';
 import * as fs from 'node:fs';
 
 vi.mock('node:fs');

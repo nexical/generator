@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
-import { BuilderLoader } from '../../../src/engine/builder-loader.js';
+import { BuilderLoader } from '@nexical/generator/engine/builder-loader.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { logger } from '@nexical/cli-core';

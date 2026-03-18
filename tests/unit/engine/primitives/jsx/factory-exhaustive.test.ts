@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi } from 'vitest';
 import { Project } from 'ts-morph';
-import { tsx } from '../../../../../src/engine/primitives/jsx/factory.js';
+import { tsx } from '@nexical/generator/engine/primitives/jsx/factory.js';
 
 describe('tsx factory', () => {
   it('should handle template string with values', () => {

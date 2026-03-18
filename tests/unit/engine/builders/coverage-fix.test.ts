@@ -1,11 +1,11 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { ActionBuilder } from '../../../../src/engine/builders/action-builder.js';
-import { ActorBuilder } from '../../../../src/engine/builders/actor-builder.js';
-import { ServiceIntegrationTestBuilder } from '../../../../src/engine/builders/service-integration-test-builder.js';
-import { ApiModuleGenerator } from '../../../../src/engine/api-module-generator.js';
-import { type ModelDef } from '../../../../src/engine/types.js';
+import { ActionBuilder } from '@nexical/generator/engine/builders/action-builder.js';
+import { ActorBuilder } from '@nexical/generator/engine/builders/actor-builder.js';
+import { ServiceIntegrationTestBuilder } from '@nexical/generator/engine/builders/test/integration/service-integration-test-builder.js';
+import { ApiModuleGenerator } from '@nexical/generator/engine/api-module-generator.js';
+import { type ModelDef } from '@nexical/generator/engine/types.js';
 
 describe('Coverage Fix - Generator Builders', () => {
   it('ActorBuilder - should handle model with role field (roleCleanup empty)', () => {

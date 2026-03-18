@@ -28,6 +28,7 @@ export interface ActorConfig {
   fields?: Record<string, string>;
   validStatus?: string;
   role?: string;
+  endpoint?: string;
 }
 
 export interface ModelDef {

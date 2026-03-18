@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { specInitModule } from '../../../src/lib/spec-init.js';
+import { specInitModule } from '@nexical/generator/lib/spec-init.js';
 import { type BaseCommand } from '@nexical/cli-core';
 import fs from 'node:fs';
 

@@ -2,41 +2,41 @@
 /* eslint-disable */
 import { describe, it, expect, vi } from 'vitest';
 import { Project, SyntaxKind } from 'ts-morph';
-import { ImportPrimitive } from '../../../src/engine/primitives/core/import-manager.js';
-import { ExportPrimitive } from '../../../src/engine/primitives/core/export-manager.js';
-import { PropertyPrimitive } from '../../../src/engine/primitives/nodes/property.js';
-import { MethodPrimitive } from '../../../src/engine/primitives/nodes/method.js';
-import { AccessorPrimitive } from '../../../src/engine/primitives/nodes/accessor.js';
-import { IntegrationTestBuilder } from '../../../src/engine/builders/integration-test-builder.js';
-import { BuilderLoader } from '../../../src/engine/builder-loader.js';
-import { ApiModuleGenerator } from '../../../src/engine/api-module-generator.js';
-import { UiModuleGenerator } from '../../../src/engine/ui-module-generator.js';
-import { type ModelDef, type FileDefinition } from '../../../src/engine/types.js';
-import { ts } from '../../../src/engine/primitives/statements/factory.js';
-import { ActionBuilder } from '../../../src/engine/builders/action-builder.js';
-import { TypeBuilder } from '../../../src/engine/builders/type-builder.js';
-import { ApiBuilder } from '../../../src/engine/builders/api-builder.js';
-import { RoleBuilder } from '../../../src/engine/builders/role-builder.js';
-import { QueryBuilder } from '../../../src/engine/builders/query-builder.js';
-import { HookBuilder } from '../../../src/engine/builders/hook-builder.js';
-import { ActorBuilder } from '../../../src/engine/builders/actor-builder.js';
-import { ActorTypeBuilder } from '../../../src/engine/builders/actor-type-builder.js';
-import { EmailBuilder } from '../../../src/engine/builders/email-builder.js';
-import * as BuilderIndex from '../../../src/engine/builders/index.js';
-import { Reconciler } from '../../../src/engine/reconciler.js';
-import { RolePrimitive } from '../../../src/engine/primitives/nodes/role.js';
-import { PermissionPrimitive } from '../../../src/engine/primitives/nodes/permission.js';
+import { ImportPrimitive } from '@nexical/generator/engine/primitives/core/import-manager.js';
+import { ExportPrimitive } from '@nexical/generator/engine/primitives/core/export-manager.js';
+import { PropertyPrimitive } from '@nexical/generator/engine/primitives/nodes/property.js';
+import { MethodPrimitive } from '@nexical/generator/engine/primitives/nodes/method.js';
+import { AccessorPrimitive } from '@nexical/generator/engine/primitives/nodes/accessor.js';
+import { IntegrationTestBuilder } from '@nexical/generator/engine/builders/test/integration/integration-test-builder.js';
+import { BuilderLoader } from '@nexical/generator/engine/builder-loader.js';
+import { ApiModuleGenerator } from '@nexical/generator/engine/api-module-generator.js';
+import { UiModuleGenerator } from '@nexical/generator/engine/ui-module-generator.js';
+import { type ModelDef, type FileDefinition } from '@nexical/generator/engine/types.js';
+import { ts } from '@nexical/generator/engine/primitives/statements/factory.js';
+import { ActionBuilder } from '@nexical/generator/engine/builders/action-builder.js';
+import { TypeBuilder } from '@nexical/generator/engine/builders/type-builder.js';
+import { ApiBuilder } from '@nexical/generator/engine/builders/api-builder.js';
+import { RoleBuilder } from '@nexical/generator/engine/builders/role-builder.js';
+import { QueryBuilder } from '@nexical/generator/engine/builders/query-builder.js';
+import { HookBuilder } from '@nexical/generator/engine/builders/hook-builder.js';
+import { ActorBuilder } from '@nexical/generator/engine/builders/actor-builder.js';
+import { ActorTypeBuilder } from '@nexical/generator/engine/builders/actor-type-builder.js';
+import { EmailBuilder } from '@nexical/generator/engine/builders/email-builder.js';
+import * as BuilderIndex from '@nexical/generator/engine/builders/index.js';
+import { Reconciler } from '@nexical/generator/engine/reconciler.js';
+import { RolePrimitive } from '@nexical/generator/engine/primitives/nodes/role.js';
+import { PermissionPrimitive } from '@nexical/generator/engine/primitives/nodes/permission.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { glob } from 'glob';
 import YAML from 'yaml';
-import { ModelParser } from '../../../src/engine/model-parser.js';
-import { runPrompt } from '../../../src/utils/prompt.js';
-import { ModuleGenerator } from '../../../src/engine/module-generator.js';
-import { TemplateLoader } from '../../../src/utils/template-loader.js';
+import { ModelParser } from '@nexical/generator/engine/model-parser.js';
+import { runPrompt } from '@nexical/generator/utils/prompt.js';
+import { ModuleGenerator } from '@nexical/generator/engine/module-generator.js';
+import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
 import { PromptRunner } from '@nexical/ai';
-import { Formatter } from '../../../src/utils/formatter.js';
-import { BaseBuilder } from '../../../src/engine/builders/base-builder.js';
+import { Formatter } from '@nexical/generator/utils/formatter.js';
+import { BaseBuilder } from '@nexical/generator/engine/builders/base-builder.js';
 
 vi.mock('node:fs');
 vi.mock('glob');
@@ -46,7 +46,7 @@ vi.mock('@nexical/ai', () => ({
   },
 }));
 
-vi.mock('../../../src/utils/formatter.js', () => ({
+vi.mock('@nexical/generator/utils/formatter.js', () => ({
   Formatter: {
     format: vi
       .fn()
@@ -56,7 +56,7 @@ vi.mock('../../../src/utils/formatter.js', () => ({
   },
 }));
 
-vi.mock('../../../src/utils/template-loader.js', () => ({
+vi.mock('@nexical/generator/utils/template-loader.js', () => ({
   TemplateLoader: {
     load: vi.fn().mockImplementation((path, vars) => ({
       raw: `// Mocked ${path}`,

@@ -34,14 +34,14 @@ vi.mock('fs', () => ({
 }));
 
 // Mock dynamic commands
-vi.mock('../../src/commands/gen/api', () => ({
+vi.mock('@nexical/generator/commands/gen/api', () => ({
   GenApiCommand: class {
     getCommand() {
       return { name: 'gen' };
     }
   },
 }));
-vi.mock('../../src/commands/audit/api', () => ({
+vi.mock('@nexical/generator/commands/audit/api', () => ({
   AuditApiCommand: class {
     getCommand() {
       return { name: 'audit' };

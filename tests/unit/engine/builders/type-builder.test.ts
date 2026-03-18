@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { TypeBuilder } from '../../../../src/engine/builders/type-builder';
-import { type ModelDef, type EnumConfig } from '../../../../src/engine/types';
+import { TypeBuilder } from '@nexical/generator/engine/builders/type-builder';
+import { type ModelDef, type EnumConfig } from '@nexical/generator/engine/types';
 
 describe('TypeBuilder', () => {
   it('should generate interfaces for virtual models', () => {

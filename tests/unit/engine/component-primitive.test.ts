@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { ComponentPrimitive } from '../../../src/engine/primitives/nodes/component.js';
-import { tsx } from '../../../src/engine/primitives/jsx/factory.js';
+import { ComponentPrimitive } from '@nexical/generator/engine/primitives/nodes/component.js';
+import { tsx } from '@nexical/generator/engine/primitives/jsx/factory.js';
 
 describe('ComponentPrimitive', () => {
   it('should create a new component from scratch', () => {

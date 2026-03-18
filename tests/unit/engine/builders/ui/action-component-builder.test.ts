@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { ActionComponentBuilder } from '../../../../../src/engine/builders/ui/action-component-builder.js';
+import { ActionComponentBuilder } from '@nexical/generator/engine/builders/ui/action-component-builder.js';
 import * as fs from 'node:fs';
 
 vi.mock('node:fs');

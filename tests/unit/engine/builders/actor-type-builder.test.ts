@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-import { ActorTypeBuilder } from '../../../../src/engine/builders/actor-type-builder';
-import { type ModelDef } from '../../../../src/engine/types';
+import { ActorTypeBuilder } from '@nexical/generator/engine/builders/actor-type-builder';
+import { type ModelDef } from '@nexical/generator/engine/types';
 
 describe('ActorTypeBuilder', () => {
   let project: Project;
@@ -49,7 +49,9 @@ describe('ActorTypeBuilder', () => {
       getText: vi.fn().mockReturnValue(''),
     };
     expect(() =>
-      builder.ensure(mockNode as unknown as import('../../../../src/engine/types').NodeContainer),
+      builder.ensure(
+        mockNode as unknown as import('@nexical/generator/engine/types').NodeContainer,
+      ),
     ).not.toThrow();
   });
 

@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { generateApiModule } from '../../../src/lib/generate-api.js';
-import { ModuleLocator } from '../../../src/lib/module-locator.js';
+import { generateApiModule } from '@nexical/generator/lib/generate-api.js';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
 
-vi.mock('../../../src/lib/module-locator.js', () => ({
+vi.mock('@nexical/generator/lib/module-locator.js', () => ({
   ModuleLocator: {
     expand: vi.fn(),
     resolve: vi.fn(),
   },
 }));
 
-vi.mock('../../../src/engine/api-module-generator.js', () => {
+vi.mock('@nexical/generator/engine/api-module-generator.js', () => {
   return {
     ApiModuleGenerator: vi.fn().mockImplementation(function () {
       return {

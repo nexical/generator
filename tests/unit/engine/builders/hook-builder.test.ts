@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { HookBuilder } from '../../../../src/engine/builders/hook-builder.js';
+import { HookBuilder } from '@nexical/generator/engine/builders/hook-builder.js';
 import * as fs from 'node:fs';
 
 vi.mock('node:fs');

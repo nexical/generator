@@ -2,10 +2,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
 import * as fs from 'node:fs';
-import { UiBaseBuilder, type UiConfig } from '../../../src/engine/builders/ui/ui-base-builder.js';
-import { type ModuleConfig } from '../../../src/engine/types.js';
-import { ModuleLocator } from '../../../src/lib/module-locator.js';
-import { ModelParser } from '../../../src/engine/model-parser.js';
+import {
+  UiBaseBuilder,
+  type UiConfig,
+} from '@nexical/generator/engine/builders/ui/ui-base-builder.js';
+import { type ModuleConfig } from '@nexical/generator/engine/types.js';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
+import { ModelParser } from '@nexical/generator/engine/model-parser.js';
 
 // Concrete implementation for testing
 class TestUiBuilder extends UiBaseBuilder {
@@ -29,13 +32,13 @@ class TestUiBuilder extends UiBaseBuilder {
   }
 }
 
-vi.mock('../../../src/lib/module-locator.js', () => ({
+vi.mock('@nexical/generator/lib/module-locator.js', () => ({
   ModuleLocator: {
     resolve: vi.fn(),
   },
 }));
 
-vi.mock('../../../src/engine/model-parser.js', () => ({
+vi.mock('@nexical/generator/engine/model-parser.js', () => ({
   ModelParser: {
     parse: vi.fn(),
   },
@@ -121,9 +124,9 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
       (ModelParser.parse as unknown as import('vitest').Mock).mockReturnValue({
         models: [{ name: 'User' }],
       } as unknown as {
-        models: import('../../../src/engine/types.js').ModelDef[];
-        enums: import('../../../src/engine/types.js').EnumConfig[];
-        config: import('../../../src/engine/types.js').GlobalConfig;
+        models: import('@nexical/generator/engine/types.js').ModelDef[];
+        enums: import('@nexical/generator/engine/types.js').EnumConfig[];
+        config: import('@nexical/generator/engine/types.js').GlobalConfig;
       });
 
       const models = builder.exposeResolveModels();

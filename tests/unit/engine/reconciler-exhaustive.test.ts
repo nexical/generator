@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { Reconciler } from '../../../src/engine/reconciler.js';
-import { type FileDefinition } from '../../../src/engine/types.js';
+import { Reconciler } from '@nexical/generator/engine/reconciler.js';
+import { type FileDefinition } from '@nexical/generator/engine/types.js';
 
 describe('Reconciler - Exhaustive Coverage', () => {
   it('should handle non-SourceFile (Namespace) path and branches', () => {

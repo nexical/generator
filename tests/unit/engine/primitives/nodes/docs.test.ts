@@ -80,7 +80,7 @@ describe('JSDocPrimitive', () => {
   it('should fallback to empty string if description is undefined during update and validate', () => {
     const classNode = sourceFile.getClass('TestClass')!;
     const primitive = new JSDocPrimitive(
-      {} as unknown as import('../../../../src/engine/primitives/nodes/docs.js').JSDocConfig,
+      {} as unknown as import('@nexical/generator/engine/primitives/nodes/docs.js').JSDocConfig,
     ); // trigger || '' fallback
 
     // Line 30 fallback

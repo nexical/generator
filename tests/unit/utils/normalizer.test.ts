@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { Normalizer } from '../../../src/utils/normalizer.js';
+import { Normalizer } from '@nexical/generator/utils/normalizer.js';
 
 describe('Normalizer', () => {
   describe('normalize', () => {

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ApiBuilder } from '../../../../src/engine/builders/api-builder.js';
+import { ApiBuilder } from '@nexical/generator/engine/builders/api-builder.js';
 import { Project } from 'ts-morph';
-import type { ModelDef } from '../../../../src/engine/types.js';
+import type { ModelDef } from '@nexical/generator/engine/types.js';
 
-vi.mock('../../../../src/utils/template-loader.js', () => ({
+vi.mock('@nexical/generator/utils/template-loader.js', () => ({
   TemplateLoader: {
     load: vi.fn((path, vars) => ({ raw: `({ path: "${path}", vars: ${JSON.stringify(vars)} })` })),
   },

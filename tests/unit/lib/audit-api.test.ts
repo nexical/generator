@@ -5,26 +5,26 @@ import * as fs from 'fs';
 // Use dynamic import for auditModule
 const auditModuleWrapper = async (
   cmd: unknown,
-  info: import('../../../src/lib/module-locator.js').ModuleInfo,
+  info: import('@nexical/generator/lib/module-locator.js').ModuleInfo,
   schemaOnly: boolean,
 ) => {
-  const { auditModule } = await import('../../../src/lib/audit-api.js');
+  const { auditModule } = await import('@nexical/generator/lib/audit-api.js');
   return auditModule(cmd as unknown as import('@nexical/cli-core').BaseCommand, info, schemaOnly);
 };
 
 const auditApiModuleWrapper = async (cmd: unknown, name: string, options: { schema?: boolean }) => {
-  const { auditApiModule } = await import('../../../src/lib/audit-api.js');
+  const { auditApiModule } = await import('@nexical/generator/lib/audit-api.js');
   return auditApiModule(cmd as unknown as import('@nexical/cli-core').BaseCommand, name, options);
 };
 
 vi.mock('fs');
-vi.mock('../../../src/lib/module-locator.js', () => ({
+vi.mock('@nexical/generator/lib/module-locator.js', () => ({
   ModuleLocator: {
     expand: vi.fn(),
   },
 }));
 
-vi.mock('../../../src/engine/model-parser.js', () => ({
+vi.mock('@nexical/generator/engine/model-parser.js', () => ({
   ModelParser: {
     parse: vi.fn(),
   },
@@ -68,7 +68,7 @@ vi.mock('ts-morph', () => {
   };
 });
 
-vi.mock('../../../src/engine/builders/base-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/base-builder.js', () => ({
   BaseBuilder: class {
     validate() {
       return { valid: true, issues: [] };
@@ -88,7 +88,7 @@ describe('auditApiModule', () => {
       success: vi.fn(),
     };
     vi.clearAllMocks();
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockReturnValue({ models: [], enums: [] });
 
     vi.spyOn(fs, 'readdirSync').mockImplementation(((p: unknown) => {
@@ -153,7 +153,7 @@ describe('auditApiModule', () => {
   });
 
   it('should perform full code audit via builders', async () => {
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockReturnValue({
       models: [{ name: 'User', api: true, db: true, fields: {} }],
       enums: [],
@@ -193,14 +193,14 @@ describe('auditApiModule', () => {
   });
 
   it('should handle missing modules for auditApiModule', async () => {
-    const { ModuleLocator } = await import('../../../src/lib/module-locator.js');
+    const { ModuleLocator } = await import('@nexical/generator/lib/module-locator.js');
     (ModuleLocator.expand as Mock).mockResolvedValue([]);
     await auditApiModuleWrapper(mockCommand, 'non-existent', {});
     expect(mockCommand.warn).toHaveBeenCalledWith(expect.stringContaining('No modules found'));
   });
 
   it('should report success for auditApiModule (schema only)', async () => {
-    const { ModuleLocator } = await import('../../../src/lib/module-locator.js');
+    const { ModuleLocator } = await import('@nexical/generator/lib/module-locator.js');
     (ModuleLocator.expand as Mock).mockResolvedValue([mockModuleInfo]);
     vi.spyOn(fs, 'readFileSync').mockImplementation((p: unknown) => {
       const ps = String(p);
@@ -220,7 +220,7 @@ describe('auditApiModule', () => {
   });
 
   it('should report success for auditApiModule (full audit)', async () => {
-    const { ModuleLocator } = await import('../../../src/lib/module-locator.js');
+    const { ModuleLocator } = await import('@nexical/generator/lib/module-locator.js');
     (ModuleLocator.expand as Mock).mockResolvedValue([mockModuleInfo]);
     vi.spyOn(fs, 'readFileSync').mockImplementation((p: unknown) => {
       const ps = String(p);
@@ -273,7 +273,7 @@ models:
   });
 
   it('should audit virtual resources (custom routes)', async () => {
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockReturnValue({
       models: [],
       enums: [],
@@ -300,7 +300,7 @@ models:
   });
 
   it('should report failure for auditApiModule when issues are found', async () => {
-    const { ModuleLocator } = await import('../../../src/lib/module-locator.js');
+    const { ModuleLocator } = await import('@nexical/generator/lib/module-locator.js');
     (ModuleLocator.expand as Mock).mockResolvedValue([mockModuleInfo]);
     vi.spyOn(fs, 'readFileSync').mockImplementation((p: unknown) => {
       const ps = String(p);
@@ -323,7 +323,7 @@ models:
   });
 
   it('should report issues from builders', async () => {
-    const { BaseBuilder } = await import('../../../src/engine/builders/base-builder.js');
+    const { BaseBuilder } = await import('@nexical/generator/engine/builders/base-builder.js');
     vi.spyOn(BaseBuilder.prototype, 'validate').mockReturnValue({
       valid: false,
       issues: ['Builder issue'],
@@ -354,7 +354,7 @@ models:
   });
 
   it('should handle unexpected exceptions in auditModule', async () => {
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockImplementation(() => {
       throw new Error('Unexpected crash');
     });
@@ -364,14 +364,14 @@ models:
   });
 
   it('should use default pattern in auditApiModule when name is undefined', async () => {
-    const { ModuleLocator } = await import('../../../src/lib/module-locator.js');
+    const { ModuleLocator } = await import('@nexical/generator/lib/module-locator.js');
     (ModuleLocator.expand as Mock).mockResolvedValue([mockModuleInfo]);
     await auditApiModuleWrapper(mockCommand, undefined as unknown as string, {});
     expect(ModuleLocator.expand).toHaveBeenCalledWith('*-api');
   });
 
   it('should handle models with api but no db', async () => {
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockReturnValue({
       models: [{ name: 'ApiOnly', api: true, db: false, fields: {} }],
       enums: [],
@@ -389,7 +389,7 @@ models:
   });
 
   it('should handle custom routes with various path formats', async () => {
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockReturnValue({
       models: [{ name: 'User', api: true, db: true, fields: {} }],
       enums: [],
@@ -423,7 +423,7 @@ models:
   });
 
   it('should handle string exceptions in auditModule', async () => {
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockImplementation(() => {
       throw 'String Exception';
     });
@@ -433,7 +433,7 @@ models:
   });
 
   it('should handle models with api false or db false', async () => {
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockReturnValue({
       models: [
         { name: 'NoApi', api: false, db: true, fields: { id: 'String' } },

@@ -49,12 +49,15 @@ export class ActorBuilder extends BaseBuilder {
         const idField = config.fields?.identifier || 'email';
         const secretField = config.fields?.secret || 'password';
 
+        const authEndpoint = config.endpoint || '/api/login';
+
         body = TemplateLoader.load('actor/login.tsf', {
           secretField,
           modelName: model.name,
           actorName,
           idField,
           roleCleanup,
+          authEndpoint,
         }).raw;
       } else if (config.strategy === 'api-key') {
         const keyModel = config.fields?.keyModel;

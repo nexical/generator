@@ -4,6 +4,7 @@
  * @input {string} modelName
  * @input {string} actorName
  * @input {string} idField
+ * @input {string} authEndpoint
  */
 import { fragment } from '@nexical/generator';
 
@@ -12,33 +13,34 @@ declare const modelName: string;
 declare const actorName: string;
 declare const idField: string;
 declare const roleCleanup: string;
+declare const authEndpoint: string;
 
 export default fragment/* ts */`async (client: ApiClient, params: Record<string, unknown> = {}) => {
-    const password = params.${secretField} || 'Password123!';
+    const password = params.\${secretField} || 'Password123!';
 
-    // 1. Get or Create ${modelName}
+    // 1. Get or Create \${modelName}
     let actor;
     if (params.id) {
-        actor = await Factory.prisma.${actorName}.findUnique({ where: { id: params.id } });
-    } else if (params.${idField}) {
-        actor = await Factory.prisma.${actorName}.findUnique({ where: { ${idField}: params.${idField} } });
+        actor = await Factory.prisma.\${actorName}.findUnique({ where: { id: params.id } });
+    } else if (params.\${idField}) {
+        actor = await Factory.prisma.\${actorName}.findUnique({ where: { \${idField}: params.\${idField} } });
     }
 
     if (!actor) {
             const factoryParams = { ...params };
             if (factoryParams.password) delete factoryParams.password; 
-            ${roleCleanup}
+            \${roleCleanup}
             if (factoryParams.strategy) delete factoryParams.strategy; 
             
-        actor = await Factory.create('${actorName}', {
+        actor = await Factory.create('\${actorName}', {
             ...factoryParams,
         });
     }
 
     // 2. Authenticate
-    const res = await client.useSession().post('/api/login', {
-        email: actor.${idField},
-        password: password
+    const res = await client.useSession().post('${authEndpoint}', {
+        ${idField}: actor.${idField},
+        ${secretField}: password
     });
 
     if (res.status >= 400) {

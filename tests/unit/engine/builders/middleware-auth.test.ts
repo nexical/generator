@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { MiddlewareBuilder } from '../../../../src/engine/builders/middleware-builder';
-import { type ModelDef } from '../../../../src/engine/types';
+import { MiddlewareBuilder } from '@nexical/generator/engine/builders/middleware-builder';
+import { type ModelDef } from '@nexical/generator/engine/types';
 
 describe('MiddlewareBuilder Auth Logic', () => {
   it('should generate token lookup via separate model', () => {

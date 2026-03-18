@@ -4,103 +4,103 @@ import * as fs from 'fs';
 
 // Use dynamic import
 const auditModuleWrapper = async (cmd: unknown, info: unknown, schemaOnly: boolean) => {
-  const { auditModule } = await import('../../../src/lib/audit-api.js');
+  const { auditModule } = await import('@nexical/generator/lib/audit-api.js');
   return auditModule(
     cmd as unknown as import('@nexical/cli-core').BaseCommand,
-    info as unknown as import('../../../src/lib/module-locator.js').ModuleInfo,
+    info as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo,
     schemaOnly,
   );
 };
 
 const auditApiModuleWrapper = async (cmd: unknown, name: string, options: { schema?: boolean }) => {
-  const { auditApiModule } = await import('../../../src/lib/audit-api.js');
+  const { auditApiModule } = await import('@nexical/generator/lib/audit-api.js');
   return auditApiModule(cmd as unknown as import('@nexical/cli-core').BaseCommand, name, options);
 };
 
 vi.mock('fs');
-vi.mock('../../../src/lib/module-locator.js', () => ({
+vi.mock('@nexical/generator/lib/module-locator.js', () => ({
   ModuleLocator: {
     expand: vi.fn(),
   },
 }));
 
-vi.mock('../../../src/engine/model-parser.js', () => ({
+vi.mock('@nexical/generator/engine/model-parser.js', () => ({
   ModelParser: {
     parse: vi.fn(),
   },
 }));
 
-vi.mock('../../../src/engine/builders/type-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/type-builder.js', () => ({
   TypeBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/service-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/service-builder.js', () => ({
   ServiceBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/api-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/api-builder.js', () => ({
   ApiBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/sdk-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/sdk-builder.js', () => ({
   SdkBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/sdk-index-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/sdk-index-builder.js', () => ({
   SdkIndexBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/init-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/init-builder.js', () => ({
   InitBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test-builder.js', () => ({
   TestBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/action-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/action-builder.js', () => ({
   ActionBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/factory-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/factory-builder.js', () => ({
   FactoryBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/actor-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/actor-builder.js', () => ({
   ActorBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
     }
   },
 }));
-vi.mock('../../../src/engine/builders/actor-type-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/actor-type-builder.js', () => ({
   ActorTypeBuilder: class {
     validate() {
       return { valid: false, issues: ['mismatch'] };
@@ -198,7 +198,7 @@ describe('AuditApi - Exhaustive Coverage', () => {
   });
 
   it('should cover virtual resources logic', async () => {
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockReturnValue({ models: [], enums: [] });
 
     vi.spyOn(fs, 'readFileSync').mockImplementation(((p: unknown) => {
@@ -212,7 +212,7 @@ describe('AuditApi - Exhaustive Coverage', () => {
   });
 
   it('should handle root-level custom routes', async () => {
-    const { ModelParser } = await import('../../../src/engine/model-parser.js');
+    const { ModelParser } = await import('@nexical/generator/engine/model-parser.js');
     (ModelParser.parse as Mock).mockReturnValue({ models: [], enums: [] });
 
     vi.spyOn(fs, 'readFileSync').mockImplementation(((p: unknown) => {
@@ -226,7 +226,7 @@ describe('AuditApi - Exhaustive Coverage', () => {
   });
 
   it('should cover auditApiModule with multiple modules', async () => {
-    const { ModuleLocator } = await import('../../../src/lib/module-locator.js');
+    const { ModuleLocator } = await import('@nexical/generator/lib/module-locator.js');
     (ModuleLocator.expand as Mock).mockResolvedValue([
       { name: 'api1', path: '/p1', app: 'backend' },
       { name: 'api2', path: '/p2', app: 'backend' },

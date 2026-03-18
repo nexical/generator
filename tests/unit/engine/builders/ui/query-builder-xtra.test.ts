@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { QueryBuilder } from '../../../../../src/engine/builders/query-builder.js';
+import { QueryBuilder } from '@nexical/generator/engine/builders/query-builder.js';
 import { Project } from 'ts-morph';
-import type { ModuleConfig } from '../../../../../src/engine/types.js';
+import type { ModuleConfig } from '@nexical/generator/engine/types.js';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import os from 'node:os';

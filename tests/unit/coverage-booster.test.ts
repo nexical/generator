@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { JsxAttributePrimitive } from '../../src/engine/primitives/jsx/attribute.js';
-import { JsxElementPrimitive } from '../../src/engine/primitives/jsx/element.js';
-import { StatementFactory } from '../../src/engine/primitives/statements/factory.js';
-import { type JsxElementConfig, type StatementConfig } from '../../src/engine/types.js';
+import { JsxAttributePrimitive } from '@nexical/generator/engine/primitives/jsx/attribute.js';
+import { JsxElementPrimitive } from '@nexical/generator/engine/primitives/jsx/element.js';
+import { StatementFactory } from '@nexical/generator/engine/primitives/statements/factory.js';
+import { type JsxElementConfig, type StatementConfig } from '@nexical/generator/engine/types.js';
 
 describe('Coverage Booster - Primitives', () => {
   describe('JsxAttributePrimitive', () => {

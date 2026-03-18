@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ShellBuilder } from '../../../../../src/engine/builders/ui/shell-builder.js';
+import { ShellBuilder } from '@nexical/generator/engine/builders/ui/shell-builder.js';
 import { Project } from 'ts-morph';
-import type { ModuleConfig } from '../../../../../src/engine/types.js';
+import type { ModuleConfig } from '@nexical/generator/engine/types.js';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import os from 'node:os';

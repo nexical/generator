@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { runPrompt } from '../../../src/utils/prompt.js';
+import { runPrompt } from '@nexical/generator/utils/prompt.js';
 import { PromptRunner } from '@nexical/ai';
 
 vi.mock('@nexical/ai', () => ({

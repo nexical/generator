@@ -1,11 +1,11 @@
 /** @vitest-environment node */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AuditUiCommand from '../../../src/commands/audit/ui';
-import { ModuleLocator } from '../../../src/lib/module-locator';
+import AuditUiCommand from '@nexical/generator/commands/audit/ui';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator';
 import fs from 'fs-extra';
 
-vi.mock('../../../src/lib/module-locator', () => ({
+vi.mock('@nexical/generator/lib/module-locator', () => ({
   ModuleLocator: {
     expand: vi.fn(),
   },

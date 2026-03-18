@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { FactoryBuilder } from '../../../../src/engine/builders/factory-builder.js';
-import { IntegrationTestBuilder } from '../../../../src/engine/builders/integration-test-builder.js';
-import { type ModelDef, type ParsedStatement } from '../../../../src/engine/types.js';
+import { FactoryBuilder } from '@nexical/generator/engine/builders/factory-builder.js';
+import { IntegrationTestBuilder } from '@nexical/generator/engine/builders/test/integration/integration-test-builder.js';
+import { type ModelDef, type ParsedStatement } from '@nexical/generator/engine/types.js';
 
 describe('Builders Sweeper', () => {
   describe('FactoryBuilder Edge Cases', () => {

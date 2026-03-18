@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
 import { FunctionPrimitive } from '@nexical/generator/engine/primitives/nodes/function.js';
-import { ts } from '../../../../../src/engine/primitives/statements/factory.js';
+import { ts } from '@nexical/generator/engine/primitives/statements/factory.js';
 
 describe('FunctionPrimitive', () => {
   it('should create a new function', () => {

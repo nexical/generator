@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ApiModuleGenerator } from '../../../src/engine/api-module-generator.js';
-import { TemplateLoader } from '../../../src/utils/template-loader.js';
+import { ApiModuleGenerator } from '@nexical/generator/engine/api-module-generator.js';
+import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
 import fs from 'node:fs';
 import { type BaseCommand } from '@nexical/cli-core';
-import { ModelParser } from '../../../src/engine/model-parser.js';
-import { type ModelDef, type EnumConfig, type GlobalConfig } from '../../../src/engine/types.js';
+import { ModelParser } from '@nexical/generator/engine/model-parser.js';
+import {
+  type ModelDef,
+  type EnumConfig,
+  type GlobalConfig,
+} from '@nexical/generator/engine/types.js';
 
 vi.mock('node:fs');
 vi.mock('@nexical/cli-core', async () => {
@@ -20,156 +24,159 @@ vi.mock('@nexical/cli-core', async () => {
   };
 });
 
-vi.mock('../../../src/engine/model-parser.js', () => ({
+vi.mock('@nexical/generator/engine/model-parser.js', () => ({
   ModelParser: {
     parse: vi.fn(),
   },
 }));
-vi.mock('../../../src/utils/formatter.js', () => ({
+vi.mock('@nexical/generator/utils/formatter.js', () => ({
   Formatter: {
     format: vi.fn((c) => c),
   },
 }));
 
 // Mock builders to avoid dependencies
-vi.mock('../../../src/engine/builders/service-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/service-builder.js', () => ({
   ServiceBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/api-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/api-builder.js', () => ({
   ApiBuilder: vi.fn(
     class {
       ensure = vi.fn();
     },
   ),
 }));
-vi.mock('../../../src/engine/builders/sdk-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/sdk-builder.js', () => ({
   SdkBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/sdk-index-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/sdk-index-builder.js', () => ({
   SdkIndexBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/init-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/init-builder.js', () => ({
   InitBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/integration-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/integration/integration-test-builder.js', () => ({
   IntegrationTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/action-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/action-builder.js', () => ({
   ActionBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/service-integration-test-builder.js', () => ({
-  ServiceIntegrationTestBuilder: class {
-    ensure() {}
-  },
-}));
-vi.mock('../../../src/engine/builders/type-builder.js', () => ({
+vi.mock(
+  '@nexical/generator/engine/builders/test/integration/service-integration-test-builder.js',
+  () => ({
+    ServiceIntegrationTestBuilder: class {
+      ensure() {}
+    },
+  }),
+);
+vi.mock('@nexical/generator/engine/builders/type-builder.js', () => ({
   TypeBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/factory-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/factory-builder.js', () => ({
   FactoryBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/actor-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/actor-builder.js', () => ({
   ActorBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/actor-type-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/actor-type-builder.js', () => ({
   ActorTypeBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/middleware-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/middleware-builder.js', () => ({
   MiddlewareBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/email-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/email-builder.js', () => ({
   EmailBuilder: class {
     build() {}
   },
 }));
-vi.mock('../../../src/engine/builders/agent-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/agent-builder.js', () => ({
   AgentBuilder: class {
     build() {}
   },
 }));
-vi.mock('../../../src/engine/builders/hook-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/hook-builder.js', () => ({
   HookBuilder: class {
     build() {}
   },
 }));
-vi.mock('../../../src/engine/builders/role-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/role-builder.js', () => ({
   RoleBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/api-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/api-unit-test-builder.js', () => ({
   ApiUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/action-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/action-unit-test-builder.js', () => ({
   ActionUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/service-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/service-unit-test-builder.js', () => ({
   ServiceUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/sdk-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/sdk-unit-test-builder.js', () => ({
   SdkUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/role-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/role-unit-test-builder.js', () => ({
   RoleUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/hook-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/hook-unit-test-builder.js', () => ({
   HookUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/agent-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/agent-unit-test-builder.js', () => ({
   AgentUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/config-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/config-unit-test-builder.js', () => ({
   ConfigUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/middleware-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/middleware-unit-test-builder.js', () => ({
   MiddlewareUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/builders/test/permission-unit-test-builder.js', () => ({
+vi.mock('@nexical/generator/engine/builders/test/unit/permission-unit-test-builder.js', () => ({
   PermissionUnitTestBuilder: class {
     ensure() {}
   },
 }));
-vi.mock('../../../src/engine/reconciler.js', () => ({
+vi.mock('@nexical/generator/engine/reconciler.js', () => ({
   Reconciler: {
     reconcile: vi.fn(),
     validate: vi.fn(),
@@ -324,9 +331,9 @@ Virtual:
       enums: [],
       config: { test: {} },
     } as unknown as {
-      models: import('../../../src/engine/types.js').ModelDef[];
-      enums: import('../../../src/engine/types.js').EnumConfig[];
-      config: import('../../../src/engine/types.js').GlobalConfig;
+      models: import('@nexical/generator/engine/types.js').ModelDef[];
+      enums: import('@nexical/generator/engine/types.js').EnumConfig[];
+      config: import('@nexical/generator/engine/types.js').GlobalConfig;
     });
     vi.mocked(fs.existsSync).mockImplementation(
       ((p: string) =>
@@ -364,9 +371,9 @@ Virtual:
       enums: [],
       config: { test: {} },
     } as unknown as {
-      models: import('../../../src/engine/types.js').ModelDef[];
-      enums: import('../../../src/engine/types.js').EnumConfig[];
-      config: import('../../../src/engine/types.js').GlobalConfig;
+      models: import('@nexical/generator/engine/types.js').ModelDef[];
+      enums: import('@nexical/generator/engine/types.js').EnumConfig[];
+      config: import('@nexical/generator/engine/types.js').GlobalConfig;
     });
 
     vi.mocked(fs.readFileSync).mockReturnValue('User: [{ path: "/foo", method: "post" }]');
@@ -381,9 +388,9 @@ Virtual:
       enums: [],
       config: { test: {} },
     } as unknown as {
-      models: import('../../../src/engine/types.js').ModelDef[];
-      enums: import('../../../src/engine/types.js').EnumConfig[];
-      config: import('../../../src/engine/types.js').GlobalConfig;
+      models: import('@nexical/generator/engine/types.js').ModelDef[];
+      enums: import('@nexical/generator/engine/types.js').EnumConfig[];
+      config: import('@nexical/generator/engine/types.js').GlobalConfig;
     });
     vi.mocked(fs.readFileSync).mockReturnValue('Virtual: [{ path: "/foo", method: "post" }]');
     await expect(generator.run()).rejects.toThrow();
@@ -401,9 +408,9 @@ Virtual:
       enums: [],
       config: { test: {} },
     } as unknown as {
-      models: import('../../../src/engine/types.js').ModelDef[];
-      enums: import('../../../src/engine/types.js').EnumConfig[];
-      config: import('../../../src/engine/types.js').GlobalConfig;
+      models: import('@nexical/generator/engine/types.js').ModelDef[];
+      enums: import('@nexical/generator/engine/types.js').EnumConfig[];
+      config: import('@nexical/generator/engine/types.js').GlobalConfig;
     });
     vi.mocked(fs.existsSync).mockImplementation(
       ((p: string) =>

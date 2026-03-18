@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { FrontendRolePrimitive } from '../../../../src/engine/primitives/nodes/frontend-role.js';
-import { RolePrimitive } from '../../../../src/engine/primitives/nodes/role.js';
+import { FrontendRolePrimitive } from '@nexical/generator/engine/primitives/nodes/frontend-role.js';
+import { RolePrimitive } from '@nexical/generator/engine/primitives/nodes/role.js';
 
 describe('Role Primitives Coverage', () => {
   it('frontend-role: should gracefully handle missing description', () => {

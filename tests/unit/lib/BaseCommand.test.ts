@@ -1,9 +1,9 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BaseCommand, type CommandDefinition } from '../../../src/lib/BaseCommand.js';
-import { logger } from '../../../src/utils/logger.js';
+import { BaseCommand, type CommandDefinition } from '@nexical/generator/lib/BaseCommand.js';
+import { logger } from '@nexical/generator/utils/logger.js';
 
-vi.mock('../../../src/utils/logger.js', () => ({
+vi.mock('@nexical/generator/utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),

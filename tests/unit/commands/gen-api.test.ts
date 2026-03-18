@@ -1,19 +1,19 @@
 /** @vitest-environment node */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import GenApiCommand from '../../../src/commands/gen/api';
-import { ModuleLocator } from '../../../src/lib/module-locator';
-import { ApiModuleGenerator } from '../../../src/engine/api-module-generator';
+import GenApiCommand from '@nexical/generator/commands/gen/api';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator';
+import { ApiModuleGenerator } from '@nexical/generator/engine/api-module-generator';
 import fs from 'fs-extra';
 
-vi.mock('../../../src/lib/module-locator', () => ({
+vi.mock('@nexical/generator/lib/module-locator', () => ({
   ModuleLocator: {
     expand: vi.fn(),
     resolve: vi.fn(),
   },
 }));
 
-vi.mock('../../../src/engine/api-module-generator', () => ({
+vi.mock('@nexical/generator/engine/api-module-generator', () => ({
   ApiModuleGenerator: vi.fn().mockImplementation(function () {
     return {
       run: vi.fn().mockResolvedValue(undefined),

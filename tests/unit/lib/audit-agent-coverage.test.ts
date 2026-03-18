@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { auditAgentModule } from '../../../src/lib/audit-agent.js';
-import { ModuleLocator } from '../../../src/lib/module-locator.js';
+import { auditAgentModule } from '@nexical/generator/lib/audit-agent.js';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
 import fs from 'node:fs';
 import YAML from 'yaml';
 import type { BaseCommand } from '@nexical/cli-core';
 
 vi.mock('node:fs');
-vi.mock('../../../src/lib/module-locator.js');
+vi.mock('@nexical/generator/lib/module-locator.js');
 
 describe('AuditAgent - Coverage Boost', () => {
   let mockCommand: BaseCommand;

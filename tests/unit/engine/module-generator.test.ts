@@ -2,18 +2,18 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'fs-extra';
-import { ModuleGenerator } from '../../../src/engine/module-generator.js';
+import { ModuleGenerator } from '@nexical/generator/engine/module-generator.js';
 import { type SourceFile } from 'ts-morph';
-import { BuilderLoader } from '../../../src/engine/builder-loader.js';
-import { TemplateLoader } from '../../../src/utils/template-loader.js';
+import { BuilderLoader } from '@nexical/generator/engine/builder-loader.js';
+import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
 
-vi.mock('../../../src/engine/builder-loader.js', () => ({
+vi.mock('@nexical/generator/engine/builder-loader.js', () => ({
   BuilderLoader: {
     loadAndRun: vi.fn(),
   },
 }));
 
-vi.mock('../../../src/utils/template-loader.js', () => ({
+vi.mock('@nexical/generator/utils/template-loader.js', () => ({
   TemplateLoader: {
     setModulePath: vi.fn(),
   },

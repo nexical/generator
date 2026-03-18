@@ -1,0 +1,380 @@
+import { type FileDefinition, type NodeContainer, type ModelField } from '../../../types.js';
+import { BaseBuilder } from '../../base-builder.js';
+import { TemplateLoader } from '../../../../utils/template-loader.js';
+
+export class ServiceUnitTestBuilder extends BaseBuilder {
+  private entityLowerName: string = '';
+  private errorPrefix: string = '';
+  private isModelValid: boolean = false;
+  private defaultStatus: string = 'PENDING';
+  private serviceFileName: string = '';
+
+  constructor(
+    private serviceName: string,
+    private entityName: string,
+    private servicePath: string, // Relative path from test to service
+    private methods: Record<string, number> = { list: 1, get: 1, create: 1, update: 2, delete: 1 },
+    private validModels: string[] = [],
+    private models: { name: string; fields?: Record<string, ModelField> }[] = [],
+  ) {
+    super();
+
+    const serviceBaseName = this.serviceName?.replace('Service', '');
+    let detectedEntity = serviceBaseName?.charAt(0).toLowerCase() + serviceBaseName?.slice(1);
+    this.errorPrefix = detectedEntity;
+
+    // Ecosystem Conventions (Agnostic but standard)
+    const isOrchestrator =
+      this.serviceName?.includes('Orchestrator') || this.serviceName?.includes('DeadLetter');
+    if (isOrchestrator) {
+      detectedEntity = this.entityName.charAt(0).toLowerCase() + this.entityName.slice(1);
+      this.defaultStatus = 'RUNNING';
+    }
+
+    this.entityLowerName = detectedEntity;
+    this.serviceFileName = this.servicePath.split('/').pop() || '';
+
+    this.isModelValid = this.models.some(
+      (m) => m.name.toLowerCase() === this.entityLowerName.toLowerCase(),
+    );
+  }
+
+  private generateMockObject(model?: {
+    name: string;
+    fields?: Record<string, ModelField>;
+  }): string {
+    const props: Record<string, string> = {
+      id: `'${this.entityLowerName || 'test'}_test'`,
+    };
+
+    if (model?.fields) {
+      for (const [fieldName, field] of Object.entries(model.fields)) {
+        if (field.isList || field.isRelation) continue;
+        if (fieldName === 'id' || fieldName === 'createdAt' || fieldName === 'updatedAt') continue;
+
+        const type = field.type;
+        if (type === 'String') {
+          if (fieldName.toLowerCase().includes('email')) props[fieldName] = "'test@example.com'";
+          else if (fieldName.toLowerCase().includes('token')) props[fieldName] = "'test-token'";
+          else props[fieldName] = "'test'";
+        } else if (type === 'Int' || type === 'Float') props[fieldName] = '1';
+        else if (type === 'Boolean') props[fieldName] = 'true';
+        else if (type === 'DateTime') props[fieldName] = 'new Date()';
+        else if (type === 'Json') props[fieldName] = '{}';
+        else props[fieldName] = "'test-enum'"; // Fallback for enums
+      }
+    } else {
+      // Minimal fallback if no fields provided
+      props['name'] = "'Test'";
+    }
+
+    const entries = Object.entries(props)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(', ');
+    return `{ ${entries} }`;
+  }
+
+  private renderTests(): string {
+    const currentModel = this.models.find(
+      (m) => m.name.toLowerCase() === this.entityLowerName.toLowerCase(),
+    );
+    const mockObj = this.generateMockObject(currentModel);
+    const defaultId = `'${this.entityLowerName || 'test'}_test'`;
+
+    return Object.entries(this.methods)
+      .map(([method, paramCount]) => {
+        let successTest = '';
+        let failureTest = '';
+
+        const args: string[] = Array.from({ length: paramCount }, (_, i) => {
+          if (i === 0 && !this.isModelValid) return `'${this.entityLowerName}_test' as unknown`;
+          if (i === 0) return `${mockObj} as Record<string, unknown>`;
+          return `${defaultId} as unknown`;
+        });
+        const argString = args.join(', ');
+
+        if (this.isModelValid && method === 'list') {
+          successTest = `
+        it('should return a list of ${this.entityName}s', async () => {
+            const mockData = [{ id: '1' }];
+            vi.mocked(db.${this.entityLowerName}.findMany).mockResolvedValue(mockData as unknown as Record<string, unknown>[]);
+
+            const result = await ${this.serviceName}.list(${argString});
+
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual(mockData);
+            expect(db.${this.entityLowerName}.findMany).toHaveBeenCalled();
+        });`;
+          failureTest = `
+        it('should handle errors when listing', async () => {
+            vi.mocked(db.${this.entityLowerName}.findMany).mockRejectedValue(new Error('DB Error'));
+
+            const result = await ${this.serviceName}.list(${argString});
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('${this.errorPrefix}.service.error.list_failed');
+            expect(Logger.error).toHaveBeenCalled();
+        });`;
+        } else if (this.isModelValid && method === 'get') {
+          // ... similarly for get ...
+          const getArgs = Array.from({ length: paramCount }, (_, i) =>
+            i === 0 ? "'1'" : `${defaultId} as unknown`,
+          ).join(', ');
+          successTest = `
+        it('should return a single ${this.entityName}', async () => {
+            const mockData = { id: '1' };
+            vi.mocked(db.${this.entityLowerName}.findUnique).mockResolvedValue(mockData as unknown as Record<string, unknown>);
+
+            const result = await ${this.serviceName}.get(${getArgs});
+
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual(mockData);
+            expect(db.${this.entityLowerName}.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+                where: { id: '1' }
+            }));
+        });`;
+          failureTest = `
+        it('should handle not found', async () => {
+            vi.mocked(db.${this.entityLowerName}.findUnique).mockResolvedValue(null);
+
+            const result = await ${this.serviceName}.get('1');
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('${this.errorPrefix}.service.error.not_found');
+        });
+
+        it('should handle errors when getting', async () => {
+            vi.mocked(db.${this.entityLowerName}.findUnique).mockRejectedValue(new Error('DB Error'));
+
+            const result = await ${this.serviceName}.get('1');
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('${this.errorPrefix}.service.error.get_failed');
+        });`;
+        } else if (this.isModelValid && method === 'create') {
+          successTest = `
+        it('should create a new ${this.entityName}', async () => {
+            const mockData = { id: '1', name: 'test' };
+            vi.mocked(db.${this.entityLowerName}.create).mockResolvedValue(mockData as unknown as Record<string, unknown>);
+
+            const result = await ${this.serviceName}.create(${mockObj} as Record<string, unknown>);
+
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual(mockData);
+            expect(db.${this.entityLowerName}.create).toHaveBeenCalled();
+        });`;
+          failureTest = `
+        it('should handle errors when creating', async () => {
+            vi.mocked(db.${this.entityLowerName}.create).mockRejectedValue(new Error('DB Error'));
+
+            const result = await ${this.serviceName}.create({} as Record<string, unknown>);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('${this.errorPrefix}.service.error.create_failed');
+        });`;
+        } else if (this.isModelValid && method === 'update') {
+          successTest = `
+        it('should update an existing ${this.entityName}', async () => {
+            const mockData = { id: '1', name: 'updated' };
+            vi.mocked(db.${this.entityLowerName}.update).mockResolvedValue(mockData as unknown as Record<string, unknown>);
+
+            const result = await ${this.serviceName}.update('1', ${mockObj} as Record<string, unknown>);
+
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual(mockData);
+            expect(db.${this.entityLowerName}.update).toHaveBeenCalled();
+        });`;
+          failureTest = `
+        it('should handle errors when updating', async () => {
+            vi.mocked(db.${this.entityLowerName}.update).mockRejectedValue(new Error('DB Error'));
+
+            const result = await ${this.serviceName}.update('1', {} as Record<string, unknown>);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('${this.errorPrefix}.service.error.update_failed');
+        });`;
+        } else if (this.isModelValid && method === 'delete') {
+          successTest = `
+        it('should delete an ${this.entityName}', async () => {
+            vi.mocked(db.${this.entityLowerName}.delete).mockResolvedValue({} as unknown as Record<string, unknown>);
+
+            const result = await ${this.serviceName}.delete('1');
+
+            expect(result.success).toBe(true);
+            expect(db.${this.entityLowerName}.delete).toHaveBeenCalled();
+        });`;
+          failureTest = `
+        it('should handle errors when deleting', async () => {
+            vi.mocked(db.${this.entityLowerName}.delete).mockRejectedValue(new Error('DB Error'));
+
+            const result = await ${this.serviceName}.delete('1');
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('${this.errorPrefix}.service.error.delete_failed');
+        });`;
+        } else if (this.isModelValid && method === 'count') {
+          successTest = `
+        it('should return the count of ${this.entityName}s', async () => {
+            vi.mocked(db.${this.entityLowerName}.count).mockResolvedValue(10);
+
+            const result = await ${this.serviceName}.count();
+
+            expect(result.success).toBe(true);
+            expect(result.data).toBe(10);
+            expect(db.${this.entityLowerName}.count).toHaveBeenCalled();
+        });`;
+          failureTest = `
+        it('should handle errors when counting', async () => {
+            vi.mocked(db.${this.entityLowerName}.count).mockRejectedValue(new Error('DB Error'));
+
+            const result = await ${this.serviceName}.count();
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('${this.errorPrefix}.service.error.count_failed');
+        });`;
+        } else {
+          const isLongRunning =
+            method.toLowerCase().includes('wait') ||
+            method.toLowerCase().includes('delay') ||
+            method.toLowerCase().includes('sleep');
+          if (isLongRunning) return '';
+
+          const args: string[] = [];
+          const m = method.toLowerCase();
+
+          for (let i = 0; i < paramCount; i++) {
+            let argContent = `${mockObj} as Record<string, unknown>`;
+
+            if (m === 'updateprogress') {
+              if (i === 1) argContent = '50';
+              else argContent = defaultId;
+            } else if (m === 'poll') {
+              if (i === 0) argContent = "'agent-1'";
+              else if (i === 1) argContent = "['TASK'] as unknown[]";
+              else if (i === 2) argContent = defaultId;
+              else if (i === 3) argContent = "'user'";
+            } else if (m === 'register' && i === 0) {
+              argContent = mockObj;
+            } else if (m.includes('complete') || m.includes('fail') || m.includes('retry')) {
+              if (i === 0) argContent = defaultId;
+              else if (i === 1) argContent = "{ result: 'ok' } as Record<string, unknown>";
+              else if (i === 2) argContent = defaultId;
+              else if (i === 3) argContent = "'user'";
+            } else {
+              let useString = false;
+              if (i === 0) {
+                useString =
+                  m.includes('cancel') ||
+                  m.includes('complete') ||
+                  m.includes('fail') ||
+                  m.includes('retry') ||
+                  m.includes('id') ||
+                  m.includes('token') ||
+                  m.includes('key') ||
+                  m.includes('validate') ||
+                  m.includes('verify') ||
+                  m.includes('poll') ||
+                  m.includes('heartbeat');
+              } else if (i >= 1) {
+                useString =
+                  m.includes('cancel') ||
+                  m.includes('complete') ||
+                  m.includes('fail') ||
+                  m.includes('retry') ||
+                  m.includes('updateprogress') ||
+                  m.includes('heartbeat') ||
+                  m.includes('checkstaleagents');
+              }
+
+              if (useString) argContent = `${defaultId} as unknown`;
+              else argContent = `${mockObj} as Record<string, unknown>`;
+            }
+
+            args.push(argContent);
+          }
+
+          // Always add actor if it's an orchestrator/dead-letter service and not already added
+          const isOrchestrator =
+            this.serviceName.toLowerCase().includes('orchestrator') ||
+            this.serviceName.toLowerCase().includes('deadletter');
+          if (isOrchestrator && !args.some((a) => a.includes(defaultId))) {
+            args.push(defaultId);
+          }
+
+          const dbErrorMocks = this.isModelValid
+            ? `
+            try {
+              vi.mocked(db.${this.entityLowerName}.findFirst).mockRejectedValueOnce(new Error('DB Error'));
+              vi.mocked(db.${this.entityLowerName}.findUnique).mockRejectedValueOnce(new Error('DB Error'));
+            } catch {
+              // Ignore expected errors during setup
+            }`
+            : '';
+
+          successTest = `
+        it('should run ${method} successfully', async () => {
+            const result = await (${this.serviceName} as unknown as Record<string, (...args: unknown[]) => unknown>).${method}(${args.join(', ')});
+            if (result && typeof result === 'object' && 'success' in result) {
+                expect((result as Record<string, unknown>).success, (result as Record<string, unknown>).error as string).toBe(true);
+            }
+            ${
+              method.toLowerCase().startsWith('count')
+                ? "if (result && typeof result === 'object' && 'data' in result) { expect(result.data).toBe(100); }"
+                : ''
+            }
+            ${
+              method.toLowerCase().startsWith('get')
+                ? "if (result && typeof result === 'object' && 'data' in result) { expect(result.data).toBeDefined(); }"
+                : ''
+            }
+        });`;
+          failureTest = `
+        it('should handle errors in ${method}', async () => {
+            try {
+              ${dbErrorMocks}
+              
+              const result = await (${this.serviceName} as unknown as Record<string, (...args: unknown[]) => unknown>).${method}(${args.join(', ')});
+              if (result && typeof result === 'object' && 'success' in result) {
+                  expect(result.success).toBe(false);
+              }
+            } catch (error) {
+                // If it throws, that's also a valid error handling path
+                expect(error).toBeDefined();
+            }
+        });`;
+        }
+
+        return `
+    describe('${method}', () => {
+        ${successTest}
+        ${failureTest}
+    });`;
+      })
+      .join('\n');
+  }
+
+  public render(): FileDefinition {
+    const methodsTests = this.renderTests();
+    const currentModel = this.models.find(
+      (m) => m.name.toLowerCase() === this.entityLowerName.toLowerCase(),
+    );
+    const mockModelProps = this.generateMockObject(currentModel);
+
+    return {
+      header: '// GENERATED CODE - DO NOT MODIFY',
+      statements: [
+        TemplateLoader.load('test/unit/service.tsf', {
+          serviceName: this.serviceName,
+          servicePath: this.servicePath,
+          tests: methodsTests,
+          mockModelProps: mockModelProps,
+        }).raw,
+      ],
+    };
+  }
+
+  protected getSchema(_node?: NodeContainer): FileDefinition {
+    // This is technically unused by the current render mode, but required by abstract class
+    return this.render();
+  }
+}

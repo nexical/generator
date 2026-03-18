@@ -1,11 +1,11 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { FormBuilder } from '../../../../../src/engine/builders/ui/form-builder.js';
+import { FormBuilder } from '@nexical/generator/engine/builders/ui/form-builder.js';
 import * as fs from 'node:fs';
-import { ModelParser } from '../../../../../src/engine/model-parser.js';
-import { TemplateLoader } from '../../../../../src/utils/template-loader.js';
-import { type ModelDef } from '../../../../../src/engine/types.js';
+import { ModelParser } from '@nexical/generator/engine/model-parser.js';
+import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
+import { type ModelDef } from '@nexical/generator/engine/types.js';
 
 vi.mock('node:fs');
 

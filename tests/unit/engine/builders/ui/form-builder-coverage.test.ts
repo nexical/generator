@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FormBuilder } from '../../../../../src/engine/builders/ui/form-builder.js';
+import { FormBuilder } from '@nexical/generator/engine/builders/ui/form-builder.js';
 import { Project } from 'ts-morph';
-import { type ModelDef, type ModuleConfig } from '../../../../../src/engine/types.js';
+import { type ModelDef, type ModuleConfig } from '@nexical/generator/engine/types.js';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import os from 'node:os';

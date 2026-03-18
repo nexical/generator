@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { ActorBuilder } from '../../../../src/engine/builders/actor-builder.js';
+import { ActorBuilder } from '@nexical/generator/engine/builders/actor-builder.js';
 import { Project } from 'ts-morph';
-import type { ModelDef } from '../../../../src/engine/types.js';
+import type { ModelDef } from '@nexical/generator/engine/types.js';
 
 describe('ActorBuilder - Enhanced Coverage', () => {
   it('should generate empty actors object when no models have actor config', () => {

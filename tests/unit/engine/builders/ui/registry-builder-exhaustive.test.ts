@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { RegistryBuilder } from '../../../../../src/engine/builders/ui/registry-builder.js';
+import { RegistryBuilder } from '@nexical/generator/engine/builders/ui/registry-builder.js';
 import * as fs from 'node:fs';
 
 vi.mock('node:fs');
@@ -88,7 +88,7 @@ registries:
     const text = f1?.getFullText();
     expect(text).toContain('useAuth');
     expect(text).toContain('Guard check');
-    expect(text).toContain('url.pathname === \'/exact\'');
+    expect(text).toContain("url.pathname === '/exact'");
   });
 
   it('should handle different component path depths', async () => {
@@ -108,6 +108,8 @@ registries:
     await builder.build(project, undefined);
 
     expect(project.getSourceFile('src/registry/z/1-deep.tsx')?.getFullText()).toContain('<Comp />');
-    expect(project.getSourceFile('src/registry/z/2-deeper.tsx')?.getFullText()).toContain('<DeeperComp />');
+    expect(project.getSourceFile('src/registry/z/2-deeper.tsx')?.getFullText()).toContain(
+      '<DeeperComp />',
+    );
   });
 });

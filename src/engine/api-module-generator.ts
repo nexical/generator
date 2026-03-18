@@ -7,9 +7,9 @@ import { ApiBuilder } from './builders/api-builder.js';
 import { SdkBuilder } from './builders/sdk-builder.js';
 import { SdkIndexBuilder } from './builders/sdk-index-builder.js';
 import { InitBuilder } from './builders/init-builder.js';
-import { IntegrationTestBuilder } from './builders/integration-test-builder.js';
+import { IntegrationTestBuilder } from './builders/test/integration/integration-test-builder.js';
 import { ActionBuilder } from './builders/action-builder.js';
-import { ServiceIntegrationTestBuilder } from './builders/service-integration-test-builder.js';
+import { ServiceIntegrationTestBuilder } from './builders/test/integration/service-integration-test-builder.js';
 import { TypeBuilder } from './builders/type-builder.js';
 import { FactoryBuilder } from './builders/factory-builder.js';
 import { ActorBuilder } from './builders/actor-builder.js';
@@ -19,16 +19,16 @@ import { EmailBuilder } from './builders/email-builder.js';
 import { AgentBuilder } from './builders/agent-builder.js';
 import { HookBuilder } from './builders/hook-builder.js';
 import { RoleBuilder } from './builders/role-builder.js';
-import { ApiUnitTestBuilder } from './builders/test/api-unit-test-builder.js';
-import { ActionUnitTestBuilder } from './builders/test/action-unit-test-builder.js';
-import { ServiceUnitTestBuilder } from './builders/test/service-unit-test-builder.js';
-import { SdkUnitTestBuilder } from './builders/test/sdk-unit-test-builder.js';
-import { RoleUnitTestBuilder } from './builders/test/role-unit-test-builder.js';
-import { HookUnitTestBuilder } from './builders/test/hook-unit-test-builder.js';
-import { AgentUnitTestBuilder } from './builders/test/agent-unit-test-builder.js';
-import { ConfigUnitTestBuilder } from './builders/test/config-unit-test-builder.js';
-import { MiddlewareUnitTestBuilder } from './builders/test/middleware-unit-test-builder.js';
-import { PermissionUnitTestBuilder } from './builders/test/permission-unit-test-builder.js';
+import { ApiUnitTestBuilder } from './builders/test/unit/api-unit-test-builder.js';
+import { ActionUnitTestBuilder } from './builders/test/unit/action-unit-test-builder.js';
+import { ServiceUnitTestBuilder } from './builders/test/unit/service-unit-test-builder.js';
+import { SdkUnitTestBuilder } from './builders/test/unit/sdk-unit-test-builder.js';
+import { RoleUnitTestBuilder } from './builders/test/unit/role-unit-test-builder.js';
+import { HookUnitTestBuilder } from './builders/test/unit/hook-unit-test-builder.js';
+import { AgentUnitTestBuilder } from './builders/test/unit/agent-unit-test-builder.js';
+import { ConfigUnitTestBuilder } from './builders/test/unit/config-unit-test-builder.js';
+import { MiddlewareUnitTestBuilder } from './builders/test/unit/middleware-unit-test-builder.js';
+import { PermissionUnitTestBuilder } from './builders/test/unit/permission-unit-test-builder.js';
 import { type CustomRoute, type ModelDef, type ModuleConfig, type AccessConfig } from './types.js';
 import { toKebabCase, toPascalCase } from '../utils/string.js';
 import path from 'node:path';
@@ -125,6 +125,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             [{ method: 'GET' }],
             `${name}Service`,
             `../../../../../src/services/${kebabName}-service`,
+            model.fields,
           ).ensure(apiColUnitTestFile);
 
           const apiIndFile = this.getOrCreateFile(`src/pages/api/${kebabName}/[id].ts`);
@@ -141,6 +142,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             [{ method: 'GET' }],
             `${name}Service`,
             `../../../../../src/services/${kebabName}-service`,
+            model.fields,
           ).ensure(apiIndUnitTestFile);
         }
 
@@ -199,6 +201,9 @@ export class ApiModuleGenerator extends ModuleGenerator {
             name,
             `${prefix}src/pages/api/${kebabName}/${routePath}`,
             unitTestRoutes,
+            undefined,
+            undefined,
+            model.fields,
           ).ensure(apiUnitTestFile);
 
           for (const route of routes) {
@@ -406,6 +411,9 @@ export class ApiModuleGenerator extends ModuleGenerator {
             ? `${prefix}src/pages/api/${fileName}`
             : `${prefix}src/pages/api/${kebabEntity}/${fileName}`,
           unitTestRoutes,
+          undefined,
+          undefined,
+          virtualModel.fields,
         ).ensure(apiUnitTestFile);
 
         for (const route of routes) {
@@ -734,34 +742,42 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
   public debugBaseRoleText(accessConfig: AccessConfig): string {
     const roles = accessConfig?.roles || {};
-    const hasTeamSupport = Object.keys(roles).some((r) => r.toUpperCase().startsWith('TEAM_'));
+    const superRoles = "'USER_ADMIN'";
 
-    const dbImport = hasTeamSupport ? "import { db } from '@/lib/core/db';" : '';
-    const teamCheck = hasTeamSupport
-      ? `
-    // If teamId is provided, check for team-specific role
+    // Heuristic: Does this module define or use contextual roles?
+    // Common ecosystem pattern: Roles prefixed with X_ (e.g., TEAM_) imply a context lookup.
+    const contextPrefixes = ['TEAM_'];
+    const activePrefixes = contextPrefixes.filter((prefix) =>
+      Object.keys(roles).some((r) => r.toUpperCase().startsWith(prefix)),
+    );
+
+    const imports = new Set<string>();
+    const contextChecks: string[] = [];
+
+    if (activePrefixes.includes('TEAM_')) {
+      imports.add("import { db } from '@/lib/core/db';");
+      contextChecks.push(`
+    // Contextual Role Resolution: Team
     const teamId = input.teamId as string | undefined;
     if (teamId && actor.id) {
-      const membership = await db.teamMember.findUnique({
-        where: {
-          userId_teamId: {
-            userId: actor.id,
-            teamId,
-          },
-        },
+      const membership = await (db as any).teamMember.findUnique({
+        where: { userId_teamId: { userId: actor.id, teamId } },
       });
-
       if (membership) {
         normalizedActorRole = normalizeRole(membership.role);
       }
     }
-    `
-      : '';
+      `);
+    }
+
+    const dbImport = Array.from(imports).join('\n');
+    const contextCheck = contextChecks.join('\n');
 
     return TemplateLoader.load('roles/base-role.tsf', {
       accessConfig: JSON.stringify(accessConfig),
       dbImport,
-      teamCheck,
+      contextCheck,
+      superRoles,
     }).raw;
   }
 

@@ -30,7 +30,7 @@ describe('prompt main block coverage', () => {
       process.argv = ['node', promptPath, 'dummy-prompt'];
 
       // 5. Dynamic import with cache-bust to force execution of the top-level block
-      await import('../../../src/utils/prompt.js?cachebust=' + Date.now());
+      await import('@nexical/generator/utils/prompt.js?cachebust=' + Date.now());
 
       // 6. Verify it reached the exit call (which confirms it went through .then())
       expect(exitSpy).toHaveBeenCalled();
@@ -61,7 +61,7 @@ describe('prompt main block coverage', () => {
       const promptPath = path.resolve(__dirname, '../../../src/utils/prompt.ts');
       process.argv = ['node', promptPath, 'dummy-prompt-error'];
 
-      await import('../../../src/utils/prompt.js?cachebust-error=' + Date.now());
+      await import('@nexical/generator/utils/prompt.js?cachebust-error=' + Date.now());
 
       expect(exitSpy).toHaveBeenCalledWith(1);
       expect(errorSpy).toHaveBeenCalled();

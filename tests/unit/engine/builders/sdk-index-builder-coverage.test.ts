@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { SdkIndexBuilder } from '../../../../src/engine/builders/sdk-index-builder.js';
+import { SdkIndexBuilder } from '@nexical/generator/engine/builders/sdk-index-builder.js';
 import { Project } from 'ts-morph';
-import { type ModelDef } from '../../../../src/engine/types.js';
+import { type ModelDef } from '@nexical/generator/engine/types.js';
 
 describe('SdkIndexBuilder - Coverage Boost', () => {
   it('should handle module name without -api suffix', () => {

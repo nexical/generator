@@ -1,9 +1,9 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-import { Reconciler } from '../../../src/engine/reconciler.js';
-import type { FileDefinition, PropertyConfig } from '../../../src/engine/types.js';
-import { Normalizer } from '../../../src/utils/normalizer.js';
+import { Reconciler } from '@nexical/generator/engine/reconciler.js';
+import type { FileDefinition, PropertyConfig } from '@nexical/generator/engine/types.js';
+import { Normalizer } from '@nexical/generator/utils/normalizer.js';
 
 describe('Reconciler', () => {
   let project: Project;

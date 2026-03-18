@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { FactoryBuilder } from '../../../../src/engine/builders/factory-builder';
-import { type ModelDef } from '../../../../src/engine/types';
+import { FactoryBuilder } from '@nexical/generator/engine/builders/factory-builder';
+import { type ModelDef } from '@nexical/generator/engine/types';
 
 describe('FactoryBuilder', () => {
   it('should generate factories for models', () => {

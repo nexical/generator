@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { FormBuilder } from '../../../../../src/engine/builders/ui/form-builder.js';
-import { TemplateLoader } from '../../../../../src/utils/template-loader.js';
+import { FormBuilder } from '@nexical/generator/engine/builders/ui/form-builder.js';
+import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
 import * as fs from 'node:fs';
 
 vi.mock('node:fs');

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { TemplateLoader } from '../../../src/utils/template-loader.js';
+import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import os from 'node:os';

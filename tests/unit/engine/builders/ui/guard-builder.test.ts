@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { GuardBuilder } from '../../../../../src/engine/builders/ui/guard-builder.js';
+import { GuardBuilder } from '@nexical/generator/engine/builders/ui/guard-builder.js';
 import * as fs from 'node:fs';
 
 vi.mock('node:fs');

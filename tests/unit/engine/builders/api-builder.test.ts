@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-import { ApiBuilder } from '../../../../src/engine/builders/api-builder.js';
-import { type ModelDef } from '../../../../src/engine/types.js';
+import { ApiBuilder } from '@nexical/generator/engine/builders/api-builder.js';
+import { type ModelDef } from '@nexical/generator/engine/types.js';
 
 describe('ApiBuilder', () => {
   let project: Project;

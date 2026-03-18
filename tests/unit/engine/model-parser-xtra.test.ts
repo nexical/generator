@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ModelParser } from '../../../src/engine/model-parser.js';
+import { ModelParser } from '@nexical/generator/engine/model-parser.js';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import os from 'node:os';

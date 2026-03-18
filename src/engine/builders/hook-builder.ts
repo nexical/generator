@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { ts } from '../primitives/statements/factory.js';
-import { HookUnitTestBuilder } from './test/hook-unit-test-builder.js';
+import { HookUnitTestBuilder } from './test/unit/hook-unit-test-builder.js';
 
 export interface HookTemplateConfig {
   event: string;

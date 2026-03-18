@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-import { RoleBuilder } from '../../../../src/engine/builders/role-builder.js';
+import { RoleBuilder } from '@nexical/generator/engine/builders/role-builder.js';
 
 describe('RoleBuilder', () => {
   let project: Project;

@@ -1,13 +1,13 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { TypeBuilder } from '../../../../src/engine/builders/type-builder';
+import { TypeBuilder } from '@nexical/generator/engine/builders/type-builder';
 import {
   type ModelDef,
   type FileDefinition,
   type ExportConfig,
   type InterfaceConfig,
   type PropertyConfig,
-} from '../../../../src/engine/types';
+} from '@nexical/generator/engine/types';
 
 describe('TypeBuilder Sweeper', () => {
   it('should generate Prisma client exports for DB models', () => {

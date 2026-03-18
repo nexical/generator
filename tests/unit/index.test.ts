@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import * as Index from '../../src/index';
+import * as Index from '@nexical/generator/index';
 
 describe('Package Exports', () => {
   it('should export all public components', () => {

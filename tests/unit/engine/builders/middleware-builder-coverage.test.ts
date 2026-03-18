@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { MiddlewareBuilder } from '../../../../src/engine/builders/middleware-builder';
-import { type ModelDef } from '../../../../src/engine/types';
+import { MiddlewareBuilder } from '@nexical/generator/engine/builders/middleware-builder';
+import { type ModelDef } from '@nexical/generator/engine/types';
 
 describe('MiddlewareBuilder Coverage', () => {
   let project: Project;
@@ -67,7 +67,7 @@ describe('MiddlewareBuilder Coverage', () => {
   });
 
   it('should handle anonymous routes', () => {
-    const routes: import('../../../../src/engine/types').CustomRoute[] = [
+    const routes: import('@nexical/generator/engine/types').CustomRoute[] = [
       { path: '/public', role: 'anonymous', method: 'GET', verb: 'GET' },
     ];
     const builder = new MiddlewareBuilder([], routes);

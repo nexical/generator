@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { ShellBuilder } from '../../../../../src/engine/builders/ui/shell-builder.js';
+import { ShellBuilder } from '@nexical/generator/engine/builders/ui/shell-builder.js';
 import * as fs from 'node:fs';
 
 vi.mock('node:fs');

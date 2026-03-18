@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { specUpdateModule } from '../../../src/lib/spec-update.js';
+import { specUpdateModule } from '@nexical/generator/lib/spec-update.js';
 import { type BaseCommand } from '@nexical/cli-core';
 import fs from 'node:fs';
 import YAML from 'yaml';

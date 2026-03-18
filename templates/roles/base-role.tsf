@@ -2,14 +2,15 @@
  * @description Backend BaseRole implementation
  * @input {string} accessConfig
  * @input {string} dbImport
- * @input {string} teamCheck
+ * @input {string} contextCheck
+ * @input {string} superRoles
  */
 import { fragment } from '@nexical/generator';
 
 export default fragment/* ts */`
 import type { APIContext } from 'astro';
 import type { ApiActor } from '@/lib/api/api-docs';
-${dbImport}
+\${dbImport}
 import { roleRegistry } from '@/lib/registries/role-registry';
 
 export abstract class BaseRole implements RolePolicy {
@@ -29,15 +30,13 @@ export abstract class BaseRole implements RolePolicy {
     const { role: actorRole } = actor as { role: string };
     const normalizeRole = (r: unknown) => String(r).toUpperCase().replace(/-/g, '_');
     
-    // Global System Bypass: USER_ADMIN is the root superuser.
-    // Module-specific admins (e.g., AGENT_ADMIN) should inherit from their respective base roles
-    // or be added to compatibleRoles in the generated role class.
-    if (normalizeRole(actorRole) === 'USER_ADMIN') return;
+    // Global System Bypass
+    if ([\${superRoles}].includes(normalizeRole(actorRole))) return;
     
     const normalizedRequiredRole = normalizeRole(this.name);
     let normalizedActorRole = normalizeRole(actorRole);
 
-    ${teamCheck}
+    \${contextCheck}
 
     if (normalizedActorRole === normalizedRequiredRole) return;
     if (this.compatibleRoles?.includes(normalizedActorRole)) return;
@@ -59,4 +58,4 @@ export abstract class BaseRole implements RolePolicy {
     throw new Error(\`Forbidden: required role \${this.name}\`);
   }
 }
-`;
+\`;

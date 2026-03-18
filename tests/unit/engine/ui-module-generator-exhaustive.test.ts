@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
 import * as fs from 'node:fs';
-import { UiModuleGenerator } from '../../../src/engine/ui-module-generator.js';
-import { ModuleLocator } from '../../../src/lib/module-locator.js';
+import { UiModuleGenerator } from '@nexical/generator/engine/ui-module-generator.js';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
 
-vi.mock('../../../src/lib/module-locator.js', () => ({
+vi.mock('@nexical/generator/lib/module-locator.js', () => ({
   ModuleLocator: {
     resolve: vi.fn(),
   },
@@ -15,12 +15,19 @@ describe('UiModuleGenerator - Exhaustive Coverage', () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = path.join(os.tmpdir(), `ui-module-gen-exhaustive-${Math.random().toString(36).slice(2)}`);
+    tmpDir = path.join(
+      os.tmpdir(),
+      `ui-module-gen-exhaustive-${Math.random().toString(36).slice(2)}`,
+    );
     fs.mkdirSync(tmpDir, { recursive: true });
 
     // Default mock implementation
     vi.mocked(ModuleLocator.resolve).mockImplementation((name: string) => {
-      return { name, path: path.join(tmpDir, name), app: name.endsWith('-ui') ? 'frontend' : 'backend' };
+      return {
+        name,
+        path: path.join(tmpDir, name),
+        app: name.endsWith('-ui') ? 'frontend' : 'backend',
+      };
     });
   });
 
@@ -87,11 +94,17 @@ describe('UiModuleGenerator - Exhaustive Coverage', () => {
 
     // 2. Page with PageGuard, no prerender (injects)
     const page2Path = path.join(pagesDir, 'admin.astro');
-    fs.writeFileSync(page2Path, '---\nimport { PageGuard } from "..."\nPageGuard.protect(...)\n---');
+    fs.writeFileSync(
+      page2Path,
+      '---\nimport { PageGuard } from "..."\nPageGuard.protect(...)\n---',
+    );
 
     // 3. Page with PageGuard AND prerender = false (skips)
     const page3Path = path.join(pagesDir, 'dashboard.astro');
-    fs.writeFileSync(page3Path, '---\nexport const prerender = false;\nPageGuard.protect(...)\n---');
+    fs.writeFileSync(
+      page3Path,
+      '---\nexport const prerender = false;\nPageGuard.protect(...)\n---',
+    );
 
     // 4. Page with PageGuard, NO frontmatter (injects new)
     const page4Path = path.join(pagesDir, 'login.astro');
@@ -118,7 +131,7 @@ describe('UiModuleGenerator - Exhaustive Coverage', () => {
 
     // Create a directory where a file is expected to cause read/write failure if handled as file
     const pagePath = path.join(pagesDir, 'error.astro');
-    fs.mkdirSync(pagePath); 
+    fs.mkdirSync(pagePath);
 
     const generator = new UiModuleGenerator(modulePath);
     // Should catch 'EISDIR' error and log warning
@@ -129,17 +142,20 @@ describe('UiModuleGenerator - Exhaustive Coverage', () => {
     const appsDir = path.join(tmpDir, 'apps');
     const frontendDir = path.join(appsDir, 'frontend/modules');
     const backendDir = path.join(appsDir, 'backend/modules');
-    
+
     const modulePath = path.join(frontendDir, 'test-ui');
     const backendPath = path.join(backendDir, 'test-api');
-    
+
     fs.mkdirSync(modulePath, { recursive: true });
     fs.mkdirSync(backendPath, { recursive: true });
 
     fs.writeFileSync(path.join(modulePath, 'models.yaml'), 'models: {}');
     fs.writeFileSync(path.join(backendPath, 'models.yaml'), 'models: {}');
     fs.writeFileSync(path.join(modulePath, 'ui.yaml'), 'backend: test-api');
-    fs.writeFileSync(path.join(backendPath, 'access.yaml'), 'roles:\n  admin:\n    permissions: ["*"]');
+    fs.writeFileSync(
+      path.join(backendPath, 'access.yaml'),
+      'roles:\n  admin:\n    permissions: ["*"]',
+    );
 
     const generator = new UiModuleGenerator(modulePath);
     await generator.run();

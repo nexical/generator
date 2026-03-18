@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import path from 'node:path';
 import os from 'node:os';
 import * as fs from 'node:fs';
-import { UiModuleGenerator } from '../../../src/engine/ui-module-generator.js';
-import { ModuleLocator } from '../../../src/lib/module-locator.js';
+import { UiModuleGenerator } from '@nexical/generator/engine/ui-module-generator.js';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
 
-vi.mock('../../../src/lib/module-locator.js', () => ({
+vi.mock('@nexical/generator/lib/module-locator.js', () => ({
   ModuleLocator: {
     resolve: vi.fn(),
   },

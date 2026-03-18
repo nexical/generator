@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentRunner } from '../../../src/utils/agent-runner.js';
+import { AgentRunner } from '@nexical/generator/utils/agent-runner.js';
 import { PromptRunner } from '@nexical/ai';
 import { logger } from '@nexical/cli-core';
 

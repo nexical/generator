@@ -4,7 +4,7 @@ import {
   PlatformDefinitionSchema,
   PrismaModelSchema,
   PlatformApiDefinitionSchema,
-} from '../../src/schemas/api-schema';
+} from '@nexical/generator/schemas/api-schema';
 
 describe('Schema Validation', () => {
   describe('PrismaModelSchema', () => {

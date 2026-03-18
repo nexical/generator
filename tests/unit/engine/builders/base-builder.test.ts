@@ -1,9 +1,9 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-import { BaseBuilder } from '../../../../src/engine/builders/base-builder';
-import { Reconciler } from '../../../../src/engine/reconciler';
-import { type FileDefinition } from '../../../../src/engine/types';
+import { BaseBuilder } from '@nexical/generator/engine/builders/base-builder';
+import { Reconciler } from '@nexical/generator/engine/reconciler';
+import { type FileDefinition } from '@nexical/generator/engine/types';
 
 class TestBuilder extends BaseBuilder {
   protected getSchema(): FileDefinition {

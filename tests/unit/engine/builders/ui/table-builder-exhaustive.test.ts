@@ -1,10 +1,10 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Project } from 'ts-morph';
-import { TableBuilder } from '../../../../../src/engine/builders/ui/table-builder.js';
+import { TableBuilder } from '@nexical/generator/engine/builders/ui/table-builder.js';
 import * as fs from 'node:fs';
-import { ModuleLocator } from '../../../../../src/lib/module-locator.js';
-import { TemplateLoader } from '../../../../../src/utils/template-loader.js';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
+import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
 
 vi.mock('node:fs');
 
@@ -30,7 +30,7 @@ describe('TableBuilder - Exhaustive Coverage', () => {
       name: 'user-api',
       path: 'user-api',
       app: 'backend',
-    } as unknown as import('../../../../../src/lib/module-locator.js').ModuleInfo);
+    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -49,7 +49,7 @@ describe('TableBuilder - Exhaustive Coverage', () => {
       name: 'test-ui',
       path: 'test-ui',
       app: 'frontend',
-    } as unknown as import('../../../../../src/lib/module-locator.js').ModuleInfo);
+    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -71,7 +71,7 @@ describe('TableBuilder - Exhaustive Coverage', () => {
       name: 'test-ui',
       path: 'test-ui',
       app: 'frontend',
-    } as unknown as import('../../../../../src/lib/module-locator.js').ModuleInfo);
+    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -108,7 +108,7 @@ models:
       name: 'test-ui',
       path: 'test-ui',
       app: 'frontend',
-    } as unknown as import('../../../../../src/lib/module-locator.js').ModuleInfo);
+    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);

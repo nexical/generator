@@ -1,13 +1,13 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { SdkBuilder } from '../../../../src/engine/builders/sdk-builder';
+import { SdkBuilder } from '@nexical/generator/engine/builders/sdk-builder';
 import {
   type ModelDef,
   type CustomRoute,
   type FileDefinition,
   type ImportConfig,
   type ParsedStatement,
-} from '../../../../src/engine/types';
+} from '@nexical/generator/engine/types';
 
 describe('SdkBuilder Sweeper', () => {
   const getMethods = (file: FileDefinition) => {

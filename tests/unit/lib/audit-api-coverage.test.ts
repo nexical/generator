@@ -1,13 +1,13 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { auditModule, auditApiModule } from '../../../src/lib/audit-api.js';
-import { ModuleLocator } from '../../../src/lib/module-locator.js';
+import { auditModule, auditApiModule } from '@nexical/generator/lib/audit-api.js';
+import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
 import type { BaseCommand } from '@nexical/cli-core';
 
-vi.mock('../../../src/lib/module-locator.js');
+vi.mock('@nexical/generator/lib/module-locator.js');
 vi.mock('node:fs');
 vi.mock('node:path');
 

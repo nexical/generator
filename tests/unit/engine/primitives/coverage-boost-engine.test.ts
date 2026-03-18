@@ -1,13 +1,13 @@
 /** @vitest-environment node */
 import { describe, it, expect, vi } from 'vitest';
 import { Project } from 'ts-morph';
-import { ClassPrimitive } from '../../../../src/engine/primitives/nodes/class.js';
-import { FunctionPrimitive } from '../../../../src/engine/primitives/nodes/function.js';
-import { ComponentPrimitive } from '../../../../src/engine/primitives/nodes/component.js';
-import { InterfacePrimitive } from '../../../../src/engine/primitives/nodes/interface.js';
-import { AccessorPrimitive } from '../../../../src/engine/primitives/nodes/accessor.js';
-import { MethodPrimitive } from '../../../../src/engine/primitives/nodes/method.js';
-import { StatementFactory, ts } from '../../../../src/engine/primitives/statements/factory.js';
+import { ClassPrimitive } from '@nexical/generator/engine/primitives/nodes/class.js';
+import { FunctionPrimitive } from '@nexical/generator/engine/primitives/nodes/function.js';
+import { ComponentPrimitive } from '@nexical/generator/engine/primitives/nodes/component.js';
+import { InterfacePrimitive } from '@nexical/generator/engine/primitives/nodes/interface.js';
+import { AccessorPrimitive } from '@nexical/generator/engine/primitives/nodes/accessor.js';
+import { MethodPrimitive } from '@nexical/generator/engine/primitives/nodes/method.js';
+import { StatementFactory, ts } from '@nexical/generator/engine/primitives/statements/factory.js';
 
 describe('Coverage Boost Engine', () => {
   describe('AccessorPrimitive', () => {
@@ -115,12 +115,12 @@ describe('Coverage Boost Engine', () => {
     it('should handle null/undefined configurations', () => {
       expect(
         StatementFactory.generate(
-          null as unknown as import('../../../../src/engine/types.js').StatementConfig,
+          null as unknown as import('@nexical/generator/engine/types.js').StatementConfig,
         ),
       ).toBe('');
       expect(
         StatementFactory.generate(
-          null as unknown as import('../../../../src/engine/types.js').StatementConfig,
+          null as unknown as import('@nexical/generator/engine/types.js').StatementConfig,
         ),
       ).toBe('');
       // Use as unknown as string/any to specifically test null handling while avoiding lint

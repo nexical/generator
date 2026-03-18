@@ -1,10 +1,10 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InterfacePrimitive } from '../../../../../src/engine/primitives/nodes/interface.js';
-import { VariablePrimitive } from '../../../../../src/engine/primitives/nodes/variable.js';
-import { AccessorPrimitive } from '../../../../../src/engine/primitives/nodes/accessor.js';
+import { InterfacePrimitive } from '@nexical/generator/engine/primitives/nodes/interface.js';
+import { VariablePrimitive } from '@nexical/generator/engine/primitives/nodes/variable.js';
+import { AccessorPrimitive } from '@nexical/generator/engine/primitives/nodes/accessor.js';
 import { Project } from 'ts-morph';
-import type { VariableConfig, StatementConfig } from '../../../../../src/engine/types.js';
+import type { VariableConfig, StatementConfig } from '@nexical/generator/engine/types.js';
 
 describe('InterfacePrimitive', () => {
   let project: Project;

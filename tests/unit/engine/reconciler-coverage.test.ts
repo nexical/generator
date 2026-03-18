@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { Reconciler } from '../../../src/engine/reconciler.js';
+import { Reconciler } from '@nexical/generator/engine/reconciler.js';
 import { Project } from 'ts-morph';
-import { type FileDefinition } from '../../../src/engine/types.js';
+import { type FileDefinition } from '@nexical/generator/engine/types.js';
 
 describe('Reconciler - Coverage Boost', () => {
   it('should prune unused elements in GENERATED files', () => {
@@ -78,7 +78,7 @@ const oldVar = 1;
       statements: [
         'export function existing() {\n  /* block content changed */\n}', // Multi-line to ensure signature match
         'export function newlyAdded() {}',
-      ] as unknown as import('../../../src/engine/types.js').StatementConfig[],
+      ] as unknown as import('@nexical/generator/engine/types.js').StatementConfig[],
     };
 
     Reconciler.reconcile(file, definition);
@@ -96,7 +96,7 @@ const oldVar = 1;
       statements: [
         'defineApi({\n  name: "existing",\n  change: true\n})',
         'const newlyAdded = 1;',
-      ] as unknown as import('../../../src/engine/types.js').StatementConfig[],
+      ] as unknown as import('@nexical/generator/engine/types.js').StatementConfig[],
     };
 
     Reconciler.reconcile(file, definition);
@@ -112,7 +112,7 @@ const oldVar = 1;
       statements: [
         "describe('test suite', () => { console.log('extra'); });",
         "it('new test', () => {});",
-      ] as unknown as import('../../../src/engine/types.js').StatementConfig[],
+      ] as unknown as import('@nexical/generator/engine/types.js').StatementConfig[],
     };
 
     Reconciler.reconcile(file, definition);

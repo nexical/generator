@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { Project } from 'ts-morph';
-import { ApiBuilder } from '../../../../src/engine/builders/api-builder.js';
-import { SdkBuilder } from '../../../../src/engine/builders/sdk-builder.js';
-import { InitBuilder } from '../../../../src/engine/builders/init-builder.js';
-import { IntegrationTestBuilder } from '../../../../src/engine/builders/integration-test-builder.js';
-import { type ModelDef } from '../../../../src/engine/types.js';
+import { ApiBuilder } from '@nexical/generator/engine/builders/api-builder.js';
+import { SdkBuilder } from '@nexical/generator/engine/builders/sdk-builder.js';
+import { InitBuilder } from '@nexical/generator/engine/builders/init-builder.js';
+import { IntegrationTestBuilder } from '@nexical/generator/engine/builders/test/integration/integration-test-builder.js';
+import { type ModelDef } from '@nexical/generator/engine/types.js';
 
 describe('Builders Minimal Coverage', () => {
   const project = new Project({ useInMemoryFileSystem: true });
@@ -50,7 +50,7 @@ describe('Builders Minimal Coverage', () => {
       mockAllModels,
       'test-api',
       'custom',
-      customRoutes as unknown as import('../../../../src/engine/types.js').CustomRoute[],
+      customRoutes as unknown as import('@nexical/generator/engine/types.js').CustomRoute[],
     );
     const file = project.createSourceFile('api-custom.ts', '');
     builder.ensure(file);

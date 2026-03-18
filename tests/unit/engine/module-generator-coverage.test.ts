@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ModuleGenerator } from '../../../src/engine/module-generator.js';
+import { ModuleGenerator } from '@nexical/generator/engine/module-generator.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -8,7 +8,7 @@ const { mockFormat } = vi.hoisted(() => ({
   mockFormat: vi.fn((c) => c),
 }));
 
-vi.mock('../../../src/utils/formatter.js', () => ({
+vi.mock('@nexical/generator/utils/formatter.js', () => ({
   Formatter: {
     format: mockFormat,
   },

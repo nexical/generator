@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-import { MethodPrimitive } from '../../../../../src/engine/primitives/nodes/method.js';
-import { ts } from '../../../../../src/engine/primitives/statements/factory.js';
+import { MethodPrimitive } from '@nexical/generator/engine/primitives/nodes/method.js';
+import { ts } from '@nexical/generator/engine/primitives/statements/factory.js';
 
 describe('MethodPrimitive Fragments', () => {
   let project: Project;

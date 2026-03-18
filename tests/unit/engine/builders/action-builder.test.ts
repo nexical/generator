@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-import { ActionBuilder } from '../../../../src/engine/builders/action-builder.js';
+import { ActionBuilder } from '@nexical/generator/engine/builders/action-builder.js';
 
 describe('ActionBuilder', () => {
   let project: Project;

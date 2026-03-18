@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-import { ServiceBuilder } from '../../../../src/engine/builders/service-builder.js';
-import { type ModelDef } from '../../../../src/engine/types.js';
+import { ServiceBuilder } from '@nexical/generator/engine/builders/service-builder.js';
+import { type ModelDef } from '@nexical/generator/engine/types.js';
 
 describe('ServiceBuilder', () => {
   let project: Project;

@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { ZodHelper } from '../../../../../src/engine/builders/utils/zod-helper.js';
-import { type ModelDef } from '../../../../../src/engine/types.js';
+import { ZodHelper } from '@nexical/generator/engine/builders/utils/zod-helper.js';
+import { type ModelDef } from '@nexical/generator/engine/types.js';
 
 describe('ZodHelper - generateSchema coverage', () => {
   const makeModel = (fields: Record<string, Partial<ModelDef['fields'][string]>>): ModelDef =>

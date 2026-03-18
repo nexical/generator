@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect } from 'vitest';
-import { ImportPrimitive } from '../../../../../src/engine/primitives/core/import-manager.js';
+import { ImportPrimitive } from '@nexical/generator/engine/primitives/core/import-manager.js';
 import { Project } from 'ts-morph';
-import type { ImportConfig } from '../../../../../src/engine/types.js';
+import type { ImportConfig } from '@nexical/generator/engine/types.js';
 
 describe('ImportPrimitive - Enhanced Coverage', () => {
   it('should create import declaration', () => {
