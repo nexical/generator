@@ -91,7 +91,8 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
           if (i === 0) return `${mockObj} as Record<string, unknown>`;
           return `${defaultId} as unknown`;
         });
-        const argString = args.join(', ');
+        const argString =
+          args.length > 2 ? `\n      ${args.join(',\n      ')}\n    ` : args.join(', ');
 
         if (this.isModelValid && method === 'list') {
           successTest = `

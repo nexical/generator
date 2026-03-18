@@ -46,7 +46,7 @@ export class ApiUnitTestBuilder extends BaseBuilder {
 
     if (isQuery) {
       return Object.entries(props)
-        .map(([k, v]) => `${k}=\${encodeURIComponent(${v}.toString())}`)
+        .map(([k, v]) => `${k}=\${encodeURIComponent(String(${v}))}`)
         .join('&');
     }
 
@@ -104,7 +104,7 @@ export class ApiUnitTestBuilder extends BaseBuilder {
     return `
   it('should call ${actionName || serviceName} and return success', async () => {
     const query = ['GET', 'DELETE'].includes('${method}'.toUpperCase()) 
-      ? '?${mockQuery}'
+      ? \`?${mockQuery}\`
       : '';
     const fullUrl = 'http://localhost/api/test' + query;
 
@@ -134,7 +134,7 @@ export class ApiUnitTestBuilder extends BaseBuilder {
 
   it('should return 400 when invalid input is provided (scaffold)', async () => {
     const query = ['GET', 'DELETE'].includes('${method}'.toUpperCase()) 
-      ? '?${mockQuery}'
+      ? \`?${mockQuery}\`
       : '';
     const fullUrl = 'http://localhost/api/test' + query;
 
@@ -161,7 +161,7 @@ export class ApiUnitTestBuilder extends BaseBuilder {
 
   it('should return 500 when action fails', async () => {
     const query = ['GET', 'DELETE'].includes('${method}'.toUpperCase()) 
-      ? '?${mockQuery}'
+      ? \`?${mockQuery}\`
       : '';
     const fullUrl = 'http://localhost/api/test' + query;
 

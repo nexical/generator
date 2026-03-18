@@ -46,9 +46,8 @@ export class ApiModuleGenerator extends ModuleGenerator {
     console.info(`[ApiModuleGenerator] Models found: ${models.length}`);
 
     const apiContent = fs.existsSync(apiYamlPath) ? fs.readFileSync(apiYamlPath, 'utf-8') : '';
-    const customRoutes: Record<string, CustomRoute[]> = apiContent.trim()
-      ? parse(apiContent) || {}
-      : {};
+    const parsedApi = apiContent.trim() ? parse(apiContent) || {} : {};
+    const customRoutes: Record<string, CustomRoute[]> = parsedApi?.models || parsedApi || {};
 
     if (models.length === 0 && Object.keys(customRoutes).length === 0) {
       if (this.command) {

@@ -165,8 +165,8 @@ export class MyAction {
     expect(specifiers).toContain('@/lib/core/db');
   });
 
-  it('ActionBuilder - should handle TeamRole as input and output (not type-only)', () => {
-    const builder = new ActionBuilder('RoleAction', 'TeamRole', 'TeamRole');
+  it('ActionBuilder - should handle SDK types as input and output (type-only)', () => {
+    const builder = new ActionBuilder('RoleAction', 'CustomDTO', 'CustomDTO');
     const schema = (
       builder as unknown as {
         getSchema(): {
@@ -175,8 +175,8 @@ export class MyAction {
       }
     ).getSchema();
     const sdkImport = schema.imports.find((i) => i.moduleSpecifier === '../sdk/types');
-    expect(sdkImport?.isTypeOnly).toBe(false);
-    expect(sdkImport?.namedImports).toContain('TeamRole');
+    expect(sdkImport?.isTypeOnly).toBe(true);
+    expect(sdkImport?.namedImports).toContain('CustomDTO');
   });
 
   it('ActorBuilder - should enable crypto for bearer strategy with hash in keyField', () => {
@@ -228,7 +228,6 @@ export class MyAction {
                 AgentService.heartbeat();
                 ApiActor.name;
                 z.string();
-                TeamRole.OWNER;
                 HookSystem.dispatch();
                 AuthService.login();
                 bcrypt.hash();

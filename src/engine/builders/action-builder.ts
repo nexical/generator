@@ -151,11 +151,6 @@ export class ActionBuilder extends BaseBuilder {
       });
     }
 
-    const hasTeamRole = sourceText.includes('TeamRole');
-    if (hasTeamRole && !namedImports.includes('TeamRole')) {
-      namedImports.push('TeamRole');
-    }
-
     const hasHookSystem = sourceText.includes('HookSystem');
     if (hasHookSystem) {
       imports.push({
@@ -201,7 +196,7 @@ export class ActionBuilder extends BaseBuilder {
         imports.push({
           moduleSpecifier: '../sdk/types',
           namedImports: uniqueImports,
-          isTypeOnly: !uniqueImports.includes('TeamRole'),
+          isTypeOnly: true,
         });
       }
     }

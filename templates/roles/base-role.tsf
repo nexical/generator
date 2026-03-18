@@ -58,4 +58,4 @@ export abstract class BaseRole implements RolePolicy {
     throw new Error(\`Forbidden: required role \${this.name}\`);
   }
 }
-\`;
+`;

@@ -49,6 +49,10 @@ export class ApiBuilder extends BaseBuilder {
   }
 
   private generateZodSchema(targetModel: ModelDef = this.model): string {
+    if (!targetModel) {
+      // Fallback to minimal object if DTO not found (e.g. virtual model with custom DTO defined elsewhere)
+      return 'z.object({})';
+    }
     const fields = Object.entries(targetModel.fields)
       .filter(([name, f]) => {
         const typeName = f.type.replace('[]', '');
