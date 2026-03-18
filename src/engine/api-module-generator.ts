@@ -733,8 +733,35 @@ export class ApiModuleGenerator extends ModuleGenerator {
   }
 
   public debugBaseRoleText(accessConfig: AccessConfig): string {
+    const roles = accessConfig?.roles || {};
+    const hasTeamSupport = Object.keys(roles).some((r) => r.toUpperCase().startsWith('TEAM_'));
+
+    const dbImport = hasTeamSupport ? "import { db } from '@/lib/core/db';" : '';
+    const teamCheck = hasTeamSupport
+      ? `
+    // If teamId is provided, check for team-specific role
+    const teamId = input.teamId as string | undefined;
+    if (teamId && actor.id) {
+      const membership = await db.teamMember.findUnique({
+        where: {
+          userId_teamId: {
+            userId: actor.id,
+            teamId,
+          },
+        },
+      });
+
+      if (membership) {
+        normalizedActorRole = normalizeRole(membership.role);
+      }
+    }
+    `
+      : '';
+
     return TemplateLoader.load('roles/base-role.tsf', {
       accessConfig: JSON.stringify(accessConfig),
+      dbImport,
+      teamCheck,
     }).raw;
   }
 

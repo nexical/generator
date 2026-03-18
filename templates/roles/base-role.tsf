@@ -1,12 +1,15 @@
 /** @fragment-contract
  * @description Backend BaseRole implementation
  * @input {string} accessConfig
+ * @input {string} dbImport
+ * @input {string} teamCheck
  */
 import { fragment } from '@nexical/generator';
 
 export default fragment/* ts */`
 import type { APIContext } from 'astro';
 import type { ApiActor } from '@/lib/api/api-docs';
+${dbImport}
 import { roleRegistry } from '@/lib/registries/role-registry';
 
 export abstract class BaseRole implements RolePolicy {
@@ -31,8 +34,10 @@ export abstract class BaseRole implements RolePolicy {
     // or be added to compatibleRoles in the generated role class.
     if (normalizeRole(actorRole) === 'USER_ADMIN') return;
     
-    const normalizedActorRole = normalizeRole(actorRole);
     const normalizedRequiredRole = normalizeRole(this.name);
+    let normalizedActorRole = normalizeRole(actorRole);
+
+    ${teamCheck}
 
     if (normalizedActorRole === normalizedRequiredRole) return;
     if (this.compatibleRoles?.includes(normalizedActorRole)) return;
