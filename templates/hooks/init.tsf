@@ -1,0 +1,13 @@
+import { fragment } from '@nexical/generator';
+
+declare const method: string;
+declare const event: string;
+declare const action: string;
+
+export default fragment/* ts */`
+HookSystem.\${method}("\${event}", async (data: unknown) => {
+    console.info(\`[Hook] \${event} triggered action \${action}\`);
+    // TODO: Implement hook logic
+    return data;
+});
+`;

@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { toPascalCase } from '../../utils/string.js';
 import { ts } from '../primitives/statements/factory.js';
+import { TemplateLoader } from '../../utils/template-loader.js';
 
 export interface AgentTemplateConfig {
   name: string;
@@ -162,12 +163,12 @@ ${Object.entries(agent.payload || {})
           isAsync: true,
           parameters: [{ name: 'job', type: 'AgentJob<unknown>' }],
           statements: [
-            // Prefix unused variables with _ to satisfy linter
-            ts`const { ${Object.keys(agent.payload || {})
-              .map((k) => `${k}: _${k}`)
-              .join(', ')} } = job.payload;`,
-            ts`console.info(\`[${agent.name}] Processing job \${job.id}\`);`,
-            ts`// TODO: Implement processing logic`,
+            TemplateLoader.load('agent/job-processor.tsf', {
+              keys: Object.keys(agent.payload || {})
+                .map((k) => `${k}: _${k}`)
+                .join(', '),
+              name: agent.name,
+            }),
           ],
         },
       ];
@@ -177,8 +178,9 @@ ${Object.entries(agent.payload || {})
           name: 'run',
           isAsync: true,
           statements: [
-            ts`console.info(\`[${agent.name}] Running persistent agent task\`);`,
-            ts`// TODO: Implement periodic task logic`,
+            TemplateLoader.load('agent/persistent-agent.tsf', {
+              name: agent.name,
+            }),
           ],
         },
       ];

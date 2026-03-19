@@ -1,0 +1,16 @@
+import { fragment } from '@nexical/generator';
+
+export default fragment/* ts */`
+import type { AstroGlobal, APIContext } from 'astro';
+import { RolePolicy } from '@/lib/registries/role-registry';
+
+export class AnonymousRole implements RolePolicy {
+  public async check(
+    context: AstroGlobal | APIContext,
+    input: Record<string, unknown>,
+    data?: unknown,
+  ): Promise<void> {
+    return;
+  }
+}
+`;

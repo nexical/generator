@@ -1,0 +1,56 @@
+// GENERATED CODE - DO NOT MODIFY
+import { roleRegistry, type RolePolicy } from '@/lib/registries/role-registry';
+import { Permissions } from '@/lib/security/permissions';
+
+export async function init() {
+  // 1. Auto-discover and Register Roles from src/roles/
+  const roleModules = import.meta.glob('./roles/*.ts', { eager: true });
+  for (const path in roleModules) {
+    const mod = roleModules[path] as { [key: string]: unknown };
+    const roleName = path.split('/').pop()?.replace('.ts', '');
+    if (!roleName) continue;
+
+    // Find the first exported class that looks like a RolePolicy (has check method)
+    for (const key in mod) {
+      const Exported = mod[key];
+      if (typeof Exported === 'function' && Exported.prototype && Exported.prototype.check) {
+        // Skip BaseRole - it's an abstract base, not a concrete policy
+        if (key === 'BaseRole') continue;
+
+        const instance = new (Exported as new () => RolePolicy & { name?: string })();
+        const actualName = instance.name || roleName;
+        roleRegistry.register(actualName, instance);
+        break;
+      }
+    }
+  }
+
+  // 2. Auto-load all Hook definitions from src/hooks/
+  const hookModules = import.meta.glob('./hooks/*.ts', { eager: true });
+  for (const path in hookModules) {
+    const mod = hookModules[path] as { init?: () => Promise<void> | void };
+    if (typeof mod.init === 'function') {
+      await mod.init();
+    }
+  }
+
+  // 3. Initialize Emails from src/emails/init.ts
+  const emailInitModules = import.meta.glob('./emails/init.ts', { eager: true });
+  for (const path in emailInitModules) {
+    const mod = emailInitModules[path] as { initEmails?: () => Promise<void> | void };
+    if (typeof mod.initEmails === 'function') {
+      await mod.initEmails();
+    }
+  }
+
+  // 4. Register Module Permissions
+  const permissionModules = import.meta.glob('./permissions.ts', { eager: true });
+  for (const path in permissionModules) {
+    const mod = permissionModules[path] as { RolePermissions?: Record<string, string[]> };
+    if (mod.RolePermissions) {
+      for (const [role, actions] of Object.entries(mod.RolePermissions)) {
+        Permissions.register(role, actions);
+      }
+    }
+  }
+}

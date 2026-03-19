@@ -1,0 +1,7 @@
+import { fragment } from '@nexical/generator';
+
+declare const keys: string;
+
+export default fragment/* ts */`
+const { \${keys} } = props;
+`;

@@ -1,0 +1,8 @@
+import { fragment } from '@nexical/generator';
+
+declare const id: string;
+declare const name: string;
+
+export default fragment/* ts */`
+EmailRegistry.register('\${id}', \${name});
+`;

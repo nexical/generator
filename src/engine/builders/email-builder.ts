@@ -6,7 +6,6 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { toPascalCase } from '../../utils/string.js';
-import { ts } from '../primitives/statements/factory.js';
 import { TemplateLoader } from '../../utils/template-loader.js';
 
 export interface EmailTemplateConfig {
@@ -82,7 +81,9 @@ export class EmailBuilder extends BaseBuilder {
           isExported: true,
           parameters: [{ name: 'props', type: `${toPascalCase(template.name)}Props` }],
           statements: [
-            ts`const { ${(template.props || []).map((p) => p.name).join(', ')} } = props;`,
+            TemplateLoader.load('email/props-destructure.tsf', {
+              keys: (template.props || []).map((p) => p.name).join(', '),
+            }),
             TemplateLoader.load('ui/email/base-email.tsf', {
               templateName: toPascalCase(template.name),
             }),
@@ -140,8 +141,11 @@ export class EmailBuilder extends BaseBuilder {
       });
     }
 
-    const registrationStatements = this.emailConfig.templates.map(
-      (t) => ts`EmailRegistry.register('${t.id}', ${toPascalCase(t.name)});`,
+    const registrationStatements = this.emailConfig.templates.map((t) =>
+      TemplateLoader.load('email/registration.tsf', {
+        id: t.id,
+        name: toPascalCase(t.name),
+      }),
     );
 
     const definition: FileDefinition = {

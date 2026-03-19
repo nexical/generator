@@ -16,6 +16,7 @@ export interface RawModelConfig {
   };
   fields: Record<string, string | RawFieldConfig>;
   role?: string | Record<string, string>;
+  traits?: string[];
   test?: {
     actor?: string;
   };
@@ -87,6 +88,7 @@ export class ModelParser {
           actor: config.actor as ModelDef['actor'], // Cast to ModelDef['actor'] to avoid strict "strategy required" check against optional YAML
           fields: {},
           role: config.role,
+          traits: config.traits || [],
           test: config.test,
           isExported: config.isExported !== false,
         };

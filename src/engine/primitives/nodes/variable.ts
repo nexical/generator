@@ -5,6 +5,7 @@ import {
   ModuleDeclaration,
   CodeBlockWriter,
 } from 'ts-morph';
+
 import { BasePrimitive } from '../core/base-primitive.js';
 import { type VariableConfig } from '../../types.js';
 import { type ValidationResult } from '../contracts.js';
@@ -27,7 +28,7 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
         {
           name: this.config.name,
           type: this.config.type,
-          initializer: this.getInitializerText(this.config.initializer),
+          initializer: this.wrapObjectLiteral(this.getInitializerText(this.config.initializer)),
         },
       ],
       leadingTrivia: this.config.comments
@@ -41,6 +42,11 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
   }
 
   update(node: VariableStatement) {
+    // If this is a default variable and it already exists, leave it alone.
+    if (this.config.isDefault) {
+      return;
+    }
+
     const decl = node.getDeclarations().find((d) => d.getName() === this.config.name);
     if (!decl) return; // Should not happen if find() works
 
@@ -61,11 +67,58 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
       decl.setType(this.config.type);
     }
 
-    const initText = this.getInitializerText(this.config.initializer);
+    const initText = this.wrapObjectLiteral(this.getInitializerText(this.config.initializer));
     if (initText) {
-      const currentInit = decl.getInitializer()?.getText() || '';
-      if (Normalizer.normalize(currentInit) !== Normalizer.normalize(initText)) {
-        decl.setInitializer(initText);
+      const currentInit = decl.getInitializer();
+      const currentInitText = currentInit?.getText() || '';
+
+      if (Normalizer.normalize(currentInitText) !== Normalizer.normalize(initText)) {
+        // If the initializer is very large or complex (like Astro GET/POST handlers),
+        // setInitializer can trigger a stack overflow in ts-morph's ParentFinder.
+        // We proactively use a top-level replacement for large initializers.
+        if (initText.length > 2000) {
+          console.warn(
+            `[VariablePrimitive] Initializer for ${this.config.name} is large (${initText.length}), using top-level replaceWithText to avoid ts-morph recursion`,
+          );
+          const kind = this.config.declarationKind || 'const';
+          const exported = this.config.isExported ? 'export ' : '';
+          const typeStr = this.config.type ? `: ${this.config.type}` : '';
+          const comments = this.config.comments
+            ? this.config.comments
+                .map((c) => (c.startsWith('//') ? `${c}\n` : `// ${c}\n`))
+                .join('')
+            : '';
+          const newStatementText = `${comments}${exported}${kind} ${this.config.name}${typeStr} = ${initText};`;
+          node.replaceWithText(newStatementText);
+          return;
+        }
+
+        try {
+          decl.setInitializer((writer) => {
+            writer.write(initText!);
+          });
+        } catch {
+          console.warn(
+            `[VariablePrimitive] Failed to set initializer for ${this.config.name} via writer, falling back to direct initializer replacement.`,
+          );
+          try {
+            const currentInitNode = decl.getInitializer();
+            if (currentInitNode) {
+              currentInitNode.replaceWithText(initText!);
+            } else {
+              decl.setInitializer(initText!);
+            }
+          } catch {
+            console.error(
+              `[VariablePrimitive] Critical failure updating ${this.config.name}, trying statement replacement as last resort`,
+            );
+            const kind = this.config.declarationKind || 'const';
+            const exported = this.config.isExported ? 'export ' : '';
+            const typeStr = this.config.type ? `: ${this.config.type}` : '';
+            const newStatementText = `${exported}${kind} ${this.config.name}${typeStr} = ${initText};`;
+            node.replaceWithText(newStatementText);
+          }
+        }
       }
     }
 
@@ -92,6 +145,15 @@ export class VariablePrimitive extends BasePrimitive<VariableStatement, Variable
     if (!initializer) return undefined;
     if (typeof initializer === 'string') return initializer;
     return initializer.raw;
+  }
+
+  private wrapObjectLiteral(text?: string): string | undefined {
+    if (!text) return text;
+    const trimmed = text.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      return `(${trimmed})`;
+    }
+    return text;
   }
 
   validate(node: VariableStatement): ValidationResult {

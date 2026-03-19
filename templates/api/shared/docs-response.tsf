@@ -1,0 +1,12 @@
+import { fragment } from '@nexical/generator';
+
+export default fragment`{
+    ${status}: {
+        description: "${description}",
+        content: {
+            "application/json": {
+                schema: ${schema}
+            }
+        }
+    }
+}`;

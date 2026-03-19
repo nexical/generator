@@ -26,6 +26,11 @@ export class MethodPrimitive extends BasePrimitive<MethodDeclaration, MethodConf
   }
 
   update(node: MethodDeclaration) {
+    // If this is a default method and it already exists, leave it alone.
+    if (this.config.isDefault) {
+      return;
+    }
+
     // "Drift Correction" Logic
     const structure = this.toStructure();
 

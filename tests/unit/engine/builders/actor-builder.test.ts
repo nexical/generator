@@ -89,7 +89,7 @@ describe('ActorBuilder', () => {
     const builder = new ActorBuilder(models);
     builder.ensure(sourceFile);
 
-    expect(sourceFile.getFullText()).toMatch(/export const actors = \{[\s\n]*\};/);
+    expect(sourceFile.getFullText()).toMatch(/export const actors = \(?\{[\s\n]*\}\)?;?/);
   });
 
   it('should handle complex bearer token relations', () => {

@@ -5,8 +5,8 @@ import { Reconciler } from '../reconciler.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import { ts } from '../primitives/statements/factory.js';
 import { HookUnitTestBuilder } from './test/unit/hook-unit-test-builder.js';
+import { TemplateLoader } from '../../utils/template-loader.js';
 
 export interface HookTemplateConfig {
   event: string;
@@ -77,11 +77,11 @@ export class HookBuilder extends BaseBuilder {
           isExported: true,
           isAsync: true,
           statements: [
-            ts`HookSystem.${method}("${hook.event}", async (data: unknown) => {
-        console.info(\`[Hook] ${hook.event} triggered action ${hook.action}\`);
-        // TODO: Implement hook logic
-        return data;
-    });`,
+            TemplateLoader.load('hooks/init.tsf', {
+              method,
+              event: hook.event,
+              action: hook.action,
+            }),
           ],
         },
       ],

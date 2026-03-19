@@ -22,14 +22,20 @@ export class PropertyPrimitive extends BasePrimitive<PropertyDeclaration, Proper
   }
 
   update(node: PropertyDeclaration) {
+    // If this is a default property and it already exists, leave it alone.
+    if (this.config.isDefault) {
+      return;
+    }
+
     const structure = this.toStructure();
 
     if (structure.type && node.getType().getText() !== structure.type) {
       node.setType(structure.type as string);
     }
 
-    if (structure.initializer && node.getInitializer()?.getText() !== structure.initializer) {
-      node.setInitializer(structure.initializer as string);
+    const initializerText = this.wrapObjectLiteral(structure.initializer as string);
+    if (initializerText && node.getInitializer()?.getText() !== initializerText) {
+      node.setInitializer(initializerText);
     }
 
     if (structure.scope && node.getScope() !== structure.scope) {
@@ -118,16 +124,27 @@ export class PropertyPrimitive extends BasePrimitive<PropertyDeclaration, Proper
     return { valid: issues.length === 0, issues };
   }
 
+  private wrapObjectLiteral(text?: string): string | undefined {
+    if (!text) return text;
+    const trimmed = text.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      return `(${trimmed})`;
+    }
+    return text;
+  }
+
   private toStructure(): OptionalKind<PropertyDeclarationStructure> {
+    const initializer =
+      this.config.initializer &&
+      typeof this.config.initializer === 'object' &&
+      'raw' in this.config.initializer
+        ? (this.config.initializer as { raw: string }).raw
+        : (this.config.initializer as string);
+
     return {
       name: this.config.name,
       type: this.config.type,
-      initializer:
-        this.config.initializer &&
-        typeof this.config.initializer === 'object' &&
-        'raw' in this.config.initializer
-          ? (this.config.initializer as { raw: string }).raw
-          : (this.config.initializer as string),
+      initializer: this.wrapObjectLiteral(initializer),
       scope: this.config.scope,
       isStatic: this.config.isStatic,
       isReadonly: this.config.readonly,

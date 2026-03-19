@@ -29,6 +29,9 @@ agents:
     interval: 5000
 `;
       }
+      if (String(path).endsWith('.tsf')) {
+        return 'export default fragment`mock-content: ${typeof name !== "undefined" ? name : ""} ${typeof interval !== "undefined" ? interval : ""} ${typeof keys !== "undefined" ? keys : ""}`';
+      }
       return '';
     });
 
@@ -90,6 +93,9 @@ agents:
   - name: "EmptyAgent"
     type: "persistent"
 `;
+      }
+      if (String(path).endsWith('.tsf')) {
+        return 'export default fragment`mock-content: ${typeof name !== "undefined" ? name : ""} ${typeof interval !== "undefined" ? interval : ""} ${typeof keys !== "undefined" ? keys : ""}`';
       }
       return '';
     });

@@ -29,7 +29,13 @@ import { AgentUnitTestBuilder } from './builders/test/unit/agent-unit-test-build
 import { ConfigUnitTestBuilder } from './builders/test/unit/config-unit-test-builder.js';
 import { MiddlewareUnitTestBuilder } from './builders/test/unit/middleware-unit-test-builder.js';
 import { PermissionUnitTestBuilder } from './builders/test/unit/permission-unit-test-builder.js';
-import { type CustomRoute, type ModelDef, type ModuleConfig, type AccessConfig } from './types.js';
+import {
+  type CustomRoute,
+  type ModelDef,
+  type ModuleConfig,
+  type AccessConfig,
+  type ParsedStatement,
+} from './types.js';
 import { toKebabCase, toPascalCase } from '../utils/string.js';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -93,7 +99,6 @@ export class ApiModuleGenerator extends ModuleGenerator {
         const serviceUnitTestFile = this.getOrCreateFile(
           `tests/unit/services/${kebabName}-service.test.ts`,
         );
-        serviceUnitTestFile.replaceWithText(''); // Prevent duplication
         const serviceRelPath = `src/services/${kebabName}-service.ts`;
         const discoveredMethods = this.discoverMethods(serviceRelPath);
         logger.info(
@@ -118,7 +123,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const apiColUnitTestFile = this.getOrCreateFile(
             `tests/unit/pages/api/${kebabName}/index.test.ts`,
           );
-          apiColUnitTestFile.replaceWithText(''); // Prevent duplication
+          // apiColUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
           new ApiUnitTestBuilder(
             this.moduleName,
             name,
@@ -135,7 +140,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const apiIndUnitTestFile = this.getOrCreateFile(
             `tests/unit/pages/api/${kebabName}/[id].test.ts`,
           );
-          apiIndUnitTestFile.replaceWithText(''); // Prevent duplication
+          // apiIndUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
           new ApiUnitTestBuilder(
             this.moduleName,
             name,
@@ -172,7 +177,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const apiUnitTestFile = this.getOrCreateFile(
             `tests/unit/pages/api/${kebabName}/${routePath}.test.ts`,
           );
-          apiUnitTestFile.replaceWithText(''); // Prevent duplication
+          // apiUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
           const levels = routePath.split('/').length + 4;
           const prefix = '../'.repeat(levels);
 
@@ -252,7 +257,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             const actionUnitTestFile = this.getOrCreateFile(
               `tests/unit/actions/${actionBase}.test.ts`,
             );
-            actionUnitTestFile.replaceWithText(''); // Prevent duplication
+            // actionUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
             new ActionUnitTestBuilder(
               actionName,
               `../../../src/actions/${actionBase}`,
@@ -269,7 +274,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           new SdkBuilder(model, modelRoutes).ensure(sdkFile);
 
           const sdkUnitTestFile = this.getOrCreateFile(`tests/unit/sdk/${kebabName}-sdk.test.ts`);
-          sdkUnitTestFile.replaceWithText(''); // Prevent duplication
+          // sdkUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
 
           const sdkRelPath = `src/sdk/${kebabName}-sdk.ts`;
           const discoveredMethods = this.discoverMethods(sdkRelPath);
@@ -382,7 +387,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             ? `tests/unit/pages/api/${fileName}.test.ts`
             : `tests/unit/pages/api/${kebabEntity}/${fileName}.test.ts`,
         );
-        apiUnitTestFile.replaceWithText(''); // Prevent duplication
+        // apiUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
 
         const levels = (isRoot ? 0 : 1) + fileName.split('/').length + 3;
         const prefix = '../'.repeat(levels);
@@ -467,7 +472,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           const actionUnitTestFile = this.getOrCreateFile(
             `tests/unit/actions/${actionBase}.test.ts`,
           );
-          actionUnitTestFile.replaceWithText(''); // Prevent duplication
+          // actionUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
           new ActionUnitTestBuilder(
             actionName,
             `../../../src/actions/${actionBase}`,
@@ -487,7 +492,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
         ? `tests/unit/sdk/root-sdk.test.ts`
         : `tests/unit/sdk/${kebabEntity}-sdk.test.ts`;
       const sdkUnitTestFile = this.getOrCreateFile(sdkUnitTestPath);
-      sdkUnitTestFile.replaceWithText(''); // Prevent duplication
+      // sdkUnitTestFile.replaceWithText(''); // Prevent duplication
 
       const discoveredMethods = this.discoverMethods(sdkPath);
 
@@ -583,7 +588,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
     new MiddlewareBuilder(models, [...allCustomRoutes, ...modelRoutes]).ensure(middlewareFile);
 
     const middlewareUnitTestFile = this.getOrCreateFile('tests/unit/middleware.test.ts');
-    middlewareUnitTestFile.replaceWithText(''); // Prevent duplication
+    // middlewareUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
     new MiddlewareUnitTestBuilder(this.moduleName, '../../src/middleware', models).ensure(
       middlewareUnitTestFile,
     );
@@ -607,7 +612,13 @@ export class ApiModuleGenerator extends ModuleGenerator {
         if (accessConfig.roles) {
           // Ensure BaseRole exists
           const baseRoleFile = this.getOrCreateFile(path.join('src', 'roles', 'base-role.ts'));
-          baseRoleFile.replaceWithText(this.debugBaseRoleText(accessConfig));
+          const superRoles = `'${PathResolver.getDefaults().superRole}'`;
+
+          Reconciler.reconcile(baseRoleFile, {
+            header:
+              '// INITIAL GENERATED CODE - THE SIGNATURE IS MANAGED BY THE GENERATOR. YOU MAY MODIFY THE IMPLEMENTATION AND ADD CUSTOM IMPORTS.',
+            statements: [TemplateLoader.load('roles/base-role.tsf', { superRoles })],
+          });
 
           for (const [roleName, roleDef] of Object.entries(accessConfig.roles)) {
             logger.info(`[ModuleGenerator] Generating Role: ${roleName}`);
@@ -631,7 +642,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             const roleUnitTestFile = this.getOrCreateFile(
               `tests/unit/roles/${roleName.toLowerCase()}.test.ts`,
             );
-            roleUnitTestFile.replaceWithText(''); // Prevent duplication
+            // roleUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
             const pascalName = toPascalCase(roleName);
             const className = `${pascalName}Role`;
             new RoleUnitTestBuilder(
@@ -661,7 +672,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           });
 
           const permUnitTestFile = this.getOrCreateFile('tests/unit/permissions.test.ts');
-          permUnitTestFile.replaceWithText(''); // Prevent duplication
+          // permUnitTestFile.replaceWithText(''); // Removed to allow reconciliation
           new PermissionUnitTestBuilder(this.moduleName).ensure(permUnitTestFile);
         }
       }
@@ -694,6 +705,14 @@ export class ApiModuleGenerator extends ModuleGenerator {
     await this.saveAll();
 
     logger.info(`[ModuleGenerator] API Generation for ${this.moduleName} complete.`);
+  }
+
+  public debugBaseRoleText(accessConfig: AccessConfig): string {
+    const superRoles = `'${PathResolver.getDefaults().superRole}'`;
+    const statement = TemplateLoader.load('roles/base-role.tsf', { superRoles });
+    if (typeof statement === 'string') return statement;
+    if ('raw' in statement) return (statement as ParsedStatement).raw;
+    return '';
   }
 
   private discoverMethods(filePath: string): Record<string, number> {
@@ -745,35 +764,6 @@ export class ApiModuleGenerator extends ModuleGenerator {
     return Object.keys(methods).length > 0 ? methods : defaultMethods;
   }
 
-  public debugBaseRoleText(accessConfig: AccessConfig): string {
-    const roles = accessConfig?.roles || {};
-    const defaults = PathResolver.getDefaults();
-    const superRoles = `'${defaults.superRole}'`;
-
-    const contextChecks: string[] = [];
-
-    // Generic Contextual Role Resolution
-    // We iterate through all roles and if they have a contextResolver, we inject it.
-    for (const [roleName, roleDef] of Object.entries(roles)) {
-      if (roleDef.contextResolver) {
-        contextChecks.push(`
-    // Contextual Role Resolution: ${roleName}
-    ${roleDef.contextResolver}
-        `);
-      }
-    }
-
-    const contextCheck = contextChecks.join('\n');
-    const dbImport = /\bdb\b/.test(contextCheck) ? "import { db } from '@/lib/core/db';" : '';
-
-    return TemplateLoader.load('roles/base-role.tsf', {
-      accessConfig: JSON.stringify(accessConfig),
-      dbImport,
-      contextCheck,
-      superRoles,
-    }).raw;
-  }
-
   private runCoverageSweeper() {
     this.sweepDirectory('src/hooks', 'tests/unit/hooks', (name, relPath, testFile) => {
       if (testFile.getText() === '' || testFile.getText().includes('GENERATED CODE')) {
@@ -783,20 +773,20 @@ export class ApiModuleGenerator extends ModuleGenerator {
     });
     this.sweepDirectory('src/agent', 'tests/unit/agent', (name, relPath, testFile) => {
       if (testFile.getText() === '' || testFile.getText().includes('GENERATED CODE')) {
-        testFile.replaceWithText('');
+        // testFile.replaceWithText(''); // Removed to allow reconciliation
         const className = toPascalCase(name);
         new AgentUnitTestBuilder(className, relPath).ensure(testFile);
       }
     });
     this.sweepDirectory('src/config', 'tests/unit/config', (name, relPath, testFile) => {
       if (testFile.getText() === '' || testFile.getText().includes('GENERATED CODE')) {
-        testFile.replaceWithText('');
+        // testFile.replaceWithText(''); // Removed to allow reconciliation
         new ConfigUnitTestBuilder(name, relPath).ensure(testFile);
       }
     });
     this.sweepDirectory('src/services', 'tests/unit/services', (name, relPath, testFile) => {
       if (testFile.getText() === '' || testFile.getText().includes('GENERATED CODE')) {
-        testFile.replaceWithText('');
+        // testFile.replaceWithText(''); // Removed to allow reconciliation
         const discoveredMethods = this.discoverMethods(relPath.replace('../../../', '') + '.ts');
         const className = toPascalCase(name);
         const entityName = name.replace(/-service$/, '').replace(/Service$/, '');
@@ -813,7 +803,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           relPath,
           discoveredMethods,
           validModelNames,
-          ModelParser.parse(modelsYamlPath).models,
+          fs.existsSync(modelsYamlPath) ? ModelParser.parse(modelsYamlPath).models : [],
         ).ensure(testFile);
       }
     });

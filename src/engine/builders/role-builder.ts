@@ -8,6 +8,7 @@ import {
 } from '../types.js';
 import { toPascalCase } from '../../utils/string.js';
 import { BaseBuilder } from './base-builder.js';
+import { TemplateLoader } from '../../utils/template-loader.js';
 
 export class RoleBuilder extends BaseBuilder {
   constructor(private roleConfig: RoleConfig) {
@@ -58,6 +59,7 @@ export class RoleBuilder extends BaseBuilder {
           scope: Scope.Protected,
         },
       ],
+      methods: [],
     };
 
     const imports: ImportConfig[] = [
@@ -68,6 +70,11 @@ export class RoleBuilder extends BaseBuilder {
       {
         moduleSpecifier: '@/lib/registries/role-registry',
         namedImports: ['roleRegistry'],
+      },
+      {
+        moduleSpecifier: 'astro',
+        namedImports: ['APIContext'],
+        isTypeOnly: true,
       },
     ];
 
@@ -97,12 +104,7 @@ export class RoleBuilder extends BaseBuilder {
         '// GENERATED CODE - THE SIGNATURE IS MANAGED BY THE GENERATOR. YOU MAY MODIFY THE IMPLEMENTATION AND ADD CUSTOM IMPORTS.',
       imports: Array.from(importMap.values()),
       classes: [roleClass],
-      statements: [
-        {
-          raw: `roleRegistry.register(new ${className}());`,
-          getNodes: () => [], // Not needed for simple strings
-        },
-      ],
+      statements: [TemplateLoader.load('roles/registration.tsf', { className })],
     };
   }
 }

@@ -157,21 +157,9 @@ export class ApiBuilder extends BaseBuilder {
     const jsonSchema = this.generateJsonSchema(modelName);
 
     if (isList) {
-      return `{
-                type: "object",
-                properties: {
-                    data: {
-                        type: "array",
-                        items: ${jsonSchema}
-                    },
-                    meta: {
-                        type: "object",
-                        properties: {
-                            total: { type: "integer" }
-                        }
-                    }
-                }
-            }`;
+      return TemplateLoader.load('api/shared/array-response-schema.tsf', {
+        jsonSchema,
+      }).raw;
     }
 
     return jsonSchema;
@@ -267,16 +255,11 @@ export class ApiBuilder extends BaseBuilder {
         tags: `"${entityName}"`,
         parameters: `parameters: [\n        ${parameterDocs.join(',\n        ')}\n    ],`,
         requestBody: '',
-        responses: `{
-        200: {
-            description: "OK",
-            content: {
-                "application/json": {
-                    schema: ${listResponseSchema}
-                }
-            }
-        }
-    }`,
+        responses: TemplateLoader.load('api/shared/docs-response.tsf', {
+          status: 200,
+          description: 'OK',
+          schema: listResponseSchema,
+        }).raw,
         protectedStatus: ['anonymous', 'public'].includes(listRole)
           ? ',\n        protected: false'
           : '',
@@ -300,32 +283,31 @@ export class ApiBuilder extends BaseBuilder {
     }
 
     if (createRole !== 'none') {
-      const createDocs = `{
-    summary: "Create ${entityName}",
-    tags: ["${entityName}"],
-    requestBody: {
+      const createDocs = TemplateLoader.load('api/shared/docs.tsf', {
+        summary: `Create ${entityName}`,
+        tags: `"${entityName}"`,
+        parameters: '',
+        requestBody: `requestBody: {
         content: {
             "application/json": {
                 schema: ${jsonSchema}
             }
         }
-    },
-    responses: {
-        200: {
-            description: "OK",
-            content: {
-                "application/json": {
-                    schema: {
+    },`,
+        responses: TemplateLoader.load('api/shared/docs-response.tsf', {
+          status: 200,
+          description: 'OK',
+          schema: `{
                         type: "object",
                         properties: {
                             data: ${jsonSchema}
                         }
-                    }
-                }
-            }
-        }
-    }${['anonymous', 'public'].includes(createRole) ? ',\n    protected: false' : ''}
-}`;
+                    }`,
+        }).raw,
+        protectedStatus: ['anonymous', 'public'].includes(createRole)
+          ? ',\n    protected: false'
+          : '',
+      }).raw;
 
       variables.push({
         name: 'POST',
@@ -414,16 +396,11 @@ export class ApiBuilder extends BaseBuilder {
         tags: `"${entityName}"`,
         parameters: `parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],`,
         requestBody: '',
-        responses: `{
-        200: {
-            description: "OK",
-            content: {
-                "application/json": {
-                    schema: ${jsonSchema}
-                }
-            }
-        }
-    }`,
+        responses: TemplateLoader.load('api/shared/docs-response.tsf', {
+          status: 200,
+          description: 'OK',
+          schema: jsonSchema,
+        }).raw,
         protectedStatus: ['anonymous', 'public'].includes(getRole)
           ? ',\n        protected: false'
           : '',
@@ -455,16 +432,11 @@ export class ApiBuilder extends BaseBuilder {
             }
         }
     },`,
-        responses: `{
-        200: {
-            description: "OK",
-            content: {
-                "application/json": {
-                    schema: ${jsonSchema}
-                }
-            }
-        }
-    }`,
+        responses: TemplateLoader.load('api/shared/docs-response.tsf', {
+          status: 200,
+          description: 'OK',
+          schema: jsonSchema,
+        }).raw,
         protectedStatus: ['anonymous', 'public'].includes(updateRole)
           ? ',\n        protected: false'
           : '',
@@ -491,21 +463,16 @@ export class ApiBuilder extends BaseBuilder {
         tags: `"${entityName}"`,
         parameters: `parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],`,
         requestBody: '',
-        responses: `{
-        200: {
-            description: "OK",
-            content: {
-                "application/json": {
-                    schema: {
+        responses: TemplateLoader.load('api/shared/docs-response.tsf', {
+          status: 200,
+          description: 'OK',
+          schema: `{
                         type: "object",
                         properties: {
                             success: { type: "boolean" }
                         }
-                    }
-                }
-            }
-        }
-    }`,
+                    }`,
+        }).raw,
         protectedStatus: ['anonymous', 'public'].includes(deleteRole)
           ? ',\n        protected: false'
           : '',
@@ -593,12 +560,10 @@ export class ApiBuilder extends BaseBuilder {
 
     const requiredStr = required.length > 0 ? `, required: [${required.join(', ')}]` : '';
 
-    return `{
-            type: "object",
-            properties: {
-                ${properties.join(',\n                ')}
-            }${requiredStr}
-        }`;
+    return TemplateLoader.load('api/shared/json-schema.tsf', {
+      properties: properties.join(',\n                '),
+      requiredStr,
+    }).raw;
   }
 
   private getCustomSchema(): FileDefinition {
@@ -706,16 +671,11 @@ export class ApiBuilder extends BaseBuilder {
         }
     },`
             : '',
-        responses: `{
-        200: {
-            description: "OK",
-            content: {
-                "application/json": {
-                    schema: ${responseSchema}
-                }
-            }
-        }
-    }`,
+        responses: TemplateLoader.load('api/shared/docs-response.tsf', {
+          status: 200,
+          description: 'OK',
+          schema: responseSchema,
+        }).raw,
         protectedStatus: ['anonymous', 'public'].includes(role || '')
           ? ',\n        protected: false'
           : '',

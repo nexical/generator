@@ -1,0 +1,17 @@
+import { fragment } from '@nexical/generator';
+
+export default fragment`{
+    type: "object",
+    properties: {
+        data: {
+            type: "array",
+            items: \${jsonSchema}
+        },
+        meta: {
+            type: "object",
+            properties: {
+                total: { type: "integer" }
+            }
+        }
+    }
+}`;

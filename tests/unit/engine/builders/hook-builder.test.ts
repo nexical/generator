@@ -28,7 +28,7 @@ hooks:
 `;
       }
       if (pathStr.endsWith('.tsf')) {
-        return 'export default fragment`mock-content`';
+        return 'export default fragment`HookSystem.${method}("${event}", ${action});`';
       }
       return '';
     });
@@ -60,7 +60,7 @@ hooks:
 `;
       }
       if (pathStr.endsWith('.tsf')) {
-        return 'export default fragment`mock-content`';
+        return 'export default fragment`HookSystem.${method}("${event}", ${action});`';
       }
       return '';
     });

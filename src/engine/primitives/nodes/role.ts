@@ -3,22 +3,31 @@ import type { RoleConfig } from '../../types.js';
 import { ClassPrimitive } from './class.js';
 import { ImportPrimitive } from '../core/import-manager.js';
 import { PropertyPrimitive } from './property.js';
+import { MethodPrimitive } from './method.js';
 import type { ValidationResult } from '../../primitives/contracts.js';
 
 export class RolePrimitive {
   constructor(private config: RoleConfig) {}
 
   ensure(sourceFile: SourceFile): void {
-    const { name, definition } = this.config;
+    const { name, definition, methods } = this.config;
     // PascalCase the role name for the class, e.g. ADMIN -> AdminRole
     const pascalName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     const className = `${pascalName}Role`;
 
-    // 1. Ensure Import
+    // 1. Ensure Imports
     new ImportPrimitive({
       moduleSpecifier: './base-role',
       namedImports: ['BaseRole'],
     }).ensure(sourceFile);
+
+    if (methods && methods.length > 0) {
+      new ImportPrimitive({
+        moduleSpecifier: 'astro',
+        namedImports: ['APIContext'],
+        isTypeOnly: true,
+      }).ensure(sourceFile);
+    }
 
     // 2. Create Class
     const classPrimitive = new ClassPrimitive({
@@ -60,6 +69,11 @@ export class RolePrimitive {
 
     properties.forEach((prop) => {
       new PropertyPrimitive(prop).ensure(classNode);
+    });
+
+    // 4. Add Methods
+    methods?.forEach((method: import('../../types.js').MethodConfig) => {
+      new MethodPrimitive(method).ensure(classNode);
     });
   }
 

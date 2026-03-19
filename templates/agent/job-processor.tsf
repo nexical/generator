@@ -1,0 +1,10 @@
+import { fragment } from '@nexical/generator';
+
+declare const keys: string;
+declare const name: string;
+
+export default fragment/* ts */`
+const { \${keys} } = job.payload;
+console.info(\`[\${name}] Processing job \${job.id}\`);
+// TODO: Implement processing logic
+`;

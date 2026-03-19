@@ -1,0 +1,7 @@
+import { fragment } from '@nexical/generator';
+
+declare const className: string;
+
+export default fragment/* ts */`
+roleRegistry.register(new \${className}());
+`;

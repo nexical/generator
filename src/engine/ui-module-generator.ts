@@ -15,6 +15,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { parse } from 'yaml';
 import { PathResolver } from '../utils/path-resolver.js';
+import { TemplateLoader } from '../utils/template-loader.js';
 
 import { glob } from 'glob';
 
@@ -79,75 +80,7 @@ export class UiModuleGenerator extends ModuleGenerator {
             const baseRoleFile = this.getOrCreateFile('src/roles/base-role.ts');
             Reconciler.reconcile(baseRoleFile, {
               header: '// GENERATED CODE - DO NOT MODIFY',
-              imports: [
-                {
-                  moduleSpecifier: 'astro',
-                  namedImports: ['AstroGlobal', 'APIContext'],
-                  isTypeOnly: true,
-                },
-                {
-                  moduleSpecifier: '@/lib/registries/role-registry',
-                  namedImports: ['RolePolicy'],
-                  isTypeOnly: true,
-                },
-              ],
-              classes: [
-                {
-                  name: 'BaseRole',
-                  isExported: true,
-                  isAbstract: true,
-                  implements: ['RolePolicy'],
-                  methods: [
-                    {
-                      name: 'check',
-                      isAsync: true,
-                      parameters: [
-                        { name: 'context', type: 'AstroGlobal | APIContext' },
-                        { name: 'input', type: 'Record<string, unknown>' },
-                        { name: 'data', type: 'unknown', optional: true },
-                      ],
-                      returnType: 'Promise<void>',
-                      statements: [
-                        {
-                          kind: 'variable',
-                          declarationKind: 'const',
-                          declarations: [
-                            {
-                              name: 'locals',
-                              initializer: '(context as { locals?: App.Locals }).locals',
-                            },
-                          ],
-                        },
-                        {
-                          kind: 'variable',
-                          declarationKind: 'const',
-                          declarations: [{ name: 'actor', initializer: 'locals?.actor' }],
-                        },
-                        {
-                          kind: 'if',
-                          condition: '!actor',
-                          then: [
-                            {
-                              kind: 'throw',
-                              expression: "new Error('Unauthorized: No actor found')",
-                            },
-                          ],
-                        },
-                        {
-                          kind: 'if',
-                          condition: '!actor.roles?.includes(this.name)',
-                          then: [
-                            {
-                              kind: 'throw',
-                              expression: 'new Error(`Forbidden: required role ${this.name}`)',
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
+              statements: [TemplateLoader.load('roles/ui-base-role.tsf')],
             });
 
             // 2. Generate Individual Roles
@@ -170,99 +103,14 @@ export class UiModuleGenerator extends ModuleGenerator {
             const anonFile = this.getOrCreateFile('src/roles/anonymous.ts');
             Reconciler.reconcile(anonFile, {
               header: '// GENERATED CODE - DO NOT MODIFY',
-              imports: [
-                {
-                  moduleSpecifier: 'astro',
-                  namedImports: ['AstroGlobal', 'APIContext'],
-                  isTypeOnly: true,
-                },
-                {
-                  moduleSpecifier: '@/lib/registries/role-registry',
-                  namedImports: ['RolePolicy'],
-                  isTypeOnly: true,
-                },
-              ],
-              classes: [
-                {
-                  name: 'AnonymousRole',
-                  isExported: true,
-                  implements: ['RolePolicy'],
-                  methods: [
-                    {
-                      name: 'check',
-                      isAsync: true,
-                      isStatic: false,
-                      parameters: [
-                        { name: 'context', type: 'AstroGlobal | APIContext' },
-                        { name: 'input', type: 'Record<string, unknown>' },
-                        { name: 'data', type: 'unknown', optional: true },
-                      ],
-                      returnType: 'Promise<void>',
-                      statements: [{ kind: 'return', expression: '' }],
-                    },
-                  ],
-                },
-              ],
+              statements: [TemplateLoader.load('roles/ui-anonymous-role.tsf')],
             });
 
             // MemberRole: Requires login, but no specific role
             const memberFile = this.getOrCreateFile('src/roles/member.ts');
             Reconciler.reconcile(memberFile, {
               header: '// GENERATED CODE - DO NOT MODIFY',
-              imports: [
-                {
-                  moduleSpecifier: 'astro',
-                  namedImports: ['AstroGlobal', 'APIContext'],
-                  isTypeOnly: true,
-                },
-                {
-                  moduleSpecifier: '@/lib/registries/role-registry',
-                  namedImports: ['RolePolicy'],
-                  isTypeOnly: true,
-                },
-              ],
-              classes: [
-                {
-                  name: 'MemberRole',
-                  isExported: true,
-                  implements: ['RolePolicy'],
-                  methods: [
-                    {
-                      name: 'check',
-                      isAsync: true,
-                      isStatic: false,
-                      parameters: [
-                        { name: 'context', type: 'AstroGlobal | APIContext' },
-                        { name: 'input', type: 'Record<string, unknown>' },
-                        { name: 'data', type: 'unknown', optional: true },
-                      ],
-                      returnType: 'Promise<void>',
-                      statements: [
-                        {
-                          kind: 'variable',
-                          declarationKind: 'const',
-                          declarations: [
-                            {
-                              name: 'locals',
-                              initializer: '(context as { locals?: App.Locals }).locals',
-                            },
-                          ],
-                        },
-                        {
-                          kind: 'if',
-                          condition: '!locals?.actor',
-                          then: [
-                            {
-                              kind: 'throw',
-                              expression: "new Error('Unauthorized: Member access required')",
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
+              statements: [TemplateLoader.load('roles/ui-member-role.tsf')],
             });
           }
         } catch (e) {

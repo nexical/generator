@@ -215,6 +215,7 @@ export interface MethodConfig {
   name: string;
   isStatic?: boolean;
   isAsync?: boolean;
+  isDefault?: boolean; // If true, generator will not overwrite manual changes
   returnType?: string;
   parameters?: { name: string; type: string; optional?: boolean; decorators?: DecoratorConfig[] }[];
   statements?: StatementConfig[];
@@ -254,7 +255,6 @@ export interface RoleDefinition {
   description?: string;
   inherits?: string[];
   permissions?: string[];
-  contextResolver?: string; // Optional code snippet to resolve role context (e.g. team member check)
 }
 
 export interface PermissionDefinition {
@@ -271,6 +271,7 @@ export interface RoleConfig {
   name: string; // The specific role name, e.g. 'ADMIN'
   definition: RoleDefinition;
   compatibleRoles?: string[];
+  methods?: MethodConfig[];
   isDefault?: boolean;
 }
 
@@ -283,6 +284,7 @@ export interface PropertyConfig {
   readonly?: boolean;
   isStatic?: boolean;
   initializer?: string | ParsedStatement;
+  isDefault?: boolean;
   scope?: Scope;
   decorators?: DecoratorConfig[];
   docs?: string[];
@@ -357,6 +359,7 @@ export interface VariableConfig {
   name: string;
   type?: string;
   initializer?: string | ParsedStatement;
+  isDefault?: boolean;
   declarationKind?: 'const' | 'let' | 'var';
   isExported?: boolean;
   comments?: string[];

@@ -1,0 +1,8 @@
+import { fragment } from '@nexical/generator';
+
+declare const name: string;
+
+export default fragment/* ts */`
+console.info(\`[\${name}] Running persistent agent task\`);
+// TODO: Implement periodic task logic
+`;
