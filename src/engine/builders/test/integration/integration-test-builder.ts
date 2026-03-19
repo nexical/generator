@@ -8,12 +8,14 @@ import {
 import { BaseBuilder } from '../../base-builder.js';
 import { TemplateLoader } from '../../../../utils/template-loader.js';
 import { ts } from '../../../primitives/statements/factory.js';
+import { PathResolver } from '../../../../utils/path-resolver.js';
 
 type TestOperation = 'create' | 'list' | 'get' | 'update' | 'delete';
 
 export class IntegrationTestBuilder extends BaseBuilder {
   constructor(
     private model: ModelDef,
+    private allModels: ModelDef[],
     private moduleName: string,
     private operation: TestOperation,
     private roleConfig: TestRoleConfig = {},
@@ -31,18 +33,14 @@ export class IntegrationTestBuilder extends BaseBuilder {
   }
 
   private getTestActorModelName(): string {
-    const testConfig = this.model.test;
-    const actor = testConfig?.actor;
-    if (!actor) {
-      return 'user';
-    }
-    return actor;
+    const defaults = PathResolver.getDefaults();
+    return this.model.test?.actor || defaults.defaultRole.toLowerCase().replace('user_', '');
   }
 
   private getActorRelationSnippet(): string {
     const actorName = this.getTestActorModelName();
     // Skip self-referential links (e.g. Team acting on Team)
-    if (this.model.name.toLowerCase() === actorName.toLowerCase()) {
+    if ((this.model.name || '').toLowerCase() === actorName.toLowerCase()) {
       return '';
     }
 
@@ -53,9 +51,15 @@ export class IntegrationTestBuilder extends BaseBuilder {
       }
     }
 
+    const defaults = PathResolver.getDefaults();
+    const defaultActor = defaults.defaultRole.toLowerCase().replace('user_', '');
+
     // Loose coupling: check for actorId or userId
     if (this.model.fields['actorId']) return `, actorId: actor.id, actorType: '${actorName}'`;
-    if (this.model.fields['userId'] && actorName.toLowerCase() === 'user')
+    if (
+      this.model.fields['userId'] &&
+      (actorName.toLowerCase() === defaultActor || actorName.toLowerCase() === 'user')
+    )
       return `, userId: actor.id`;
 
     return '';
@@ -141,7 +145,7 @@ export class IntegrationTestBuilder extends BaseBuilder {
   }
 
   protected getSchema(node?: NodeContainer): FileDefinition {
-    const entityName = this.model.name;
+    const entityName = this.model.name || 'Unknown';
     const camelEntity = entityName.charAt(0).toLowerCase() + entityName.slice(1);
     const kebabEntity = entityName
       .replace(/([a-z])([A-Z])/g, '$1-$2')
@@ -212,7 +216,7 @@ export class IntegrationTestBuilder extends BaseBuilder {
       imports: Array.from(importMap.values()),
       variables: [],
       statements: [
-        ts`describe('${entityName} API - ${this.operation.charAt(0).toUpperCase() + this.operation.slice(1)}', () => {
+        ts`describe('${entityName} API - ${(this.operation || 'unknown').charAt(0).toUpperCase() + (this.operation || '').slice(1)}', () => {
     let client: ApiClient;
 
     beforeEach(async () => {
@@ -286,17 +290,21 @@ export class IntegrationTestBuilder extends BaseBuilder {
 
     if (requiredFKs.length > 0 || actorRelationField) {
       const setups = requiredFKs.map((fk, i) => {
-        const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i}`;
-        const extras =
-          fk.model === 'Job'
-            ? `, actorId: (typeof actor !== "undefined" ? (actor as unknown as { id: string }).id : undefined), actorType: '${this.getTestActorModelName()}'`
-            : '';
-        return `const ${varName} = await Factory.create('${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}', { ${extras.replace(/^, /, '')} });`;
+        const modelName = fk.model || 'Unknown';
+        const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
+        const targetModel = this.allModels.find((m) => m.name === fk.model);
+        const isActorLinked = targetModel?.traits?.includes('actor-linked');
+
+        const extras = isActorLinked
+          ? `, actorId: (typeof actor !== "undefined" ? (actor as unknown as { id: string }).id : undefined), actorType: '${this.getTestActorModelName()}'`
+          : '';
+        return `const ${varName} = await Factory.create('${modelName.charAt(0).toLowerCase() + modelName.slice(1)}', { ${extras.replace(/^, /, '')} });`;
       });
       dependencySetup = setups.join('\n            ');
 
       const overrides = requiredFKs.map((fk, i) => {
-        const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i}`;
+        const modelName = fk.model || 'Unknown';
+        const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
         return `${fk.field}: ${varName}.id`;
       });
 
@@ -314,7 +322,11 @@ export class IntegrationTestBuilder extends BaseBuilder {
             };`;
     }
 
-    const isActorUsed = requiredFKs.some((fk) => fk.model === 'Job') || !!actorRelationField;
+    const isActorUsed =
+      requiredFKs.some((fk) => {
+        const targetModel = this.allModels.find((m) => m.name === fk.model);
+        return targetModel?.traits?.includes('actor-linked');
+      }) || !!actorRelationField;
     const actorStatement = this.getActorStatement('create', isActorUsed);
 
     const assertionBlock = Object.keys(mockData)
@@ -370,7 +382,7 @@ export class IntegrationTestBuilder extends BaseBuilder {
     mockData: Record<string, unknown>,
   ): string {
     const actorModelName = this.getTestActorModelName();
-    const isActorModel = this.model.name.toLowerCase() === actorModelName.toLowerCase();
+    const isActorModel = (this.model.name || '').toLowerCase() === actorModelName.toLowerCase();
     const actorFK = this.findActorForeignKey();
 
     const baseDataConfig = JSON.stringify(mockData).replace(
@@ -546,7 +558,7 @@ export class IntegrationTestBuilder extends BaseBuilder {
     mockData: Record<string, unknown>,
   ): string {
     const isActorModel =
-      this.model.name.toLowerCase() === this.getTestActorModelName().toLowerCase();
+      (this.model.name || '').toLowerCase() === this.getTestActorModelName().toLowerCase();
 
     const requiredFKs = this.getRequiredForeignKeys();
     let dependencySetup = '';
@@ -554,18 +566,22 @@ export class IntegrationTestBuilder extends BaseBuilder {
 
     if (!isActorModel && requiredFKs.length > 0) {
       const setups = requiredFKs.map((fk, i) => {
-        const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i} `;
-        const extras =
-          fk.model === 'Job'
-            ? `, actorId: (typeof actor !== "undefined" ? actor.id : undefined), actorType: '${this.getTestActorModelName()}'`
-            : '';
-        return `const ${varName} = await Factory.create('${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}', { ${extras.replace(/^, /, '')}}); `;
+        const modelName = fk.model || 'Unknown';
+        const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i} `;
+        const targetModel = this.allModels.find((m) => m.name === fk.model);
+        const isActorLinked = targetModel?.traits?.includes('actor-linked');
+
+        const extras = isActorLinked
+          ? `, actorId: (typeof actor !== "undefined" ? actor.id : undefined), actorType: '${this.getTestActorModelName()}'`
+          : '';
+        return `const ${varName} = await Factory.create('${modelName.charAt(0).toLowerCase() + modelName.slice(1)}', { ${extras.replace(/^, /, '')}}); `;
       });
       dependencySetup = setups.join('\n            ');
 
       overrides = requiredFKs
         .map((fk, i) => {
-          const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i} `;
+          const modelName = fk.model || 'Unknown';
+          const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i} `;
           const relationName = fk.field.endsWith('Id') ? fk.field.slice(0, -2) : fk.field;
           return `${relationName}: { connect: { id: ${varName}.id } } `;
         })
@@ -602,7 +618,7 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
     updateData: Record<string, unknown>,
   ): string {
     const isActorModel =
-      this.model.name.toLowerCase() === this.getTestActorModelName().toLowerCase();
+      (this.model.name || '').toLowerCase() === this.getTestActorModelName().toLowerCase();
 
     const requiredFKs = this.getRequiredForeignKeys();
     const actorRelationField = this.getActorRelationFieldName();
@@ -611,18 +627,20 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
 
     if (!isActorModel && requiredFKs.length > 0) {
       const setups = requiredFKs.map((fk, i) => {
-        const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i}`;
+        const modelName = fk.model || 'Unknown';
+        const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
         const extras =
-          fk.model === 'Job'
+          modelName === 'Job'
             ? `, actorId: (typeof actor !== "undefined" ? actor.id : undefined), actorType: '${this.getTestActorModelName()}'`
             : '';
-        return `const ${varName} = await Factory.create('${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}', {${extras.replace(/^, /, '')}});`;
+        return `const ${varName} = await Factory.create('${modelName.charAt(0).toLowerCase() + modelName.slice(1)}', {${extras.replace(/^, /, '')}});`;
       });
       dependencySetup = setups.join('\n            ');
 
       overrides = requiredFKs
         .map((fk, i) => {
-          const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i}`;
+          const modelName = fk.model || 'Unknown';
+          const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
           const relationName = fk.field.endsWith('Id') ? fk.field.slice(0, -2) : fk.field;
           return `${relationName}: { connect: { id: ${varName}.id } }`;
         })
@@ -634,7 +652,8 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
 
     if (requiredFKs.length > 0 || actorRelationField) {
       const payloadOverridesList = requiredFKs.map((fk, i) => {
-        const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i}`;
+        const modelName = fk.model || 'Unknown';
+        const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
         return `${fk.field}: ${varName}.id`;
       });
 
@@ -663,7 +682,10 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
 
     const isActorUsed =
       isActorModel ||
-      requiredFKs.some((fk) => fk.model === 'Job') ||
+      requiredFKs.some((fk) => {
+        const targetModel = this.allModels.find((m) => m.name === fk.model);
+        return targetModel?.traits?.includes('actor-linked');
+      }) ||
       !!this.getActorRelationSnippet();
 
     const actorStatement = this.getActorStatement('update', isActorUsed);
@@ -702,7 +724,7 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
     mockData: Record<string, unknown>,
   ): string {
     const isActorModel =
-      this.model.name.toLowerCase() === this.getTestActorModelName().toLowerCase();
+      (this.model.name || '').toLowerCase() === this.getTestActorModelName().toLowerCase();
 
     const requiredFKs = this.getRequiredForeignKeys();
     let dependencySetup = '';
@@ -710,18 +732,20 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
 
     if (!isActorModel && requiredFKs.length > 0) {
       const setups = requiredFKs.map((fk, i) => {
-        const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i}`;
+        const modelName = fk.model || 'Unknown';
+        const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
         const extras =
-          fk.model === 'Job'
+          modelName === 'Job'
             ? `, actorId: (typeof actor !== "undefined" ? actor.id : undefined), actorType: '${this.getTestActorModelName()}'`
             : '';
-        return `const ${varName} = await Factory.create('${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}', {${extras.replace(/^, /, '')}});`;
+        return `const ${varName} = await Factory.create('${modelName.charAt(0).toLowerCase() + modelName.slice(1)}', {${extras.replace(/^, /, '')}});`;
       });
       dependencySetup = setups.join('\n            ');
 
       overrides = requiredFKs
         .map((fk, i) => {
-          const varName = `${fk.model.charAt(0).toLowerCase() + fk.model.slice(1)}_${i}`;
+          const modelName = fk.model || 'Unknown';
+          const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
           const relationName = fk.field.endsWith('Id') ? fk.field.slice(0, -2) : fk.field;
           return `${relationName}: { connect: { id: ${varName}.id } }`;
         })

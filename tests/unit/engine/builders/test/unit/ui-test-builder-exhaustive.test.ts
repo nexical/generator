@@ -3,7 +3,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Project } from 'ts-morph';
 import { UiTestBuilder } from '@nexical/generator/engine/builders/test/unit/ui-test-builder.js';
 import * as fs from 'node:fs';
-import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
+
+vi.mock('@nexical/generator/utils/path-resolver.js', () => ({
+  PathResolver: {
+    resolve: vi.fn(),
+    init: vi.fn(),
+    getDefaults: vi.fn().mockReturnValue({
+      superRole: 'USER_ADMIN',
+      defaultRole: 'USER_EMPLOYEE',
+    }),
+  },
+}));
 
 vi.mock('node:fs');
 
@@ -13,6 +24,7 @@ describe('UiTestBuilder - Exhaustive Coverage', () => {
   beforeEach(() => {
     project = new Project({ useInMemoryFileSystem: true });
     vi.resetAllMocks();
+    vi.mocked(PathResolver.resolve).mockImplementation((name: string) => name);
   });
 
   afterEach(() => {
@@ -44,11 +56,6 @@ describe('UiTestBuilder - Exhaustive Coverage', () => {
       return true;
     });
     vi.mocked(fs.readFileSync).mockReturnValue('backend: "user-api"');
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'user-api',
-      path: 'user-api',
-      app: 'backend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new UiTestBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -62,11 +69,6 @@ describe('UiTestBuilder - Exhaustive Coverage', () => {
       if (String(path).endsWith('models.yaml')) return 'invalid: yaml';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'user-api',
-      path: 'user-api',
-      app: 'backend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new UiTestBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -80,11 +82,6 @@ describe('UiTestBuilder - Exhaustive Coverage', () => {
       if (String(path).endsWith('models.yaml')) return 'models: { M1: { fields: {} } }';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'test-ui',
-      path: 'test-ui',
-      app: 'frontend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new UiTestBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);

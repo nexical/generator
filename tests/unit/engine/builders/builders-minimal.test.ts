@@ -74,6 +74,7 @@ describe('Builders Minimal Coverage', () => {
   it('IntegrationTestBuilder should hit branches', () => {
     const builder = new IntegrationTestBuilder(
       mockModel as unknown as ModelDef,
+      [],
       'test-api',
       'create',
     );

@@ -355,7 +355,7 @@ export async function auditModule(
           ];
           for (const op of ops) {
             validate(
-              new IntegrationTestBuilder(model, name, op),
+              new IntegrationTestBuilder(model, models, name, op),
               getFile(`tests/integration/api/${kebabName}/${op}.test.ts`),
               `${entityName}Test ${op}`,
             );

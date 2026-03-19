@@ -3,8 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Project } from 'ts-morph';
 import { UiTestBuilder } from '@nexical/generator/engine/builders/test/unit/ui-test-builder.js';
 import * as fs from 'node:fs';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
 
 vi.mock('node:fs');
+vi.mock('@nexical/generator/utils/path-resolver.js');
 
 describe('UiTestBuilder', () => {
   let project: Project;
@@ -12,6 +14,7 @@ describe('UiTestBuilder', () => {
   beforeEach(() => {
     project = new Project({ useInMemoryFileSystem: true });
     vi.resetAllMocks();
+    vi.mocked(PathResolver.resolve).mockImplementation((name) => `/path/to/${name}`);
   });
 
   it('should generate unit tests for components', async () => {

@@ -8,6 +8,7 @@ import {
 } from '../types.js';
 import { BaseBuilder } from './base-builder.js';
 import { TemplateLoader } from '../../utils/template-loader.js';
+import { PathResolver } from '../../utils/path-resolver.js';
 
 export class ApiBuilder extends BaseBuilder {
   constructor(
@@ -41,11 +42,12 @@ export class ApiBuilder extends BaseBuilder {
   }
 
   private getRole(action: string): string {
-    // ... existing getRole logic ...
+    const defaults = PathResolver.getDefaults();
+    const defaultRole = defaults.defaultRole;
     const roleConfig = this.model.role;
-    if (!roleConfig) return 'USER_EMPLOYEE';
+    if (!roleConfig) return defaultRole;
     if (typeof roleConfig === 'string') return roleConfig;
-    return roleConfig[action] || 'USER_EMPLOYEE';
+    return roleConfig[action] || defaultRole;
   }
 
   private generateZodSchema(targetModel: ModelDef = this.model): string {
@@ -734,7 +736,7 @@ export class ApiBuilder extends BaseBuilder {
           entityName: this.model.name,
           lowerEntity: this.model.name.charAt(0).toLowerCase() + this.model.name.slice(1),
           method,
-          role: role || 'USER_EMPLOYEE',
+          role: role || PathResolver.getDefaults().defaultRole,
           actionClassName,
           docs: customDocs,
           zodSchema:

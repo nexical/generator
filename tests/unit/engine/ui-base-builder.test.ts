@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UiBaseBuilder } from '@nexical/generator/engine/builders/ui/ui-base-builder.js';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import os from 'node:os';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
+
+vi.mock('@nexical/generator/utils/path-resolver.js');
 
 // Concrete implementation for testing
 class TestUiBuilder extends UiBaseBuilder {
@@ -38,6 +41,7 @@ describe('UiBaseBuilder', () => {
     tmpDir = path.join(os.tmpdir(), `ui-base-builder-test-${Math.random().toString(36).slice(2)}`);
     modulePath = path.join(tmpDir, 'apps/frontend/modules/test-ui');
     fs.mkdirSync(modulePath, { recursive: true });
+    vi.mocked(PathResolver.resolve).mockImplementation((name: string) => path.join(tmpDir, name));
   });
 
   it('should handle missing modulePath in loadUiConfig', () => {

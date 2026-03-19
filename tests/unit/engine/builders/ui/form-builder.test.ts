@@ -4,8 +4,10 @@ import { Project } from 'ts-morph';
 import { FormBuilder } from '@nexical/generator/engine/builders/ui/form-builder.js';
 import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
 import * as fs from 'node:fs';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
 
 vi.mock('node:fs');
+vi.mock('@nexical/generator/utils/path-resolver.js');
 
 describe('FormBuilder', () => {
   let project: Project;
@@ -13,6 +15,7 @@ describe('FormBuilder', () => {
   beforeEach(async () => {
     project = new Project({ useInMemoryFileSystem: true });
     vi.resetAllMocks();
+    vi.mocked(PathResolver.resolve).mockImplementation((name) => `/path/to/${name}`);
     const realFs = await vi.importActual<typeof fs>('node:fs');
     TemplateLoader.setFileSystem(realFs);
   });

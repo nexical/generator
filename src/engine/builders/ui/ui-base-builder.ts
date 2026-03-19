@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import YAML from 'yaml';
 import { ModelParser } from '../../model-parser.js';
 import { toPascalCase } from '../../../utils/string.js';
-import { ModuleLocator } from '../../../lib/module-locator.js';
+import { PathResolver } from '../../../utils/path-resolver.js';
 
 export interface UiConfig {
   backend?: string;
@@ -66,8 +66,8 @@ export abstract class UiBaseBuilder extends BaseBuilder {
 
   protected resolveModels(): ModelDef[] {
     const targetModule = this.uiConfig.backend || this.moduleName;
-    const backendModule = ModuleLocator.resolve(targetModule);
-    const modelsPath = join(backendModule.path, 'models.yaml');
+    const backendModulePath = PathResolver.resolve(targetModule);
+    const modelsPath = join(backendModulePath, 'models.yaml');
 
     if (!existsSync(modelsPath)) {
       return [];
@@ -83,8 +83,8 @@ export abstract class UiBaseBuilder extends BaseBuilder {
 
   protected resolveRoutes(): ResolvedRoute[] {
     const targetModule = this.uiConfig.backend || this.moduleName;
-    const backendModule = ModuleLocator.resolve(targetModule);
-    const apiPath = join(backendModule.path, 'api.yaml');
+    const backendModulePath = PathResolver.resolve(targetModule);
+    const apiPath = join(backendModulePath, 'api.yaml');
 
     if (!existsSync(apiPath)) {
       return [];

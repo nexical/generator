@@ -7,7 +7,7 @@ import {
   type UiConfig,
 } from '@nexical/generator/engine/builders/ui/ui-base-builder.js';
 import { type ModuleConfig } from '@nexical/generator/engine/types.js';
-import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
 import { ModelParser } from '@nexical/generator/engine/model-parser.js';
 
 // Concrete implementation for testing
@@ -32,11 +32,7 @@ class TestUiBuilder extends UiBaseBuilder {
   }
 }
 
-vi.mock('@nexical/generator/lib/module-locator.js', () => ({
-  ModuleLocator: {
-    resolve: vi.fn(),
-  },
-}));
+vi.mock('@nexical/generator/utils/path-resolver.js');
 
 vi.mock('@nexical/generator/engine/model-parser.js', () => ({
   ModelParser: {
@@ -55,11 +51,9 @@ describe('UiBaseBuilder - Exhaustive Coverage', () => {
     fs.mkdirSync(tmpDir, { recursive: true });
 
     // Default mock implementation
-    (ModuleLocator.resolve as unknown as import('vitest').Mock).mockImplementation(
-      (name: string) => {
-        return { name, path: path.join(tmpDir, name), app: 'backend' };
-      },
-    );
+    vi.mocked(PathResolver.resolve).mockImplementation((name: string) => {
+      return path.join(tmpDir, name);
+    });
   });
 
   afterEach(async () => {

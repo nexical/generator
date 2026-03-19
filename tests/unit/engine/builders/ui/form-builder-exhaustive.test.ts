@@ -6,6 +6,18 @@ import * as fs from 'node:fs';
 import { ModelParser } from '@nexical/generator/engine/model-parser.js';
 import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
 import { type ModelDef } from '@nexical/generator/engine/types.js';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
+
+vi.mock('@nexical/generator/utils/path-resolver.js', () => ({
+  PathResolver: {
+    resolve: vi.fn(),
+    init: vi.fn(),
+    getDefaults: vi.fn().mockReturnValue({
+      superRole: 'USER_ADMIN',
+      defaultRole: 'USER_EMPLOYEE',
+    }),
+  },
+}));
 
 vi.mock('node:fs');
 
@@ -17,6 +29,8 @@ describe('FormBuilder - Exhaustive Coverage', () => {
     vi.resetAllMocks();
     const realFs = await vi.importActual<typeof fs>('node:fs');
     TemplateLoader.setFileSystem(realFs);
+
+    vi.mocked(PathResolver.resolve).mockImplementation((name: string) => name);
   });
 
   afterEach(() => {

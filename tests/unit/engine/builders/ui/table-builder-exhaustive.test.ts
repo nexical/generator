@@ -3,8 +3,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Project } from 'ts-morph';
 import { TableBuilder } from '@nexical/generator/engine/builders/ui/table-builder.js';
 import * as fs from 'node:fs';
-import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
 import { TemplateLoader } from '@nexical/generator/utils/template-loader.js';
+
+vi.mock('@nexical/generator/utils/path-resolver.js', () => ({
+  PathResolver: {
+    resolve: vi.fn(),
+    init: vi.fn(),
+    getDefaults: vi.fn().mockReturnValue({
+      superRole: 'USER_ADMIN',
+      defaultRole: 'USER_EMPLOYEE',
+    }),
+  },
+}));
 
 vi.mock('node:fs');
 
@@ -16,6 +27,8 @@ describe('TableBuilder - Exhaustive Coverage', () => {
     vi.resetAllMocks();
     const realFs = await vi.importActual<typeof fs>('node:fs');
     TemplateLoader.setFileSystem(realFs);
+
+    vi.mocked(PathResolver.resolve).mockImplementation((name: string) => name);
   });
 
   afterEach(() => {
@@ -26,11 +39,6 @@ describe('TableBuilder - Exhaustive Coverage', () => {
   it('should handle no models', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue('backend: "user-api"');
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'user-api',
-      path: 'user-api',
-      app: 'backend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -45,11 +53,6 @@ describe('TableBuilder - Exhaustive Coverage', () => {
         return 'models: { NoApi: { api: false, fields: { name: string } } }';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'test-ui',
-      path: 'test-ui',
-      app: 'frontend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -67,11 +70,6 @@ describe('TableBuilder - Exhaustive Coverage', () => {
       }
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'test-ui',
-      path: 'test-ui',
-      app: 'frontend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -104,11 +102,6 @@ models:
 `;
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'test-ui',
-      path: 'test-ui',
-      app: 'frontend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new TableBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);

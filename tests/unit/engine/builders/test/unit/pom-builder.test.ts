@@ -3,8 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Project } from 'ts-morph';
 import { PageObjectBuilder } from '@nexical/generator/engine/builders/test/unit/pom-builder.js';
 import * as fs from 'node:fs';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
 
 vi.mock('node:fs');
+vi.mock('@nexical/generator/utils/path-resolver.js');
 
 describe('PageObjectBuilder', () => {
   let project: Project;
@@ -12,6 +14,7 @@ describe('PageObjectBuilder', () => {
   beforeEach(() => {
     project = new Project({ useInMemoryFileSystem: true });
     vi.resetAllMocks();
+    vi.mocked(PathResolver.resolve).mockImplementation((name) => `/path/to/${name}`);
   });
 
   it('should generate POMs for models', async () => {
@@ -32,7 +35,7 @@ models:
       return '';
     });
 
-    const builder = new PageObjectBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
+    const builder = new PageObjectBuilder('test-ui', { name: 'test-ui' }, '/path/to/test-ui');
     await builder.build(project, undefined);
 
     const files = project.getSourceFiles();

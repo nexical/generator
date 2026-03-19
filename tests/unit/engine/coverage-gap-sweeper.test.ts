@@ -363,13 +363,13 @@ describe('Coverage Gap Sweeper', () => {
   describe('IntegrationTestBuilder Internals', () => {
     it('should fallback to user if actor missing in config', () => {
       const model = { name: 'User', fields: {} };
-      const builder = new IntegrationTestBuilder(model as any, 'mod', 'create');
-      expect((builder as any).getTestActorModelName()).toBe('user');
+      const builder = new IntegrationTestBuilder(model as any, [], 'module', 'create', {});
+      expect((builder as any).getTestActorModelName()).toBe('employee');
     });
 
     it('should handle public role checks', () => {
       const model = { name: 'PublicResource', role: 'public', fields: {}, test: { actor: 'User' } };
-      const builder = new IntegrationTestBuilder(model as any, 'mod', 'create');
+      const builder = new IntegrationTestBuilder(model as any, [], 'mod', 'create');
       const stmt = (builder as any).getActorStatement('create');
       expect(stmt).toContain('Public access');
     });

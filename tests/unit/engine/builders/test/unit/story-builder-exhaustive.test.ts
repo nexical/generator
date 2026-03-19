@@ -3,9 +3,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Project } from 'ts-morph';
 import { StoryBuilder } from '@nexical/generator/engine/builders/test/unit/story-builder.js';
 import * as fs from 'node:fs';
-import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
 
 vi.mock('node:fs');
+vi.mock('@nexical/generator/utils/path-resolver.js');
 
 describe('StoryBuilder - Exhaustive Coverage', () => {
   let project: Project;
@@ -13,6 +14,7 @@ describe('StoryBuilder - Exhaustive Coverage', () => {
   beforeEach(() => {
     project = new Project({ useInMemoryFileSystem: true });
     vi.resetAllMocks();
+    vi.mocked(PathResolver.resolve).mockImplementation((name) => `/path/to/${name}`);
   });
 
   afterEach(() => {
@@ -44,11 +46,6 @@ describe('StoryBuilder - Exhaustive Coverage', () => {
       return true;
     });
     vi.mocked(fs.readFileSync).mockReturnValue('backend: "user-api"');
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'user-api',
-      path: 'user-api',
-      app: 'backend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new StoryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -62,11 +59,6 @@ describe('StoryBuilder - Exhaustive Coverage', () => {
       if (String(path).endsWith('models.yaml')) return 'invalid: yaml';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'user-api',
-      path: 'user-api',
-      app: 'backend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new StoryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);
@@ -81,11 +73,6 @@ describe('StoryBuilder - Exhaustive Coverage', () => {
         return 'models: { M1: { fields: {} }, M2: { fields: {} } }';
       return '';
     });
-    vi.spyOn(ModuleLocator, 'resolve').mockReturnValue({
-      name: 'test-ui',
-      path: 'test-ui',
-      app: 'frontend',
-    } as unknown as import('@nexical/generator/lib/module-locator.js').ModuleInfo);
 
     const builder = new StoryBuilder('test-ui', { name: 'test-ui' }, 'test-ui');
     await builder.build(project, undefined);

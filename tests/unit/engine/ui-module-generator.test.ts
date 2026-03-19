@@ -3,11 +3,16 @@ import path from 'node:path';
 import os from 'node:os';
 import * as fs from 'node:fs';
 import { UiModuleGenerator } from '@nexical/generator/engine/ui-module-generator.js';
-import { ModuleLocator } from '@nexical/generator/lib/module-locator.js';
+import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
 
-vi.mock('@nexical/generator/lib/module-locator.js', () => ({
-  ModuleLocator: {
+vi.mock('@nexical/generator/utils/path-resolver.js', () => ({
+  PathResolver: {
     resolve: vi.fn(),
+    init: vi.fn(),
+    getDefaults: vi.fn().mockReturnValue({
+      superRole: 'USER_ADMIN',
+      defaultRole: 'USER_EMPLOYEE',
+    }),
   },
 }));
 
@@ -34,14 +39,10 @@ describe('UiModuleGenerator Integration-Style Unit Test', () => {
     fs.mkdirSync(backendPath, { recursive: true });
 
     // Setup mock to return temporary paths
-    vi.mocked(ModuleLocator.resolve).mockImplementation((name: string) => {
-      if (name === 'user-api') {
-        return { name: 'user-api', path: backendPath, app: 'backend' };
-      }
-      if (name === 'user-ui') {
-        return { name: 'user-ui', path: modulePath, app: 'frontend' };
-      }
-      return { name, path: path.join(tmpDir, name), app: 'backend' };
+    vi.mocked(PathResolver.resolve).mockImplementation((name: string) => {
+      if (name === 'user-api') return backendPath;
+      if (name === 'user-ui') return modulePath;
+      return path.join(tmpDir, name);
     });
 
     const modelsYaml = `

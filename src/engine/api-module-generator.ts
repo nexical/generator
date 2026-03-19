@@ -36,9 +36,11 @@ import fs from 'node:fs';
 import { parse } from 'yaml';
 import { Reconciler } from './reconciler.js';
 import { TemplateLoader } from '../utils/template-loader.js';
+import { PathResolver } from '../utils/path-resolver.js';
 
 export class ApiModuleGenerator extends ModuleGenerator {
   async run(): Promise<void> {
+    await PathResolver.init();
     const modelsYamlPath = path.join(this.modulePath, 'models.yaml');
     const apiYamlPath = path.join(this.modulePath, 'api.yaml');
 
@@ -308,9 +310,13 @@ export class ApiModuleGenerator extends ModuleGenerator {
             const testFile = this.getOrCreateFile(
               `tests/integration/api/generated/${kebabName}/${op}.test.ts`,
             );
-            new IntegrationTestBuilder(model, this.moduleName, op, config.test?.roles || {}).ensure(
-              testFile,
-            );
+            new IntegrationTestBuilder(
+              model,
+              models,
+              this.moduleName,
+              op,
+              config.test?.roles || {},
+            ).ensure(testFile);
           }
         }
       }
@@ -741,36 +747,24 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
   public debugBaseRoleText(accessConfig: AccessConfig): string {
     const roles = accessConfig?.roles || {};
-    const superRoles = "'USER_ADMIN'";
+    const defaults = PathResolver.getDefaults();
+    const superRoles = `'${defaults.superRole}'`;
 
-    // Heuristic: Does this module define or use contextual roles?
-    // Common ecosystem pattern: Roles prefixed with X_ (e.g., TEAM_) imply a context lookup.
-    const contextPrefixes = ['TEAM_'];
-    const activePrefixes = contextPrefixes.filter((prefix) =>
-      Object.keys(roles).some((r) => r.toUpperCase().startsWith(prefix)),
-    );
-
-    const imports = new Set<string>();
     const contextChecks: string[] = [];
 
-    if (activePrefixes.includes('TEAM_')) {
-      imports.add("import { db } from '@/lib/core/db';");
-      contextChecks.push(`
-    // Contextual Role Resolution: Team
-    const teamId = input.teamId as string | undefined;
-    if (teamId && actor.id) {
-      const membership = await (db as any).teamMember.findUnique({
-        where: { userId_teamId: { userId: actor.id, teamId } },
-      });
-      if (membership) {
-        normalizedActorRole = normalizeRole(membership.role);
+    // Generic Contextual Role Resolution
+    // We iterate through all roles and if they have a contextResolver, we inject it.
+    for (const [roleName, roleDef] of Object.entries(roles)) {
+      if (roleDef.contextResolver) {
+        contextChecks.push(`
+    // Contextual Role Resolution: ${roleName}
+    ${roleDef.contextResolver}
+        `);
       }
     }
-      `);
-    }
 
-    const dbImport = Array.from(imports).join('\n');
     const contextCheck = contextChecks.join('\n');
+    const dbImport = /\bdb\b/.test(contextCheck) ? "import { db } from '@/lib/core/db';" : '';
 
     return TemplateLoader.load('roles/base-role.tsf', {
       accessConfig: JSON.stringify(accessConfig),

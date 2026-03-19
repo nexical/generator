@@ -6,3 +6,4 @@ export {
 } from './BaseCommand.js';
 export { CustomHelp } from '../lib/help.js';
 export { logger } from '../utils/logger.js';
+export const loadConfig = async (name: string, cwd: string) => ({});

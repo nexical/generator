@@ -200,4 +200,176 @@ describe('ServiceUnitTestBuilder', () => {
     expect(tests).toContain("describe('getActive', () => {");
     expect(tests).toContain('expect(result.data).toBe(100)'); // default count return
   });
+
+  it('should generate mock objects for all field types', () => {
+    const builder = new ServiceUnitTestBuilder(
+      'UserService',
+      'User',
+      '../services/user-service',
+      { create: 1 },
+      [],
+      [
+        {
+          name: 'User',
+          fields: {
+            id: {
+              type: 'String',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+            email: {
+              type: 'String',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+            token: {
+              type: 'String',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+            name: {
+              type: 'String',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+            age: {
+              type: 'Int',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+            ratio: {
+              type: 'Float',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+            isActive: {
+              type: 'Boolean',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+            lastSeen: {
+              type: 'DateTime',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+            meta: {
+              type: 'Json',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+            status: {
+              type: 'StatusEnum',
+              isList: false,
+              isRequired: true,
+              isRelation: false,
+              attributes: [],
+              api: true,
+            },
+          },
+        },
+      ],
+    );
+
+    // @ts-expect-error - getSchema is protected
+    const _schema = builder.getSchema();
+    const data = vi.mocked(TemplateLoader.load).mock.calls[0][1] as unknown as ServiceTemplateData;
+    const mockModelProps = (data as any).mockModelProps as string;
+
+    expect(mockModelProps).toContain("email: 'test@example.com'");
+    expect(mockModelProps).toContain("token: 'test-token'");
+    expect(mockModelProps).toContain('age: 1');
+    expect(mockModelProps).toContain('ratio: 1');
+    expect(mockModelProps).toContain('isActive: true');
+    expect(mockModelProps).toContain('lastSeen: new Date()');
+    expect(mockModelProps).toContain('meta: {}');
+    expect(mockModelProps).toContain("status: 'test-enum'");
+  });
+
+  it('should handle db error mocks generation', () => {
+    const builder = new ServiceUnitTestBuilder(
+      'UserService',
+      'User',
+      '../services/user-service',
+      { custom: 1 },
+      [],
+      [{ name: 'User' }],
+    );
+
+    // @ts-expect-error - getSchema is protected
+    const _schema = builder.getSchema();
+    const tests = (
+      vi.mocked(TemplateLoader.load).mock.calls[0][1] as unknown as ServiceTemplateData
+    ).tests;
+
+    expect(tests).toContain(
+      "vi.mocked(db.user.findFirst).mockRejectedValueOnce(new Error('DB Error'))",
+    );
+    expect(tests).toContain(
+      "vi.mocked(db.user.findUnique).mockRejectedValueOnce(new Error('DB Error'))",
+    );
+  });
+
+  it('should handle exact count method', () => {
+    const builder = new ServiceUnitTestBuilder(
+      'UserService',
+      'User',
+      '../services/user-service',
+      {
+        count: 0,
+      },
+      [],
+      [{ name: 'User' }],
+    );
+
+    // @ts-expect-error - getSchema is protected
+    const _schema = builder.getSchema();
+    const tests = (
+      vi.mocked(TemplateLoader.load).mock.calls[0][1] as unknown as ServiceTemplateData
+    ).tests;
+    expect(tests).toContain("describe('count', () => {");
+    expect(tests).toContain('expect(result.data).toBe(10)'); // branch for method === 'count'
+  });
+
+  it('should add actor for orchestrator services', () => {
+    const builder = new ServiceUnitTestBuilder(
+      'OrchestratorService',
+      'Job',
+      '../services/orchestrator-service',
+      { someAction: 0 },
+    );
+
+    // @ts-expect-error - getSchema is protected
+    const _schema = builder.getSchema();
+    const tests = (
+      vi.mocked(TemplateLoader.load).mock.calls[0][1] as unknown as ServiceTemplateData
+    ).tests;
+    expect(tests).toContain("'job_test'"); // defaultId for Job added as actor
+  });
 });

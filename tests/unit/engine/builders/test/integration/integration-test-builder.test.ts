@@ -79,7 +79,7 @@ describe('IntegrationTestBuilder', () => {
   };
 
   it('should generate CREATE tests', () => {
-    const builder = new IntegrationTestBuilder(userModel, 'UserApi', 'create');
+    const builder = new IntegrationTestBuilder(userModel, [], 'UserApi', 'create');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -92,7 +92,7 @@ describe('IntegrationTestBuilder', () => {
   });
 
   it('should generate LIST tests with pagination and filters', () => {
-    const builder = new IntegrationTestBuilder(postModel, 'PostApi', 'list');
+    const builder = new IntegrationTestBuilder(postModel, [], 'PostApi', 'list');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -106,7 +106,7 @@ describe('IntegrationTestBuilder', () => {
   });
 
   it('should generate GET tests with dependency setup', () => {
-    const builder = new IntegrationTestBuilder(postModel, 'PostApi', 'get');
+    const builder = new IntegrationTestBuilder(postModel, [], 'PostApi', 'get');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -124,6 +124,7 @@ describe('IntegrationTestBuilder', () => {
     const roleConfig = { admin: { role: 'admin' } };
     const builder = new IntegrationTestBuilder(
       restrictedModel,
+      [],
       'AdminDocApi',
       'create',
       roleConfig,
@@ -140,7 +141,7 @@ describe('IntegrationTestBuilder', () => {
   });
 
   it('should generate DELETE tests', () => {
-    const builder = new IntegrationTestBuilder(postModel, 'PostApi', 'delete');
+    const builder = new IntegrationTestBuilder(postModel, [], 'PostApi', 'delete');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -152,7 +153,7 @@ describe('IntegrationTestBuilder', () => {
   });
 
   it('should generate GET tests with public role and no auth requirement', () => {
-    const builder = new IntegrationTestBuilder(restrictedModel, 'AdminDocApi', 'get');
+    const builder = new IntegrationTestBuilder(restrictedModel, [], 'AdminDocApi', 'get');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 
@@ -164,7 +165,7 @@ describe('IntegrationTestBuilder', () => {
   });
 
   it('should fallback to User actor if test.actor is missing', () => {
-    const builder = new IntegrationTestBuilder(missingActorModel, 'LogEntryApi', 'create');
+    const builder = new IntegrationTestBuilder(missingActorModel, [], 'LogEntryApi', 'create');
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFile = project.createSourceFile('test.ts', '');
 

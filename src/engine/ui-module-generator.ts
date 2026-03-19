@@ -14,11 +14,13 @@ import { Reconciler } from './reconciler.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import { parse } from 'yaml';
+import { PathResolver } from '../utils/path-resolver.js';
 
 import { glob } from 'glob';
 
 export class UiModuleGenerator extends ModuleGenerator {
   async run(): Promise<void> {
+    await PathResolver.init();
     const config = {
       type: 'feature',
       order: 100,
@@ -63,11 +65,7 @@ export class UiModuleGenerator extends ModuleGenerator {
 
     // --- Role Generation ---
     if (uiConfig.backend) {
-      // apps/frontend/modules/user-ui -> ../../../apps/backend/modules/user-api
-      const backendModulePath = path.resolve(
-        this.modulePath,
-        `../../../backend/modules/${uiConfig.backend}`,
-      );
+      const backendModulePath = await PathResolver.resolve(uiConfig.backend);
       const accessYamlPath = path.join(backendModulePath, 'access.yaml');
 
       if (fs.existsSync(accessYamlPath)) {

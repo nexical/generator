@@ -40,6 +40,7 @@ export interface ModelDef {
   actor?: ActorConfig;
   fields: Record<string, ModelField>;
   role?: string | Record<string, string>; // Role configuration (string = globally, or map of action -> role)
+  traits?: string[]; // Trait-based logic (e.g. 'actor-linked')
   test?: {
     actor?: string;
   };
@@ -253,6 +254,7 @@ export interface RoleDefinition {
   description?: string;
   inherits?: string[];
   permissions?: string[];
+  contextResolver?: string; // Optional code snippet to resolve role context (e.g. team member check)
 }
 
 export interface PermissionDefinition {
