@@ -238,7 +238,7 @@ describe('ApiUnitTestBuilder', () => {
 
     // Check query string generation logic in the test body
     expect(renderedTests).toContain(
-      "const query = ['GET', 'DELETE'].includes('GET'.toUpperCase()) \n      ? `?id=${encodeURIComponent(String('test-id'))}&name=${encodeURIComponent(String('test'))}`\n      : '';",
+      "const query = ['GET', 'DELETE'].includes('GET'.toUpperCase()) \n      ? `?name=${encodeURIComponent(String('test'))}`\n      : '';",
     );
   });
 });

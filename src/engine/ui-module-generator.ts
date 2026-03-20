@@ -1,3 +1,4 @@
+import { SyntaxKind, VariableDeclarationKind, type CallExpression } from 'ts-morph';
 import { ModuleGenerator } from './module-generator.js';
 import { FormBuilder } from './builders/ui/form-builder.js';
 import { TableBuilder } from './builders/ui/table-builder.js';
@@ -27,7 +28,7 @@ export class UiModuleGenerator extends ModuleGenerator {
       order: 100,
     } as unknown as ModuleConfig; // Defaults, as we don't strictly parsing module.config.mjs here yet
 
-    console.info(`[UiModuleGenerator] Running for ${this.moduleName} at ${this.modulePath}`);
+    console.error(`[UiModuleGenerator] Running for ${this.moduleName} at ${this.modulePath}`);
 
     // 0. Parse ui.yaml
     const uiYamlPath = path.join(this.modulePath, 'ui.yaml');
@@ -70,7 +71,7 @@ export class UiModuleGenerator extends ModuleGenerator {
       const accessYamlPath = path.join(backendModulePath, 'access.yaml');
 
       if (fs.existsSync(accessYamlPath)) {
-        console.info(`[UiModuleGenerator] Found linked backend access.yaml at ${accessYamlPath}`);
+        console.error(`[UiModuleGenerator] Found linked backend access.yaml at ${accessYamlPath}`);
         try {
           const parsedAccess = parse(fs.readFileSync(accessYamlPath, 'utf-8'));
           const accessConfig = (parsedAccess.config || parsedAccess) as AccessConfig;
@@ -85,7 +86,7 @@ export class UiModuleGenerator extends ModuleGenerator {
 
             // 2. Generate Individual Roles
             for (const [roleName, roleDef] of Object.entries(accessConfig.roles)) {
-              console.info(`[UiModuleGenerator] Generating Frontend Role: ${roleName}`);
+              console.error(`[UiModuleGenerator] Generating Frontend Role: ${roleName}`);
               const pascalName = roleName.charAt(0).toUpperCase() + roleName.slice(1).toLowerCase();
               const roleFile = this.getOrCreateFile(`src/roles/${pascalName.toLowerCase()}.ts`);
 
@@ -135,38 +136,57 @@ export class UiModuleGenerator extends ModuleGenerator {
 
   private async optimizeHybridRendering() {
     const pagesPattern = path.join(this.modulePath, 'src/pages/**/*.astro');
-    console.info(`[UiModuleGenerator] Optimizing Hybrid Rendering. Scanning: ${pagesPattern}`);
+    console.error(`[UiModuleGenerator] Optimizing Hybrid Rendering. Scanning: ${pagesPattern}`);
 
     const astroFiles = await glob(pagesPattern);
-    console.info(`[UiModuleGenerator] Found ${astroFiles.length} .astro files.`);
+    console.error(`[UiModuleGenerator] Found ${astroFiles.length} .astro files.`);
 
     for (const file of astroFiles) {
       try {
         const content = fs.readFileSync(file, 'utf-8');
+        const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\n---/);
 
-        // Naive but effective check for PageGuard usage
-        if (content.includes('PageGuard.protect')) {
-          // Check if already configured for SSR (prerender = false)
-          if (!content.includes('export const prerender = false')) {
-            console.info(
-              `[UiModuleGenerator] Enhancing ${path.basename(file)} with SSR (prerender = false)`,
-            );
+        let frontmatter = '';
+        let rest = content;
 
-            // Inject into frontmatter
-            // Assumes standard Astro format:
-            // ---
-            // import ...
-            // ---
+        if (frontmatterMatch) {
+          frontmatter = frontmatterMatch[1];
+          rest = content.replace(frontmatterMatch[0], '').trimStart();
+        }
 
-            if (content.startsWith('---')) {
-              const newContent = content.replace('---', '---\nexport const prerender = false;');
-              fs.writeFileSync(file, newContent, 'utf-8');
-            } else {
-              // No frontmatter? (Rare for protected pages, but possible)
-              const newContent = `---\nexport const prerender = false;\n---\n${content}`;
-              fs.writeFileSync(file, newContent, 'utf-8');
+        const tempFile = this.project.createSourceFile(`__astro_fm_${Date.now()}.ts`, frontmatter);
+
+        try {
+          const hasPageGuard = tempFile
+            .getDescendantsOfKind(SyntaxKind.CallExpression)
+            .some((c) => (c as CallExpression).getExpression().getText() === 'PageGuard.protect');
+
+          if (hasPageGuard || content.includes('PageGuard.protect')) {
+            const hasPrerender = tempFile.getVariableStatement('prerender');
+            if (
+              !hasPrerender ||
+              hasPrerender.getDeclarations()[0].getInitializer()?.getText() !== 'false'
+            ) {
+              console.error(
+                `[UiModuleGenerator] Enhancing ${path.basename(file)} with SSR (prerender = false)`,
+              );
+
+              if (hasPrerender) {
+                hasPrerender.getDeclarations()[0].setInitializer('false');
+              } else {
+                tempFile.addVariableStatement({
+                  declarationKind: VariableDeclarationKind.Const,
+                  declarations: [{ name: 'prerender', initializer: 'false' }],
+                  isExported: true,
+                });
+              }
+
+              const newFrontmatter = `---\n${tempFile.getFullText().trim()}\n---`;
+              fs.writeFileSync(file, `${newFrontmatter}\n${rest}`, 'utf-8');
             }
           }
+        } finally {
+          tempFile.delete();
         }
       } catch (e) {
         console.warn(`[UiModuleGenerator] Failed to optimize ${file}: ${e}`);

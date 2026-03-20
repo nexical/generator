@@ -309,7 +309,7 @@ describe('ServiceUnitTestBuilder', () => {
     expect(mockModelProps).toContain('isActive: true');
     expect(mockModelProps).toContain('lastSeen: new Date()');
     expect(mockModelProps).toContain('meta: {}');
-    expect(mockModelProps).toContain("status: 'test-enum'");
+    expect(mockModelProps).toContain("status: 'PENDING'");
   });
 
   it('should handle db error mocks generation', () => {
@@ -363,6 +363,8 @@ describe('ServiceUnitTestBuilder', () => {
       'Job',
       '../services/orchestrator-service',
       { someAction: 0 },
+      [],
+      [{ name: 'Job' }],
     );
 
     // @ts-expect-error - getSchema is protected

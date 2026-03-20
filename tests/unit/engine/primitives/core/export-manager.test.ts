@@ -1,8 +1,8 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SourceFile } from 'ts-morph';
-import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
-import { ExportPrimitive } from '@nexical/generator/engine/primitives/core/export-manager.js';
+import { createTestProject } from '../../../helpers/test-project.js';
+import { ExportPrimitive } from '../../../../../src/engine/primitives/core/export-manager.js';
 
 describe('ExportPrimitive', () => {
   let sourceFile: SourceFile;
@@ -164,64 +164,5 @@ describe('ExportPrimitive', () => {
     expect(result.issues[0]).toContain('type-only mismatch');
   });
 
-  it('should fallback to regex replacement for type-only (true)', () => {
-    sourceFile.addExportDeclaration({ moduleSpecifier: './mod' });
-    const primitive = new ExportPrimitive({ moduleSpecifier: './mod', isTypeOnly: true });
-    const node = sourceFile.getExportDeclarations()[0];
 
-    // Mock ts-morph failure
-    let calls = 0;
-    vi.spyOn(node, 'isTypeOnly').mockImplementation(() => {
-      calls++;
-      // Return false for first two checks (before and after setIsTypeOnly)
-      return calls > 2 ? true : false;
-    });
-    vi.spyOn(node, 'setIsTypeOnly').mockImplementation(() => {
-      return node as unknown as import('ts-morph').ExportDeclaration;
-    });
-
-    primitive.update(node);
-    expect(node.getText()).toContain('export type * from "./mod"');
-  });
-
-  it('should fallback to regex replacement for type-only (false)', () => {
-    sourceFile.addExportDeclaration({ moduleSpecifier: './mod', isTypeOnly: true });
-    const primitive = new ExportPrimitive({ moduleSpecifier: './mod', isTypeOnly: false });
-    const node = sourceFile.getExportDeclarations()[0];
-
-    // Mock ts-morph failure
-    let calls = 0;
-    vi.spyOn(node, 'isTypeOnly').mockImplementation(() => {
-      calls++;
-      // Return true for first two checks (before and after setIsTypeOnly)
-      return calls > 2 ? false : true;
-    });
-    vi.spyOn(node, 'setIsTypeOnly').mockImplementation(() => {
-      return node as unknown as import('ts-morph').ExportDeclaration;
-    });
-
-    primitive.update(node);
-    expect(node.getText()).toBe('export * from "./mod";');
-  });
-
-  it('should fallback without replacement if text does not match export/export type', () => {
-    sourceFile.addExportDeclaration({ moduleSpecifier: './mod', isTypeOnly: true });
-    const primitive = new ExportPrimitive({ moduleSpecifier: './mod', isTypeOnly: false });
-    const node = sourceFile.getExportDeclarations()[0];
-
-    // Mock ts-morph failure
-    let calls = 0;
-    vi.spyOn(node, 'isTypeOnly').mockImplementation(() => {
-      calls++;
-      return calls > 2 ? false : true;
-    });
-    vi.spyOn(node, 'setIsTypeOnly').mockImplementation(() => {
-      return node as unknown as import('ts-morph').ExportDeclaration;
-    });
-
-    // Stub getText to NOT include 'export type' so it hits the implicit else
-    vi.spyOn(node, 'getText').mockReturnValue('something else');
-
-    primitive.update(node);
-  });
 });

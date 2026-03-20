@@ -1,20 +1,25 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
 import { loadConfig } from '@nexical/cli-core';
 import path from 'node:path';
+import fs from 'node:fs';
 
 vi.mock('@nexical/cli-core', () => ({
   loadConfig: vi.fn(),
 }));
 
 describe('PathResolver', () => {
+  let existsMock: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset private static config between tests using any if needed,
-    // but better to just let it be since we can't easily reset private static without reflection
-    // or adding a reset method.
-    // For now, I'll assume we can re-init or just mock loadConfig differently.
+    existsMock = vi.spyOn(fs, 'existsSync');
     (PathResolver as any).config = null;
+    (PathResolver as any).rootPath = process.cwd();
+  });
+
+  afterEach(() => {
+    existsMock.mockRestore();
   });
 
   describe('init', () => {
@@ -43,6 +48,7 @@ describe('PathResolver', () => {
         },
       });
 
+      existsMock.mockReturnValue(true);
       await PathResolver.init();
 
       const apiPath = PathResolver.resolve('user-api');

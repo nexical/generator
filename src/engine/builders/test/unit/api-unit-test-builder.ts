@@ -1,4 +1,4 @@
-import { type FileDefinition, type NodeContainer, type ModelField } from '../../../types.js';
+import { type FileDefinition, type NodeContainer, type ModelField, type EnumConfig } from '../../../types.js';
 import { BaseBuilder } from '../../base-builder.js';
 import { TemplateLoader } from '../../../../utils/template-loader.js';
 
@@ -11,38 +11,67 @@ export class ApiUnitTestBuilder extends BaseBuilder {
       method: string;
       actionName?: string;
       actionPath?: string;
+      inputFields?: Record<string, ModelField>;
     }[],
     private serviceName?: string,
     private servicePath?: string,
     private fields?: Record<string, ModelField>,
+    private enums?: EnumConfig[],
   ) {
     super();
   }
 
-  private generateMockData(isQuery = false): string {
-    const props: Record<string, string> = {
-      id: "'test-id'",
-    };
+  private generateMockData(fields: Record<string, ModelField> | undefined, isQuery = false): string {
+    const props: Record<string, string> = {};
 
-    if (this.fields) {
-      for (const [fieldName, field] of Object.entries(this.fields)) {
-        if (field.isList || field.isRelation) continue;
+    if (fields) {
+      for (const [fieldName, field] of Object.entries(fields)) {
+        if (field.isRelation || field.isList) continue;
         if (fieldName === 'id' || fieldName === 'createdAt' || fieldName === 'updatedAt') continue;
 
         const type = field.type;
+        if (field.isList) {
+          if (type === 'String') props[fieldName] = "['test-item']";
+          else if (type === 'Int' || type === 'Float') props[fieldName] = '[1, 2]';
+          else if (type === 'Boolean') props[fieldName] = '[true, false]';
+          else {
+            // Try to find a valid enum value
+            const enumDef = this.enums?.find((e) => e.name === type);
+            if (enumDef && enumDef.members.length > 0) {
+              props[fieldName] = `['${enumDef.members[0].name}']`;
+            } else {
+              props[fieldName] = "['test-enum']";
+            }
+          }
+          continue;
+        }
+
         if (type === 'String') {
           if (fieldName.toLowerCase().includes('email')) props[fieldName] = "'test@example.com'";
           else if (fieldName.toLowerCase().includes('token')) props[fieldName] = "'test-token'";
           else props[fieldName] = "'test'";
-        } else if (type === 'Int' || type === 'Float') props[fieldName] = '100';
-        else if (type === 'Boolean') props[fieldName] = 'true';
-        else if (type === 'DateTime') props[fieldName] = 'new Date().toISOString()';
-        else if (type === 'Json') props[fieldName] = '{}';
-        else props[fieldName] = "'test-enum'";
+        } else if (type === 'Int' || type === 'Float') {
+          props[fieldName] = '100';
+        } else if (type === 'Boolean') {
+          props[fieldName] = 'true';
+        } else if (type === 'DateTime') {
+          props[fieldName] = 'new Date().toISOString()';
+        } else if (type === 'Json') {
+          props[fieldName] = '{}';
+        } else {
+          // Try to find a valid enum value
+          const enumDef = this.enums?.find((e) => e.name === type);
+          if (enumDef && enumDef.members.length > 0) {
+            props[fieldName] = `'${enumDef.members[0].name}'`;
+          } else {
+            props[fieldName] = "'test-enum'";
+          }
+        }
       }
     } else {
       props['name'] = "'Test'";
     }
+
 
     if (isQuery) {
       return Object.entries(props)
@@ -56,12 +85,12 @@ export class ApiUnitTestBuilder extends BaseBuilder {
     return `{ ${entries} }`;
   }
 
-  private renderTests(route: { method: string; actionName?: string; actionPath?: string }): string {
-    const { method, actionName } = route;
+  private renderTests(route: { method: string; actionName?: string; actionPath?: string; inputFields?: Record<string, ModelField> }): string {
+    const { method, actionName, inputFields } = route;
     const { serviceName, endpointPath } = this;
 
-    const mockQuery = this.generateMockData(true);
-    const mockBody = this.generateMockData(false);
+    const mockQuery = this.generateMockData(inputFields || this.fields, true);
+    const mockBody = this.generateMockData(inputFields || this.fields, false);
 
     let successMock = '';
     if (actionName) {

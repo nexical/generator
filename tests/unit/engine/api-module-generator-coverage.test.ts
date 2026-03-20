@@ -552,6 +552,32 @@ config:
           }
         `,
       }),
+      createSourceFile: vi.fn().mockImplementation((name, content) => {
+        if (content.includes('function custom')) {
+          return {
+            getClasses: () => [],
+            getFunctions: () => [
+              { isAsync: () => true, getName: () => "custom", getParameters: () => [1, 2, 3] },
+            ],
+            delete: vi.fn(),
+          };
+        }
+        return {
+          getClasses: () => [
+            {
+              getMethods: () => [
+                { isAsync: () => true, getName: () => 'list', getParameters: () => [] },
+                { isAsync: () => true, getName: () => 'get', getParameters: () => [1] },
+                { isAsync: () => true, getName: () => 'update', getParameters: () => [1, 2] },
+                { isAsync: () => true, getName: () => 'init', getParameters: () => [] },
+                { isAsync: () => true, getName: () => 'run', getParameters: () => [] },
+              ],
+            },
+          ],
+          getFunctions: () => [],
+          delete: vi.fn(),
+        };
+      }),
     };
 
     const methods = (
@@ -573,7 +599,7 @@ config:
     ).project.getSourceFile = vi.fn().mockReturnValue(null);
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue(
-      'async custom(a, b, c) {}' as unknown as string & Buffer,
+      'async function custom(a, b, c) {}' as unknown as string & Buffer,
     );
     const customMethods = (
       generator as unknown as { discoverMethods: (path: string) => Record<string, number> }

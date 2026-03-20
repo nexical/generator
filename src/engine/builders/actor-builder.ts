@@ -27,7 +27,7 @@ export class ActorBuilder extends BaseBuilder {
     let needsCrypto = false;
 
     for (const model of this.models) {
-      console.info(`[ActorBuilder] Checking model: ${model.name}, hasActor: ${!!model.actor}`);
+      console.error(`[ActorBuilder] Checking model: ${model.name}, hasActor: ${!!model.actor}`);
       if (!model.actor) continue;
 
       // Enable crypto if any actor uses hashing in bearer strategy (heuristic)

@@ -47,6 +47,12 @@ describe('ActorTypeBuilder', () => {
       getImportDeclaration: vi.fn(),
       addImportDeclaration: vi.fn(),
       getText: vi.fn().mockReturnValue(''),
+      getProject: vi.fn().mockReturnValue({
+        createSourceFile: vi.fn().mockReturnValue({
+          getStatements: () => [],
+          delete: vi.fn(),
+        }),
+      }),
     };
     expect(() =>
       builder.ensure(

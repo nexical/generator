@@ -1,6 +1,7 @@
 import { glob } from 'glob';
 import path from 'path';
-import fs from 'fs-extra';
+import fs from 'node:fs';
+import fse from 'fs-extra';
 
 export interface ModuleInfo {
   name: string;
@@ -9,6 +10,24 @@ export interface ModuleInfo {
 }
 
 export class ModuleLocator {
+  private static rootPath: string = '';
+
+  private static getRoot(): string {
+    if (this.rootPath) return this.rootPath;
+
+    let currentDir = process.cwd();
+    while (currentDir !== path.parse(currentDir).root) {
+      if (fs.existsSync(path.join(currentDir, 'nexical.yaml'))) {
+        this.rootPath = currentDir;
+        return this.rootPath;
+      }
+      currentDir = path.dirname(currentDir);
+    }
+
+    this.rootPath = process.cwd();
+    return this.rootPath;
+  }
+
   /**
    * Expands a module name pattern into a list of existing module names.
    * The pattern can be a direct name (e.g., 'chat-api'), a glob pattern (e.g., '*-api'),
@@ -19,6 +38,7 @@ export class ModuleLocator {
    */
   static async expand(pattern: string): Promise<ModuleInfo[]> {
     const results: ModuleInfo[] = [];
+    const rootPath = this.getRoot();
 
     // Parse prefix
     let prefix: string | undefined;
@@ -32,8 +52,8 @@ export class ModuleLocator {
 
     // Define search roots
     const roots = [
-      { type: 'backend', path: path.join(process.cwd(), 'apps/backend/modules') },
-      { type: 'frontend', path: path.join(process.cwd(), 'apps/frontend/modules') },
+      { type: 'backend', path: path.join(rootPath, 'apps/backend/modules') },
+      { type: 'frontend', path: path.join(rootPath, 'apps/frontend/modules') },
     ] as const;
 
     // Filter roots based on prefix
@@ -45,12 +65,12 @@ export class ModuleLocator {
     });
 
     for (const root of activeRoots) {
-      if (!(await fs.pathExists(root.path))) continue;
+      if (!(await fse.pathExists(root.path))) continue;
 
       // Check for direct match first (if no glob magic)
       if (!glob.hasMagic(searchPattern)) {
         const directPath = path.join(root.path, searchPattern);
-        if ((await fs.pathExists(directPath)) && (await fs.stat(directPath)).isDirectory()) {
+        if ((await fse.pathExists(directPath)) && (await fse.stat(directPath)).isDirectory()) {
           results.push({
             name: searchPattern,
             path: directPath,
@@ -64,7 +84,7 @@ export class ModuleLocator {
       const matches = await glob(searchPattern, { cwd: root.path });
       for (const match of matches) {
         const fullPath = path.join(root.path, match);
-        if ((await fs.stat(fullPath)).isDirectory()) {
+        if ((await fse.stat(fullPath)).isDirectory()) {
           results.push({
             name: match.replace(/\/$/, ''),
             path: fullPath,
@@ -101,11 +121,11 @@ export class ModuleLocator {
       }
     }
 
-    const rootPath = prefix === 'frontend' ? 'apps/frontend/modules' : 'apps/backend/modules';
+    const rootRelPath = prefix === 'frontend' ? 'apps/frontend/modules' : 'apps/backend/modules';
 
     return {
       name,
-      path: path.join(process.cwd(), rootPath, name),
+      path: path.join(this.getRoot(), rootRelPath, name),
       app: prefix as ModuleInfo['app'],
     };
   }

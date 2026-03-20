@@ -1,21 +1,6 @@
-import {
-  SourceFile,
-  StatementedNode,
-  Node,
-  ClassDeclaration,
-  InterfaceDeclaration,
-  EnumDeclaration,
-  FunctionDeclaration,
-  TypeAliasDeclaration,
-  VariableStatement,
-} from 'ts-morph';
+import { SourceFile, StatementedNode, Node, ClassDeclaration, InterfaceDeclaration, EnumDeclaration, FunctionDeclaration, TypeAliasDeclaration, VariableStatement } from 'ts-morph';
 import { GeneratorError } from './errors.js';
-import {
-  type FileDefinition,
-  type NodeContainer,
-  type StatementConfig,
-  type ParsedStatement,
-} from './types.js';
+import { FileDefinition, NodeContainer, StatementConfig, ParsedStatement } from './types.js';
 import { ImportPrimitive } from './primitives/core/import-manager.js';
 import { ExportPrimitive } from './primitives/core/export-manager.js';
 import { ClassPrimitive } from './primitives/nodes/class.js';
@@ -76,7 +61,7 @@ export class Reconciler {
             });
 
             if (!isRequired) {
-              console.info(`[Reconciler] Pruning unused import: ${specifier}`);
+              console.error(`[Reconciler] Pruning unused import: ${specifier}`);
               decl.remove();
             }
           });
@@ -107,7 +92,7 @@ export class Reconciler {
           [...container.getClasses()].forEach((node: ClassDeclaration) => {
             const name = node.getName();
             if (name && !targetNames.includes(name)) {
-              console.info(`[Reconciler] Pruning class: ${name}`);
+              console.error(`[Reconciler] Pruning class: ${name}`);
               node.remove();
             }
           });
@@ -120,7 +105,7 @@ export class Reconciler {
           [...container.getInterfaces()].forEach((node: InterfaceDeclaration) => {
             const name = node.getName();
             if (name && !targetNames.includes(name)) {
-              console.info(`[Reconciler] Pruning interface: ${name}`);
+              console.error(`[Reconciler] Pruning interface: ${name}`);
               node.remove();
             }
           });
@@ -133,7 +118,7 @@ export class Reconciler {
           [...container.getEnums()].forEach((node: EnumDeclaration) => {
             const name = node.getName();
             if (name && !targetNames.includes(name)) {
-              console.info(`[Reconciler] Pruning enum: ${name}`);
+              console.error(`[Reconciler] Pruning enum: ${name}`);
               node.remove();
             }
           });
@@ -149,7 +134,7 @@ export class Reconciler {
           [...container.getFunctions()].forEach((node: FunctionDeclaration) => {
             const name = node.getName();
             if (name && !targetNames.includes(name)) {
-              console.info(`[Reconciler] Pruning function: ${name}`);
+              console.error(`[Reconciler] Pruning function: ${name}`);
               node.remove();
             }
           });
@@ -162,7 +147,7 @@ export class Reconciler {
           [...container.getTypeAliases()].forEach((node: TypeAliasDeclaration) => {
             const name = node.getName();
             if (name && !targetNames.includes(name)) {
-              console.info(`[Reconciler] Pruning type: ${name}`);
+              console.error(`[Reconciler] Pruning type: ${name}`);
               node.remove();
             }
           });
@@ -181,7 +166,7 @@ export class Reconciler {
 
             const isRequired = names.some((name: string) => targetNames.includes(name));
             if (!isRequired) {
-              console.info(`[Reconciler] Pruning variable: ${names.join(', ')}`);
+              console.error(`[Reconciler] Pruning variable: ${names.join(', ')}`);
               node.remove();
             }
           });
@@ -256,11 +241,7 @@ export class Reconciler {
 
       // 9. Handle Raw Statements (Explicitly added for flexibility)
       if ('statements' in definition && Array.isArray(definition.statements)) {
-        const rawStatements = (definition.statements as (string | StatementConfig)[]).map((s) => {
-          if (typeof s === 'string') return s;
-          if (s && typeof s === 'object' && 'raw' in s) return (s as ParsedStatement).raw;
-          return ''; // Or handle other structural configs if needed
-        });
+        const statements = definition.statements;
 
         if ('addStatements' in sourceFile) {
           const sourceText =
@@ -269,69 +250,134 @@ export class Reconciler {
               : '';
           const normalizedExisting = Normalizer.normalize(sourceText);
 
+          const project = (sourceFile as Node).getProject();
           const uniqueStmts: string[] = [];
           let currentNormalizedExisting = normalizedExisting;
 
-          rawStatements.forEach((stmt) => {
-            const trimmedStmt = stmt.trim();
+          statements.forEach((stmt) => {
+            const raw = typeof stmt === 'string' ? stmt : stmt && 'raw' in stmt ? stmt.raw : '';
+            const trimmedStmt = raw.trim();
             if (!trimmedStmt) return;
 
             const normalizedStmt = Normalizer.normalize(trimmedStmt);
-            if (currentNormalizedExisting.includes(normalizedStmt)) {
-              return;
-            }
 
-            // Smart check for blocks: extract the "signature" (first meaningful line)
-            const lines = trimmedStmt.split('\n');
-            const signature = lines.find((l) => l.trim().length > 0)?.trim();
+            // Fast-path: Skip if identical statement already exists
+            if (currentNormalizedExisting.includes(normalizedStmt)) return;
 
-            if (signature) {
-              const normalizedSignature = Normalizer.normalize(signature);
+            const tempFile = project.createSourceFile(
+              `__reconcile_stmt_${Date.now()}_${Math.random().toString(36).substring(7)}.ts`,
+              trimmedStmt,
+            );
 
-              // For declarations or common patterns, check if the signature already exists
-              const isDeclaration =
-                /^(export\s+)?(enum|function|class|const|let|interface)\s+/.test(signature);
-              const isDefineApi = signature.startsWith('defineApi(');
-              const isDescribeOrIt =
-                signature.startsWith('describe(') || signature.startsWith('it(');
+            try {
+              const declarations = tempFile.getStatements().filter(
+                (n) =>
+                  Node.isClassDeclaration(n) ||
+                  Node.isFunctionDeclaration(n) ||
+                  Node.isEnumDeclaration(n) ||
+                  Node.isInterfaceDeclaration(n) ||
+                  Node.isTypeAliasDeclaration(n) ||
+                  Node.isVariableStatement(n) ||
+                  Node.isImportDeclaration(n) ||
+                  Node.isExportDeclaration(n) ||
+                  Node.isExpressionStatement(n),
+              );
 
-              if (isDeclaration || isDefineApi || isDescribeOrIt) {
-                // If it's a describe/it block, extract the name and check for it
-                if (isDescribeOrIt) {
-                  const nameMatch = signature.match(/^(describe|it)\(['"`]([^'"`]+)['"`]/);
-                  if (nameMatch) {
-                    const searchPattern = Normalizer.normalize(`${nameMatch[1]}("${nameMatch[2]}"`);
-                    const altSearchPattern = Normalizer.normalize(
-                      `${nameMatch[1]}('${nameMatch[2]}'`,
+              if (declarations.length > 0) {
+                let alreadyExists = false;
+
+                for (const decl of declarations) {
+                  const existingNodes: Node[] = [];
+
+                  if (
+                    Node.isClassDeclaration(decl) ||
+                    Node.isFunctionDeclaration(decl) ||
+                    Node.isEnumDeclaration(decl) ||
+                    Node.isInterfaceDeclaration(decl) ||
+                    Node.isTypeAliasDeclaration(decl)
+                  ) {
+                    const name = decl.getName();
+                    if (name) {
+                      let node: Node | undefined;
+                      if (Node.isClassDeclaration(decl)) node = (sourceFile as StatementedNode).getClass(name);
+                      else if (Node.isFunctionDeclaration(decl)) node = (sourceFile as StatementedNode).getFunction(name);
+                      else if (Node.isEnumDeclaration(decl)) node = (sourceFile as StatementedNode).getEnum(name);
+                      else if (Node.isInterfaceDeclaration(decl)) node = (sourceFile as StatementedNode).getInterface(name);
+                      else if (Node.isTypeAliasDeclaration(decl)) node = (sourceFile as StatementedNode).getTypeAlias(name);
+                      if (node) existingNodes.push(node);
+                    }
+                  } else if (Node.isVariableStatement(decl)) {
+                    const names = decl.getDeclarationList().getDeclarations().map((d) => d.getName());
+                    for (const name of names) {
+                      const node = (sourceFile as StatementedNode).getVariableStatement(name);
+                      if (node) existingNodes.push(node);
+                    }
+                  } else if (Node.isImportDeclaration(decl)) {
+                    const specifier = decl.getModuleSpecifierValue();
+                    const nodes = (sourceFile as SourceFile).getImportDeclarations().filter(
+                      (id) => Normalizer.normalizeImport(id.getModuleSpecifierValue()) === Normalizer.normalizeImport(specifier),
                     );
-                    if (
-                      currentNormalizedExisting.includes(searchPattern) ||
-                      currentNormalizedExisting.includes(altSearchPattern)
-                    ) {
-                      // Only skip if the file is NOT a generated file.
-                      // For generated files, we want to allow the builder to update the tests.
-                      const isGeneratedFile = sourceFile.getText().includes('GENERATED CODE');
-                      if (!isGeneratedFile) {
-                        console.info(
-                          `[Reconciler] Skipping existing block by name: ${nameMatch[2]}`,
-                        );
-                        return;
+                    existingNodes.push(...nodes);
+                  } else if (Node.isExportDeclaration(decl)) {
+                    const specifier = decl.getModuleSpecifierValue();
+                    if (specifier) {
+                      const nodes = (sourceFile as SourceFile).getExportDeclarations().filter(
+                        (ed) => ed.getModuleSpecifierValue() === specifier,
+                      );
+                      existingNodes.push(...nodes);
+                    }
+                  } else if (Node.isExpressionStatement(decl)) {
+                    const text = decl.getText();
+                    const nameMatch = text.match(/^\s*(describe|it|vi\.mock|defineApi)\s*\(/);
+                    if (nameMatch) {
+                      const funcName = nameMatch[1];
+                      let arg0: string | undefined;
+
+                      const stringMatch = text.match(
+                        /^\s*(describe|it|vi\.mock|defineApi)\(['"`]([^'"`]+)['"`]/,
+                      );
+                      if (stringMatch) {
+                        arg0 = stringMatch[2];
+                      } else if (funcName === 'defineApi') {
+                        const objMatch = text.match(/name:\s*['"`]([^'"`]+)['"`]/);
+                        if (objMatch) arg0 = objMatch[1];
                       }
+
+                      if (arg0) {
+                        const nodes = (sourceFile as StatementedNode).getStatements().filter((s) => {
+                          if (!Node.isExpressionStatement(s)) return false;
+                          const t = s.getText();
+                          return (
+                            t.includes(`${funcName}`) &&
+                            (t.includes(`"${arg0}"`) || t.includes(`'${arg0}'`))
+                          );
+                        });
+                        existingNodes.push(...nodes);
+                      }
+                    }
+                  }
+
+                  if (existingNodes.length > 0) {
+                    if (isGenerated) {
+                      // Wipe ALL duplicates and replace: Delete the existing ones, we'll add the new one
+                      existingNodes.forEach((n) => (n as any).remove());
+                      currentNormalizedExisting = Normalizer.normalize((sourceFile as Node).getText());
+                    } else {
+                      // Manual file: Protect existing declaration
+                      console.error(`[Reconciler] Skipping existing statement in manual file: ${decl.getText().split('\n')[0]}`);
+                      alreadyExists = true;
+                      break;
                     }
                   }
                 }
 
-                if (currentNormalizedExisting.includes(normalizedSignature)) {
-                  const isGeneratedFile = sourceFile.getText().includes('GENERATED CODE');
-                  if (!isGeneratedFile) {
-                    console.info(`[Reconciler] Skipping existing block by signature: ${signature}`);
-                    return;
-                  }
-                }
+                if (alreadyExists) return;
               }
+            } finally {
+              tempFile.delete();
             }
 
-            uniqueStmts.push(stmt);
+            uniqueStmts.push(trimmedStmt);
             currentNormalizedExisting += ' ' + normalizedStmt;
           });
 

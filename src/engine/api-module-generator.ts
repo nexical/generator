@@ -51,7 +51,6 @@ export class ApiModuleGenerator extends ModuleGenerator {
     const apiYamlPath = path.join(this.modulePath, 'api.yaml');
 
     const { models, enums, config } = ModelParser.parse(modelsYamlPath);
-    console.info(`[ApiModuleGenerator] Models found: ${models.length}`);
 
     const apiContent = fs.existsSync(apiYamlPath) ? fs.readFileSync(apiYamlPath, 'utf-8') : '';
     const parsedApi = apiContent.trim() ? parse(apiContent) || {} : {};
@@ -111,6 +110,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
           discoveredMethods,
           models.map((m) => m.name),
           models,
+          enums,
         ).ensure(serviceUnitTestFile);
       }
 
@@ -132,6 +132,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             `${name}Service`,
             `../../../../../src/services/${kebabName}-service`,
             model.fields,
+            enums,
           ).ensure(apiColUnitTestFile);
 
           const apiIndFile = this.getOrCreateFile(`src/pages/api/${kebabName}/[id].ts`);
@@ -149,6 +150,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             `${name}Service`,
             `../../../../../src/services/${kebabName}-service`,
             model.fields,
+            enums,
           ).ensure(apiIndUnitTestFile);
         }
 
@@ -195,10 +197,14 @@ export class ApiModuleGenerator extends ModuleGenerator {
                   .join('') + 'Action'
               : (methodPascal.includes(name) ? methodPascal : `${methodPascal}${name}`) + 'Action';
 
+            const inputModel = models.find((m) => m.name === route.input);
+            const inputFields = inputModel?.fields || {};
+
             return {
               method: route.verb,
               actionName,
               actionPath: `${prefix}src/actions/${actionBase}`,
+              inputFields,
             };
           });
 
@@ -210,6 +216,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             undefined,
             undefined,
             model.fields,
+            enums,
           ).ensure(apiUnitTestFile);
 
           for (const route of routes) {
@@ -360,7 +367,9 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
         const routePath = route.path.startsWith('/') ? route.path.slice(1) : route.path;
         const fileName = routePath === '' ? 'index' : routePath;
-        if (!groupedVirtualRoutes[fileName]) groupedVirtualRoutes[fileName] = [];
+        if (!groupedVirtualRoutes[fileName]) {
+          groupedVirtualRoutes[fileName] = [];
+        }
         groupedVirtualRoutes[fileName].push(route);
       }
 
@@ -393,11 +402,16 @@ export class ApiModuleGenerator extends ModuleGenerator {
         const prefix = '../'.repeat(levels);
 
         const unitTestRoutes = routes.map((route) => {
+          const inputModel = models.find((m) => m.name === route.input);
+          const inputFields = inputModel?.fields || {};
+
+          // Action
           const method = route.method || 'GET';
           const kebabMethod = method.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
           const actionBase =
             route.action ||
             (kebabMethod.includes(kebabEntity) ? kebabMethod : `${kebabMethod}-${kebabEntity}`);
+
           const methodPascal = method.charAt(0).toUpperCase() + method.slice(1);
           const actionName = route.action
             ? route.action
@@ -411,6 +425,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
             method: route.verb,
             actionName,
             actionPath: `${prefix}src/actions/${actionBase}`,
+            inputFields,
           };
         });
 
@@ -423,7 +438,8 @@ export class ApiModuleGenerator extends ModuleGenerator {
           unitTestRoutes,
           undefined,
           undefined,
-          virtualModel.fields,
+          {},
+          enums,
         ).ensure(apiUnitTestFile);
 
         for (const route of routes) {
@@ -740,25 +756,35 @@ export class ApiModuleGenerator extends ModuleGenerator {
     if (!content) return defaultMethods;
 
     // Find all methods (static or instance) that look like service methods
-    // Regex matches: async methodName(params)
-    const methodRegex =
-      /(?:public|private|protected)?\s*(?:static\s+)?async\s+(\w+)\s*\(([^)]*)\)/g;
     const methods: Record<string, number> = {};
-    let match;
-    while ((match = methodRegex.exec(content)) !== null) {
-      const methodName = match[1];
-      const params = match[2].trim();
 
-      if (!['init', 'run', 'constructor'].includes(methodName)) {
-        // Count parameters by counting commas and adding 1 (if not empty)
-        const paramCount = params
-          ? params
-              .split(',')
-              .map((p) => p.trim())
-              .filter((p) => p.length > 0).length
-          : 0;
-        methods[methodName] = paramCount;
-      }
+    const tempFile = this.project.createSourceFile(
+      `__discover_${Date.now()}_${Math.random().toString(36).substring(7)}.ts`,
+      content,
+    );
+
+    try {
+      tempFile.getClasses().forEach((cls) => {
+        cls.getMethods().forEach((method) => {
+          if (!method.isAsync()) return;
+
+          const methodName = method.getName();
+          if (!['init', 'run', 'constructor'].includes(methodName)) {
+            methods[methodName] = method.getParameters().length;
+          }
+        });
+      });
+
+      tempFile.getFunctions().forEach((func) => {
+        if (!func.isAsync()) return;
+
+        const funcName = func.getName();
+        if (funcName && !['init', 'run'].includes(funcName)) {
+          methods[funcName] = func.getParameters().length;
+        }
+      });
+    } finally {
+      tempFile.delete();
     }
 
     return Object.keys(methods).length > 0 ? methods : defaultMethods;
@@ -793,9 +819,8 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
         // Find models.yaml in the current module
         const modelsYamlPath = path.join(this.modulePath, 'models.yaml');
-        const validModelNames = fs.existsSync(modelsYamlPath)
-          ? ModelParser.parse(modelsYamlPath).models.map((m) => m.name)
-          : [];
+        const { models, enums } = ModelParser.parse(modelsYamlPath);
+        const validModelNames = models.map((m) => m.name);
 
         new ServiceUnitTestBuilder(
           className,
@@ -803,7 +828,8 @@ export class ApiModuleGenerator extends ModuleGenerator {
           relPath,
           discoveredMethods,
           validModelNames,
-          fs.existsSync(modelsYamlPath) ? ModelParser.parse(modelsYamlPath).models : [],
+          models,
+          enums,
         ).ensure(testFile);
       }
     });

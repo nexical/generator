@@ -1,9 +1,9 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SourceFile } from 'ts-morph';
-import { createTestProject } from '@nexical/generator-tests/helpers/test-project.js';
-import { ImportPrimitive } from '@nexical/generator/engine/primitives/core/import-manager.js';
-import { Normalizer } from '@nexical/generator/utils/normalizer.js';
+import { createTestProject } from '../../../helpers/test-project.js';
+import { ImportPrimitive } from '../../../../../src/engine/primitives/core/import-manager.js';
+import { Normalizer } from '../../../../../src/utils/normalizer.js';
 
 describe('ImportPrimitive', () => {
   let sourceFile: SourceFile;
@@ -371,75 +371,5 @@ describe('ImportPrimitive', () => {
     expect(node.getNamedImports()).toHaveLength(1);
   });
 
-  it('should fallback to regex replacement for type-only (true)', () => {
-    const node = sourceFile.addImportDeclaration({ moduleSpecifier: './mod', namedImports: ['A'] });
-    const primitive = new ImportPrimitive({
-      moduleSpecifier: './mod',
-      isTypeOnly: true,
-      namedImports: ['A'],
-    });
 
-    let calls = 0;
-    vi.spyOn(node, 'isTypeOnly').mockImplementation(() => {
-      calls++;
-      return calls > 2 ? true : false;
-    });
-    vi.spyOn(node, 'setIsTypeOnly').mockImplementation(() => {
-      return node as unknown as import('ts-morph').ImportDeclaration;
-    });
-
-    primitive.update(node);
-    expect(node.getText()).toContain('import type');
-  });
-
-  it('should fallback to regex replacement for type-only (false)', () => {
-    const node = sourceFile.addImportDeclaration({
-      moduleSpecifier: './mod',
-      isTypeOnly: true,
-      namedImports: ['A'],
-    });
-    const primitive = new ImportPrimitive({
-      moduleSpecifier: './mod',
-      isTypeOnly: false,
-      namedImports: ['A'],
-    });
-
-    let calls = 0;
-    vi.spyOn(node, 'isTypeOnly').mockImplementation(() => {
-      calls++;
-      return calls > 2 ? false : true;
-    });
-    vi.spyOn(node, 'setIsTypeOnly').mockImplementation(() => {
-      return node as unknown as import('ts-morph').ImportDeclaration;
-    });
-
-    primitive.update(node);
-    expect(node.getText()).toBe('import { A } from "./mod";');
-  });
-
-  it('should fallback without replacement if text does not match import/import type', () => {
-    const node = sourceFile.addImportDeclaration({
-      moduleSpecifier: './mod',
-      isTypeOnly: true,
-      namedImports: ['A'],
-    });
-    const primitive = new ImportPrimitive({
-      moduleSpecifier: './mod',
-      isTypeOnly: false,
-      namedImports: ['A'],
-    });
-
-    let calls = 0;
-    vi.spyOn(node, 'isTypeOnly').mockImplementation(() => {
-      calls++;
-      return calls > 2 ? false : true;
-    });
-    vi.spyOn(node, 'setIsTypeOnly').mockImplementation(() => {
-      return node as unknown as import('ts-morph').ImportDeclaration;
-    });
-
-    vi.spyOn(node, 'getText').mockReturnValue('something else');
-
-    primitive.update(node);
-  });
 });

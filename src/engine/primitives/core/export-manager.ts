@@ -17,7 +17,7 @@ export class ExportPrimitive extends BasePrimitive<ExportDeclaration, ExportConf
   }
 
   create(parent: SourceFile) {
-    console.info(`[ExportPrimitive] Creating export for ${this.config.moduleSpecifier}`);
+    console.error(`[ExportPrimitive] Creating export for ${this.config.moduleSpecifier}`);
     const structure: ExportDeclarationStructure = {
       kind: StructureKind.ExportDeclaration,
       moduleSpecifier: this.config.moduleSpecifier,
@@ -36,16 +36,6 @@ export class ExportPrimitive extends BasePrimitive<ExportDeclaration, ExportConf
     // Enforce Type Only
     if (this.config.isTypeOnly !== undefined && node.isTypeOnly() !== this.config.isTypeOnly) {
       node.setIsTypeOnly(this.config.isTypeOnly);
-
-      // Fallback: if it didn't change, force it
-      if (node.isTypeOnly() !== this.config.isTypeOnly) {
-        const text = node.getText();
-        if (this.config.isTypeOnly && !text.includes('export type')) {
-          node.replaceWithText(text.replace(/^export\s+/, 'export type '));
-        } else if (!this.config.isTypeOnly && text.includes('export type')) {
-          node.replaceWithText(text.replace(/^export type\s+/, 'export '));
-        }
-      }
     }
 
     if (this.config.exportClause === '*') {
@@ -54,7 +44,7 @@ export class ExportPrimitive extends BasePrimitive<ExportDeclaration, ExportConf
       }
     } else if (Array.isArray(this.config.exportClause)) {
       const namedExports = node.getNamedExports();
-      const normalizedExisting = namedExports.map((ne) => ne.getText().replace(/^type\s+/, ''));
+      const normalizedExisting = namedExports.map((ne) => ne.getName());
 
       const missingExports = this.config.exportClause.filter(
         (ne) => !normalizedExisting.includes(ne),
@@ -67,8 +57,7 @@ export class ExportPrimitive extends BasePrimitive<ExportDeclaration, ExportConf
       // Cleanup redundant/duplicate named exports
       const seen = new Set<string>();
       node.getNamedExports().forEach((ne) => {
-        const text = ne.getText();
-        const normalized = text.replace(/^type\s+/, '');
+        const normalized = ne.getName();
 
         if (seen.has(normalized)) {
           ne.remove();
@@ -80,27 +69,21 @@ export class ExportPrimitive extends BasePrimitive<ExportDeclaration, ExportConf
       // Re-run cleanup to remove internal 'type ' prefixes if top-level is type-only
       if (node.isTypeOnly()) {
         node.getNamedExports().forEach((ne) => {
-          const text = ne.getText();
-          if (text.startsWith('type ')) {
-            const newName = text.replace(/^type\s+/, '');
-            ne.remove();
-            node.addNamedExport(newName);
+          if (ne.isTypeOnly()) {
+            ne.setIsTypeOnly(false);
           }
         });
       }
     }
   }
-  // If exportClause is '*', strictly enforcing that it is NOT a named export might be tricky if we matched an existing named export declaration.
-  // But typically, `getExportDeclaration` returns the one matching module specifier.
 
   validate(node: ExportDeclaration): import('../contracts.js').ValidationResult {
     const issues: string[] = [];
 
     if (Array.isArray(this.config.exportClause)) {
       const existingNamedExports = node.getNamedExports().map((ne) => ne.getName());
-      const normalizedExisting = existingNamedExports.map((name) => name.replace(/^type\s+/, ''));
       const missingExports = this.config.exportClause.filter(
-        (ne) => !normalizedExisting.includes(ne),
+        (ne) => !existingNamedExports.includes(ne),
       );
       if (missingExports.length > 0) {
         issues.push(

@@ -173,7 +173,7 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('price: z.number()');
+    expect(text).toContain('price: z.coerce.number()');
     expect(text).toContain('birthday: z.string().datetime().optional()');
     expect(text).toContain('meta: z.unknown().optional()');
     expect(text).toContain('type: "number"');
@@ -276,7 +276,7 @@ describe('ApiBuilder', () => {
     builder.ensure(sourceFile);
 
     const text = sourceFile.getFullText();
-    expect(text).toContain('amount: z.number()'); // tests Decimal handling
+    expect(text).toContain('amount: z.coerce.number()'); // tests Decimal handling
     expect(text).toContain('id: z.string()'); // ID without default becomes required
     // Test relation and private redactions
     expect(text).toContain('user: { select:');

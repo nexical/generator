@@ -123,7 +123,7 @@ describe('UiModuleGenerator - Exhaustive Coverage', () => {
     expect(page3Content.split('export const prerender = false').length).toBe(2);
 
     const page4Content = fs.readFileSync(page4Path, 'utf-8');
-    expect(page4Content).toContain('---\nexport const prerender = false;\n---');
+    expect(page4Content).toMatch(/---\r?\nexport const prerender = false;\r?\n---/);
   });
 
   it('should cover optimizeHybridRendering error path (line 326)', async () => {

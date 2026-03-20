@@ -1,9 +1,9 @@
 /** @vitest-environment node */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Project, SourceFile } from 'ts-morph';
-import { Reconciler } from '@nexical/generator/engine/reconciler.js';
-import type { FileDefinition, PropertyConfig } from '@nexical/generator/engine/types.js';
-import { Normalizer } from '@nexical/generator/utils/normalizer.js';
+import { Reconciler } from '../../../src/engine/reconciler.js';
+import type { FileDefinition, PropertyConfig } from '../../../src/engine/types.js';
+import { Normalizer } from '../../../src/utils/normalizer.js';
 
 describe('Reconciler', () => {
   let project: Project;
@@ -281,5 +281,26 @@ export class A {
     expect(result).toContain('import { foo }');
     expect(result).toMatch(/\n\nexport class A/);
     expect(result.endsWith('}\n')).toBe(true);
+  });
+
+  it('should remove multiple duplicates in a single pass', async () => {
+    const project = new Project({ useInMemoryFileSystem: true });
+    const content = `// GENERATED CODE
+describe('Duplicated', () => {});
+describe('Duplicated', () => {});
+describe('Duplicated', () => {});
+`;
+    const sourceFile = project.createSourceFile('test.ts', content);
+
+    const definition: FileDefinition = {
+      statements: ["describe('Duplicated', () => { console.log('new'); });"],
+    };
+
+    Reconciler.reconcile(sourceFile, definition);
+
+    const text = sourceFile.getFullText();
+    const matches = text.match(/describe\('Duplicated'/g);
+    expect(matches?.length).toBe(1);
+    expect(text).toContain("console.log('new')");
   });
 });

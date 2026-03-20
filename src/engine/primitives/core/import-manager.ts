@@ -67,9 +67,9 @@ export class ImportPrimitive extends BasePrimitive<ImportDeclaration, ImportConf
       if (isTargetAliased === isExistingAliased) {
         const existingNamed = decl.getNamedImports();
         existingNamed.forEach((ni) => {
-          const sym = ni.getText().replace(/^type\s+/, '');
+          const sym = ni.getName();
           if (targetSymbols.includes(sym)) {
-            console.info(
+            console.error(
               `[ImportPrimitive] Removing duplicate symbol '${sym}' from ${normalizedExisting} (moving to ${normalizedTarget})`,
             );
             ni.remove();
@@ -95,26 +95,16 @@ export class ImportPrimitive extends BasePrimitive<ImportDeclaration, ImportConf
     // 2. Enforce Type Only
     if (this.config.isTypeOnly !== undefined && node.isTypeOnly() !== this.config.isTypeOnly) {
       node.setIsTypeOnly(this.config.isTypeOnly);
-
-      // Fallback: if it didn't change (e.g. ts-morph behavior in some versions), force it
-      if (node.isTypeOnly() !== this.config.isTypeOnly) {
-        const text = node.getText();
-        if (this.config.isTypeOnly && !text.includes('import type')) {
-          node.replaceWithText(text.replace(/^import\s+/, 'import type '));
-        } else if (!this.config.isTypeOnly && text.includes('import type')) {
-          node.replaceWithText(text.replace(/^import type\s+/, 'import '));
-        }
-      }
     }
 
     // 3. Add missing named imports
     if (this.config.namedImports) {
       const namedImports = node.getNamedImports();
-      const normalizedExisting = namedImports.map((ni) => ni.getText().replace(/^type\s+/, ''));
+      const normalizedExisting = namedImports.map((ni) => ni.getName());
 
       // Remove imports not in the config
       namedImports.forEach((ni) => {
-        const name = ni.getText().replace(/^type\s+/, '');
+        const name = ni.getName();
         if (!this.config.namedImports?.includes(name)) {
           ni.remove();
         }
@@ -131,8 +121,7 @@ export class ImportPrimitive extends BasePrimitive<ImportDeclaration, ImportConf
       // Cleanup redundant/duplicate named imports
       const seen = new Set<string>();
       node.getNamedImports().forEach((ni) => {
-        const text = ni.getText();
-        const normalized = text.replace(/^type\s+/, '');
+        const normalized = ni.getName();
 
         if (seen.has(normalized)) {
           ni.remove();
@@ -144,11 +133,8 @@ export class ImportPrimitive extends BasePrimitive<ImportDeclaration, ImportConf
       // Re-run cleanup to remove internal 'type ' prefixes if top-level is type-only
       if (node.isTypeOnly()) {
         node.getNamedImports().forEach((ni) => {
-          const text = ni.getText();
-          if (text.startsWith('type ')) {
-            const newName = text.replace(/^type\s+/, '');
-            ni.remove();
-            node.addNamedImport(newName);
+          if (ni.isTypeOnly()) {
+            ni.setIsTypeOnly(false);
           }
         });
       }

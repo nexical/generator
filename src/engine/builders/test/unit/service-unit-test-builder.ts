@@ -1,4 +1,4 @@
-import { type FileDefinition, type NodeContainer, type ModelField } from '../../../types.js';
+import { type FileDefinition, type NodeContainer, type ModelField, type EnumConfig } from '../../../types.js';
 import { BaseBuilder } from '../../base-builder.js';
 import { TemplateLoader } from '../../../../utils/template-loader.js';
 
@@ -16,6 +16,7 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
     private methods: Record<string, number> = { list: 1, get: 1, create: 1, update: 2, delete: 1 },
     private validModels: string[] = [],
     private models: { name: string; fields?: Record<string, ModelField> }[] = [],
+    private enums: EnumConfig[] = [],
   ) {
     super();
 
@@ -23,11 +24,32 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
     let detectedEntity = serviceBaseName?.charAt(0).toLowerCase() + serviceBaseName?.slice(1);
     this.errorPrefix = detectedEntity;
 
+    // Robust entity matching
+    const entityInModels = this.models.find(
+      (m) =>
+        m.name.toLowerCase() === this.entityName.toLowerCase() ||
+        m.name.toLowerCase() === detectedEntity.toLowerCase(),
+    );
+
+    if (entityInModels) {
+      detectedEntity = entityInModels.name.charAt(0).toLowerCase() + entityInModels.name.slice(1);
+    }
+
     // Ecosystem Conventions (Agnostic but standard)
     const isOrchestrator =
-      this.serviceName?.includes('Orchestrator') || this.serviceName?.includes('DeadLetter');
+      this.serviceName?.toLowerCase().includes('orchestration') ||
+      this.serviceName?.toLowerCase().includes('orchestrator') ||
+      this.serviceName?.toLowerCase().includes('deadletter');
+
     if (isOrchestrator) {
-      detectedEntity = this.entityName.charAt(0).toLowerCase() + this.entityName.slice(1);
+      // For orchestrators, if we found a model (like Job), use it.
+      // If no model found yet, try harder for 'Job'
+      if (!entityInModels) {
+        const jobModel = this.models.find((m) => m.name.toLowerCase() === 'job');
+        if (jobModel) {
+          detectedEntity = 'job';
+        }
+      }
       this.defaultStatus = 'RUNNING';
     }
 
@@ -49,19 +71,54 @@ export class ServiceUnitTestBuilder extends BaseBuilder {
 
     if (model?.fields) {
       for (const [fieldName, field] of Object.entries(model.fields)) {
-        if (field.isList || field.isRelation) continue;
+        if (field.isRelation) continue;
         if (fieldName === 'id' || fieldName === 'createdAt' || fieldName === 'updatedAt') continue;
 
         const type = field.type;
+        if (field.isList) {
+          if (type === 'String') props[fieldName] = "['test-item']";
+          else if (type === 'Int' || type === 'Float') props[fieldName] = '[1, 2]';
+          else if (type === 'Boolean') props[fieldName] = '[true, false]';
+          else {
+            // Try to find a valid enum value
+            const enumDef = this.enums?.find((e) => e.name === type);
+            if (enumDef && enumDef.members.length > 0) {
+              props[fieldName] = `['${enumDef.members[0].name}']`;
+            } else {
+              props[fieldName] = "['test-enum']";
+            }
+          }
+          continue;
+        }
+
         if (type === 'String') {
           if (fieldName.toLowerCase().includes('email')) props[fieldName] = "'test@example.com'";
           else if (fieldName.toLowerCase().includes('token')) props[fieldName] = "'test-token'";
+          else if (fieldName.toLowerCase().includes('actorid'))
+            props[fieldName] = `'${this.entityLowerName}_test'`; // Match default actorId in tests
+          else if (fieldName.toLowerCase().includes('lockedby'))
+            props[fieldName] = `'${this.entityLowerName}_test'`; // Match default agentId/actorId
           else props[fieldName] = "'test'";
         } else if (type === 'Int' || type === 'Float') props[fieldName] = '1';
         else if (type === 'Boolean') props[fieldName] = 'true';
         else if (type === 'DateTime') props[fieldName] = 'new Date()';
         else if (type === 'Json') props[fieldName] = '{}';
-        else props[fieldName] = "'test-enum'"; // Fallback for enums
+        else {
+          // Try to find a valid enum value
+          const enumDef = this.enums?.find((e) => e.name === type);
+          if (enumDef && enumDef.members.length > 0) {
+            props[fieldName] = `'${enumDef.members[0].name}'`;
+          } else {
+            props[fieldName] = fieldName.trim().toLowerCase() === 'status' ? `'${this.defaultStatus}'` : "'test-enum'";
+          }
+        } // Fallback for enums
+      }
+
+      // Add common orchestration fields even if not in model but needed for authorization in tests
+      if (this.serviceName.toLowerCase().includes('orchestration')) {
+        if (!props['actorId']) props['actorId'] = `'${this.entityLowerName}_test'`;
+        if (!props['lockedBy']) props['lockedBy'] = `'${this.entityLowerName}_test'`;
+        if (!props['status']) props['status'] = `'${this.defaultStatus}'`;
       }
     } else {
       // Minimal fallback if no fields provided

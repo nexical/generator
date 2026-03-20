@@ -73,7 +73,7 @@ export class MethodPrimitive extends BasePrimitive<MethodDeclaration, MethodConf
         // Type check (ignoring whitespace and delimiters for improved stability)
         const curType = cur.getTypeNode()?.getText() || 'any'; // fallback if implicit
         if (Normalizer.normalizeType(curType) !== Normalizer.normalizeType(neuType)) {
-          console.info(
+          console.error(
             `[MethodPrimitive] Param mismatch for ${this.config.name}: '${curType}' != '${neuType}'`,
           );
           paramsChanged = true;

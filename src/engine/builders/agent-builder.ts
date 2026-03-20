@@ -38,13 +38,13 @@ export class AgentBuilder extends BaseBuilder {
 
   async build(project: Project, sourceFile: SourceFile | undefined): Promise<void> {
     this.loadAgentsConfig();
-    console.info(
+    console.error(
       `[AgentBuilder] Loaded ${this.agentsConfig.agents.length} agents for ${this.moduleName}`,
     );
     if (this.agentsConfig.agents.length === 0) return;
 
     for (const agent of this.agentsConfig.agents) {
-      console.info(`[AgentBuilder] Generating agent: ${agent.name}`);
+      console.error(`[AgentBuilder] Generating agent: ${agent.name}`);
       await this.generateAgentFile(project, agent);
     }
   }
@@ -124,7 +124,7 @@ export class AgentBuilder extends BaseBuilder {
     }
 
     writeFileSync(absolutePath, formatted);
-    console.info(`[AgentBuilder] Saved agent file: ${absolutePath}`);
+    console.error(`[AgentBuilder] Saved agent file: ${absolutePath}`);
   }
 
   private generateProperties(agent: AgentTemplateConfig): PropertyConfig[] {

@@ -1,5 +1,6 @@
 import { loadConfig } from '@nexical/cli-core';
 import path from 'node:path';
+import fs from 'node:fs';
 
 export interface NexicalConfig {
   modules?: {
@@ -15,10 +16,22 @@ export interface NexicalConfig {
 
 export class PathResolver {
   private static config: NexicalConfig | null = null;
+  private static rootPath: string = process.cwd();
 
   static async init() {
     if (this.config) return;
-    this.config = (await loadConfig('nexical', process.cwd())) as NexicalConfig;
+
+    // Find the directory containing nexical.yaml by walking up from CWD
+    let currentDir = process.cwd();
+    while (currentDir !== path.parse(currentDir).root) {
+      if (fs.existsSync(path.join(currentDir, 'nexical.yaml'))) {
+        this.rootPath = currentDir;
+        break;
+      }
+      currentDir = path.dirname(currentDir);
+    }
+
+    this.config = (await loadConfig('nexical', this.rootPath)) as NexicalConfig;
   }
 
   /**
@@ -35,7 +48,7 @@ export class PathResolver {
         for (const pattern of patterns) {
           const regex = new RegExp(`^${pattern}$`);
           if (regex.test(moduleName)) {
-            return path.join(process.cwd(), dir, moduleName);
+            return path.join(this.rootPath, dir, moduleName);
           }
         }
       }

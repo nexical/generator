@@ -9,6 +9,7 @@ import {
 import { BaseBuilder } from './base-builder.js';
 import { TemplateLoader } from '../../utils/template-loader.js';
 import { PathResolver } from '../../utils/path-resolver.js';
+import { logger } from '@nexical/cli-core';
 
 export class ApiBuilder extends BaseBuilder {
   constructor(
@@ -74,11 +75,11 @@ export class ApiBuilder extends BaseBuilder {
         } else {
           switch (f.type) {
             case 'Int':
-              validator += 'number().int()';
+              validator += 'coerce.number().int()';
               break;
             case 'Float':
             case 'Decimal':
-              validator += 'number()';
+              validator += 'coerce.number()';
               break;
             case 'Boolean':
               validator += 'boolean()';
@@ -578,7 +579,6 @@ export class ApiBuilder extends BaseBuilder {
 
     for (const route of this.routes) {
       const { method, verb, input, output, role } = route;
-      console.info(`[ApiBuilder] Processing route: ${verb} ${method}, input: ${input}`);
       const entityName = this.model.name;
       // ... (rest of variable setup, entityName, etc)
       const kebabName = entityName

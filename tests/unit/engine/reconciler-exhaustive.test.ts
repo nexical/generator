@@ -156,10 +156,10 @@ export const myVar = 1;
     const project = new Project({ useInMemoryFileSystem: true });
     const file = project.createSourceFile(
       'test.ts',
-      '// GENERATED CODE\nclass C {\n  // user content\n}',
+      'class C {\n  // user content\n}',
     );
     const definition: FileDefinition = {
-      header: '// GENERATED CODE',
+      header: '',
       classes: [{ name: 'C' }],
       statements: ['class C {\n  // generator content\n}'],
     };
