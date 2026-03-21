@@ -9,7 +9,6 @@ import {
 import { BaseBuilder } from './base-builder.js';
 import { TemplateLoader } from '../../utils/template-loader.js';
 import { PathResolver } from '../../utils/path-resolver.js';
-import { logger } from '@nexical/cli-core';
 
 export class ApiBuilder extends BaseBuilder {
   constructor(
@@ -51,9 +50,11 @@ export class ApiBuilder extends BaseBuilder {
     return roleConfig[action] || defaultRole;
   }
 
-  private generateZodSchema(targetModel: ModelDef = this.model): string {
+  private generateZodSchema(targetModel: ModelDef | null = this.model): string {
+    if (targetModel === null) {
+      return 'z.unknown()';
+    }
     if (!targetModel) {
-      // Fallback to minimal object if DTO not found (e.g. virtual model with custom DTO defined elsewhere)
       return 'z.object({})';
     }
     const fields = Object.entries(targetModel.fields)
@@ -701,7 +702,7 @@ export class ApiBuilder extends BaseBuilder {
           docs: customDocs,
           zodSchema:
             input && !['none', 'void', 'unknown', 'any'].includes(input)
-              ? this.generateZodSchema(this.allModels.find((m) => m.name === input))
+              ? this.generateZodSchema(this.allModels.find((m) => m.name === input) || null)
               : 'null',
         }),
       });

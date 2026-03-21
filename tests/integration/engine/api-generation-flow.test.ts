@@ -25,7 +25,7 @@ describe('ApiModuleGenerator - Functional Integration Flow', () => {
 
     // Use real TemplateLoader FS
     const realFs = await vi.importActual<typeof fs>('node:fs');
-    TemplateLoader.setFileSystem(realFs as any);
+    TemplateLoader.setFileSystem(realFs as typeof fs);
   });
 
   it('should generate a full API module and tests without rendering errors', async () => {

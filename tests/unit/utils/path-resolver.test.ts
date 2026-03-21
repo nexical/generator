@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
 import { PathResolver } from '@nexical/generator/utils/path-resolver.js';
 import { loadConfig } from '@nexical/cli-core';
 import path from 'node:path';
@@ -9,13 +9,13 @@ vi.mock('@nexical/cli-core', () => ({
 }));
 
 describe('PathResolver', () => {
-  let existsMock: any;
+  let existsMock: MockInstance;
 
   beforeEach(() => {
     vi.clearAllMocks();
     existsMock = vi.spyOn(fs, 'existsSync');
-    (PathResolver as any).config = null;
-    (PathResolver as any).rootPath = process.cwd();
+    (PathResolver as unknown as { config: unknown }).config = null;
+    (PathResolver as unknown as { rootPath: string }).rootPath = process.cwd();
   });
 
   afterEach(() => {

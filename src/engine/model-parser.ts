@@ -95,7 +95,7 @@ export class ModelParser {
         // Normalize fields
         for (const fieldName in config.fields) {
           const rawField = config.fields[fieldName];
-          let field: RawFieldConfig =
+          const field: RawFieldConfig =
             typeof rawField === 'string' ? { type: rawField } : { ...rawField };
 
           if (field.type.endsWith('[]')) {
@@ -111,7 +111,6 @@ export class ModelParser {
             field.type = field.type.slice(0, -1);
             field.isRequired = true;
           }
-
 
           const isEnum = enumNames.has(field.type);
           const isRelation = modelNames.has(field.type);

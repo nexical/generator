@@ -1,6 +1,16 @@
-import { SourceFile, StatementedNode, Node, ClassDeclaration, InterfaceDeclaration, EnumDeclaration, FunctionDeclaration, TypeAliasDeclaration, VariableStatement } from 'ts-morph';
+import {
+  SourceFile,
+  StatementedNode,
+  Node,
+  ClassDeclaration,
+  InterfaceDeclaration,
+  EnumDeclaration,
+  FunctionDeclaration,
+  TypeAliasDeclaration,
+  VariableStatement,
+} from 'ts-morph';
 import { GeneratorError } from './errors.js';
-import { FileDefinition, NodeContainer, StatementConfig, ParsedStatement } from './types.js';
+import { FileDefinition, NodeContainer } from './types.js';
 import { ImportPrimitive } from './primitives/core/import-manager.js';
 import { ExportPrimitive } from './primitives/core/export-manager.js';
 import { ClassPrimitive } from './primitives/nodes/class.js';
@@ -270,18 +280,20 @@ export class Reconciler {
             );
 
             try {
-              const declarations = tempFile.getStatements().filter(
-                (n) =>
-                  Node.isClassDeclaration(n) ||
-                  Node.isFunctionDeclaration(n) ||
-                  Node.isEnumDeclaration(n) ||
-                  Node.isInterfaceDeclaration(n) ||
-                  Node.isTypeAliasDeclaration(n) ||
-                  Node.isVariableStatement(n) ||
-                  Node.isImportDeclaration(n) ||
-                  Node.isExportDeclaration(n) ||
-                  Node.isExpressionStatement(n),
-              );
+              const declarations = tempFile
+                .getStatements()
+                .filter(
+                  (n) =>
+                    Node.isClassDeclaration(n) ||
+                    Node.isFunctionDeclaration(n) ||
+                    Node.isEnumDeclaration(n) ||
+                    Node.isInterfaceDeclaration(n) ||
+                    Node.isTypeAliasDeclaration(n) ||
+                    Node.isVariableStatement(n) ||
+                    Node.isImportDeclaration(n) ||
+                    Node.isExportDeclaration(n) ||
+                    Node.isExpressionStatement(n),
+                );
 
               if (declarations.length > 0) {
                 let alreadyExists = false;
@@ -299,31 +311,43 @@ export class Reconciler {
                     const name = decl.getName();
                     if (name) {
                       let node: Node | undefined;
-                      if (Node.isClassDeclaration(decl)) node = (sourceFile as StatementedNode).getClass(name);
-                      else if (Node.isFunctionDeclaration(decl)) node = (sourceFile as StatementedNode).getFunction(name);
-                      else if (Node.isEnumDeclaration(decl)) node = (sourceFile as StatementedNode).getEnum(name);
-                      else if (Node.isInterfaceDeclaration(decl)) node = (sourceFile as StatementedNode).getInterface(name);
-                      else if (Node.isTypeAliasDeclaration(decl)) node = (sourceFile as StatementedNode).getTypeAlias(name);
+                      if (Node.isClassDeclaration(decl))
+                        node = (sourceFile as StatementedNode).getClass(name);
+                      else if (Node.isFunctionDeclaration(decl))
+                        node = (sourceFile as StatementedNode).getFunction(name);
+                      else if (Node.isEnumDeclaration(decl))
+                        node = (sourceFile as StatementedNode).getEnum(name);
+                      else if (Node.isInterfaceDeclaration(decl))
+                        node = (sourceFile as StatementedNode).getInterface(name);
+                      else if (Node.isTypeAliasDeclaration(decl))
+                        node = (sourceFile as StatementedNode).getTypeAlias(name);
                       if (node) existingNodes.push(node);
                     }
                   } else if (Node.isVariableStatement(decl)) {
-                    const names = decl.getDeclarationList().getDeclarations().map((d) => d.getName());
+                    const names = decl
+                      .getDeclarationList()
+                      .getDeclarations()
+                      .map((d) => d.getName());
                     for (const name of names) {
                       const node = (sourceFile as StatementedNode).getVariableStatement(name);
                       if (node) existingNodes.push(node);
                     }
                   } else if (Node.isImportDeclaration(decl)) {
                     const specifier = decl.getModuleSpecifierValue();
-                    const nodes = (sourceFile as SourceFile).getImportDeclarations().filter(
-                      (id) => Normalizer.normalizeImport(id.getModuleSpecifierValue()) === Normalizer.normalizeImport(specifier),
-                    );
+                    const nodes = (sourceFile as SourceFile)
+                      .getImportDeclarations()
+                      .filter(
+                        (id) =>
+                          Normalizer.normalizeImport(id.getModuleSpecifierValue()) ===
+                          Normalizer.normalizeImport(specifier),
+                      );
                     existingNodes.push(...nodes);
                   } else if (Node.isExportDeclaration(decl)) {
                     const specifier = decl.getModuleSpecifierValue();
                     if (specifier) {
-                      const nodes = (sourceFile as SourceFile).getExportDeclarations().filter(
-                        (ed) => ed.getModuleSpecifierValue() === specifier,
-                      );
+                      const nodes = (sourceFile as SourceFile)
+                        .getExportDeclarations()
+                        .filter((ed) => ed.getModuleSpecifierValue() === specifier);
                       existingNodes.push(...nodes);
                     }
                   } else if (Node.isExpressionStatement(decl)) {
@@ -344,14 +368,16 @@ export class Reconciler {
                       }
 
                       if (arg0) {
-                        const nodes = (sourceFile as StatementedNode).getStatements().filter((s) => {
-                          if (!Node.isExpressionStatement(s)) return false;
-                          const t = s.getText();
-                          return (
-                            t.includes(`${funcName}`) &&
-                            (t.includes(`"${arg0}"`) || t.includes(`'${arg0}'`))
-                          );
-                        });
+                        const nodes = (sourceFile as StatementedNode)
+                          .getStatements()
+                          .filter((s) => {
+                            if (!Node.isExpressionStatement(s)) return false;
+                            const t = s.getText();
+                            return (
+                              t.includes(`${funcName}`) &&
+                              (t.includes(`"${arg0}"`) || t.includes(`'${arg0}'`))
+                            );
+                          });
                         existingNodes.push(...nodes);
                       }
                     }
@@ -360,11 +386,17 @@ export class Reconciler {
                   if (existingNodes.length > 0) {
                     if (isGenerated) {
                       // Wipe ALL duplicates and replace: Delete the existing ones, we'll add the new one
-                      existingNodes.forEach((n) => (n as any).remove());
-                      currentNormalizedExisting = Normalizer.normalize((sourceFile as Node).getText());
+                      existingNodes.forEach((n) =>
+                        (n as unknown as { remove: () => void }).remove(),
+                      );
+                      currentNormalizedExisting = Normalizer.normalize(
+                        (sourceFile as Node).getText(),
+                      );
                     } else {
                       // Manual file: Protect existing declaration
-                      console.error(`[Reconciler] Skipping existing statement in manual file: ${decl.getText().split('\n')[0]}`);
+                      console.error(
+                        `[Reconciler] Skipping existing statement in manual file: ${decl.getText().split('\n')[0]}`,
+                      );
                       alreadyExists = true;
                       break;
                     }

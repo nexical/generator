@@ -1,5 +1,5 @@
 /** @vitest-environment node */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { SourceFile } from 'ts-morph';
 import { createTestProject } from '../../../helpers/test-project.js';
 import { ExportPrimitive } from '../../../../../src/engine/primitives/core/export-manager.js';
@@ -163,6 +163,4 @@ describe('ExportPrimitive', () => {
     expect(result.valid).toBe(false);
     expect(result.issues[0]).toContain('type-only mismatch');
   });
-
-
 });

@@ -300,7 +300,7 @@ describe('ServiceUnitTestBuilder', () => {
     // @ts-expect-error - getSchema is protected
     const _schema = builder.getSchema();
     const data = vi.mocked(TemplateLoader.load).mock.calls[0][1] as unknown as ServiceTemplateData;
-    const mockModelProps = (data as any).mockModelProps as string;
+    const mockModelProps = (data as unknown as { mockModelProps: string }).mockModelProps;
 
     expect(mockModelProps).toContain("email: 'test@example.com'");
     expect(mockModelProps).toContain("token: 'test-token'");
