@@ -29,7 +29,7 @@
     ]
   },
   "dependencies": {
-    "@nexical/ai": "^0.1.5",
+    "@nexical/ai": "^0.1.6",
     "@nexical/cli-core": "^0.1.16",
     "commander": "^14.0.3",
     "minimist": "^1.2.8",
@@ -40,21 +40,21 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^9.39.4",
     "@types/inquirer": "^9.0.9",
     "@types/minimist": "^1.2.5",
-    "@types/node": "^25.3.0",
+    "@types/node": "^25.5.0",
     "@types/nunjucks": "^3.2.6",
-    "@vitest/coverage-v8": "^4.0.18",
-    "eslint": "^9.39.2",
+    "@vitest/coverage-v8": "^4.1.0",
+    "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
-    "globals": "^17.3.0",
+    "globals": "^17.4.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.0"
+    "typescript-eslint": "^8.57.1"
   },
   "types": "dist/index.d.ts"
 }
