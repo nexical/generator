@@ -8,6 +8,7 @@ import {
   FunctionDeclaration,
   TypeAliasDeclaration,
   VariableStatement,
+  Project,
 } from 'ts-morph';
 import { GeneratorError } from './errors.js';
 import { FileDefinition, NodeContainer } from './types.js';
@@ -258,9 +259,31 @@ export class Reconciler {
             isRealNode(sourceFile) && Node.isNode(sourceFile)
               ? (sourceFile as Node).getFullText()
               : '';
-          const normalizedExisting = Normalizer.normalize(sourceText);
 
-          const project = (sourceFile as Node).getProject();
+          // [Robustness] Deduplication Pass: If we have multiple classes/functions of the same name in a manual file,
+          // it likely means the generator glitched in a previous run. Clean it up now before adding more.
+          if (!isGenerated && isRealNode(sourceFile) && Node.isSourceFile(sourceFile)) {
+            const classes = sourceFile.getClasses();
+            const seenNames = new Set<string>();
+            for (const cls of classes) {
+              const name = cls.getName();
+              if (name) {
+                if (seenNames.has(name)) {
+                  console.error(
+                    `[Reconciler] Found duplicate class "${name}" in manual file, removing it.`,
+                  );
+                  cls.remove();
+                } else {
+                  seenNames.add(name);
+                }
+              }
+            }
+          }
+
+          const normalizedExisting = Normalizer.normalize(sourceText);
+          const project = isRealNode(sourceFile)
+            ? (sourceFile as Node).getProject()
+            : new Project();
           const uniqueStmts: string[] = [];
           let currentNormalizedExisting = normalizedExisting;
 
@@ -283,7 +306,7 @@ export class Reconciler {
               const declarations = tempFile
                 .getStatements()
                 .filter(
-                  (n) =>
+                  (n: Node) =>
                     Node.isClassDeclaration(n) ||
                     Node.isFunctionDeclaration(n) ||
                     Node.isEnumDeclaration(n) ||
@@ -315,13 +338,19 @@ export class Reconciler {
                         node = (sourceFile as StatementedNode).getClass(name);
                       else if (Node.isFunctionDeclaration(decl))
                         node = (sourceFile as StatementedNode).getFunction(name);
-                      else if (Node.isEnumDeclaration(decl))
-                        node = (sourceFile as StatementedNode).getEnum(name);
                       else if (Node.isInterfaceDeclaration(decl))
                         node = (sourceFile as StatementedNode).getInterface(name);
+                      else if (Node.isEnumDeclaration(decl))
+                        node = (sourceFile as StatementedNode).getEnum(name);
                       else if (Node.isTypeAliasDeclaration(decl))
                         node = (sourceFile as StatementedNode).getTypeAlias(name);
-                      if (node) existingNodes.push(node);
+
+                      if (node) {
+                        console.error(
+                          `[Reconciler] Found existing node by name: ${name} (${node.getKindName()})`,
+                        );
+                        existingNodes.push(node);
+                      }
                     }
                   } else if (Node.isVariableStatement(decl)) {
                     const names = decl
