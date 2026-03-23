@@ -211,9 +211,9 @@ describe('ApiUnitTestBuilder', () => {
     expect(renderedTests).toContain('lastLogin: new Date().toISOString()');
     expect(renderedTests).toContain('meta: {}');
     expect(renderedTests).toContain("status: 'test-enum'");
+    expect(renderedTests).toContain('ignoredList: []');
 
     // These should be filtered out
-    expect(renderedTests).not.toContain('ignoredList');
     expect(renderedTests).not.toContain('ignoredRelation');
   });
 
@@ -226,7 +226,14 @@ describe('ApiUnitTestBuilder', () => {
       undefined,
       undefined,
       {
-        name: { type: 'String', isList: false, isRequired: true, isRelation: false },
+        name: {
+          type: 'String',
+          isList: false,
+          isRequired: true,
+          isRelation: false,
+          attributes: [],
+          api: true,
+        },
       },
     );
 

@@ -34,7 +34,7 @@ export class ApiUnitTestBuilder extends BaseBuilder {
 
     if (fields) {
       for (const [fieldName, field] of Object.entries(fields)) {
-        if (field.isRelation) continue;
+        if (field.isRelation || field.api === false) continue;
         if (fieldName === 'id' || fieldName === 'createdAt' || fieldName === 'updatedAt') continue;
 
         if (field.isList) {
