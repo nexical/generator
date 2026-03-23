@@ -34,8 +34,13 @@ export class ApiUnitTestBuilder extends BaseBuilder {
 
     if (fields) {
       for (const [fieldName, field] of Object.entries(fields)) {
-        if (field.isRelation || field.isList) continue;
+        if (field.isRelation) continue;
         if (fieldName === 'id' || fieldName === 'createdAt' || fieldName === 'updatedAt') continue;
+
+        if (field.isList) {
+          props[fieldName] = isQuery ? "'test'" : '[]';
+          continue;
+        }
         const type = field.type;
         if (type === 'String') {
           if (fieldName.toLowerCase().includes('email')) props[fieldName] = "'test@example.com'";
