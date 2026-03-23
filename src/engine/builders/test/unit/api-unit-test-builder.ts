@@ -34,26 +34,9 @@ export class ApiUnitTestBuilder extends BaseBuilder {
 
     if (fields) {
       for (const [fieldName, field] of Object.entries(fields)) {
-        if (field.isRelation) continue;
+        if (field.isRelation || field.isList) continue;
         if (fieldName === 'id' || fieldName === 'createdAt' || fieldName === 'updatedAt') continue;
-
         const type = field.type;
-        if (field.isList) {
-          if (type === 'String') props[fieldName] = "['test-item']";
-          else if (type === 'Int' || type === 'Float') props[fieldName] = '[1, 2]';
-          else if (type === 'Boolean') props[fieldName] = '[true, false]';
-          else {
-            // Try to find a valid enum value
-            const enumDef = this.enums?.find((e) => e.name === type);
-            if (enumDef && enumDef.members.length > 0) {
-              props[fieldName] = `['${enumDef.members[0].name}']`;
-            } else {
-              props[fieldName] = "['test-enum']";
-            }
-          }
-          continue;
-        }
-
         if (type === 'String') {
           if (fieldName.toLowerCase().includes('email')) props[fieldName] = "'test@example.com'";
           else if (fieldName.toLowerCase().includes('token')) props[fieldName] = "'test-token'";
