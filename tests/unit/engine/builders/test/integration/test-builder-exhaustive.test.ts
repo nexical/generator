@@ -119,7 +119,9 @@ describe('IntegrationTestBuilder - Exhaustive Coverage', () => {
     builder.ensure(sourceFile);
     const text = sourceFile.getFullText();
 
-    expect(text).toContain('await Factory.prisma.authToken.count({ where: { userId: actor.id } })');
+    expect(text).toContain(
+      'await Factory.prisma.authToken.count({ where: { userId: actor ? (actor as unknown as { id: string }).id : undefined } })',
+    );
   });
 
   it('should cover dependency setup in GET, UPDATE, DELETE', () => {
@@ -134,6 +136,9 @@ describe('IntegrationTestBuilder - Exhaustive Coverage', () => {
       if (op === 'update') {
         expect(text).toContain('bool: false');
         expect(text).toContain('int: 20');
+        expect(text).toContain(
+          `actorId: (actor ? (actor as unknown as { id: string }).id : undefined)`,
+        );
         expect(text).toContain('float: 20.5');
       }
     }
@@ -243,7 +248,7 @@ describe('IntegrationTestBuilder - Exhaustive Coverage', () => {
     const sourceFile = project.createSourceFile('test_no_fk.ts', '');
     builder.ensure(sourceFile);
     // Should hit line 107/348 fallback
-    expect(sourceFile.getFullText()).toContain("const actor = await client.as('User', {});");
+    expect(sourceFile.getFullText()).toContain("const _actor = await client.as('User', {});");
   });
 
   it('should cover isActorModel in CREATE', () => {
@@ -356,7 +361,7 @@ describe('IntegrationTestBuilder - Exhaustive Coverage', () => {
     const project = new Project({ useInMemoryFileSystem: true });
     const sourceFileGet = project.createSourceFile('test_post_get.ts', '');
     getBuilder.ensure(sourceFileGet);
-    expect(sourceFileGet.getFullText()).toContain('userId: actor.id');
+    expect(sourceFileGet.getFullText()).toContain('userId: (actor ?');
   });
 
   it('should cover isActorModel cleanup in LIST (line 450)', () => {

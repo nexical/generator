@@ -114,7 +114,7 @@ describe('IntegrationTestBuilder', () => {
 
     const text = sourceFile.getFullText();
     expect(text).toContain(
-      'const target = await Factory.create(\'post\', { ...{"title":"title_test"}, author: { connect: { id: actor.id } } });',
+      'const target = await Factory.create(\'post\', { ...{"title":"title_test"}, author: { connect: { id: (actor ? (actor as unknown as { id: string }).id : undefined) } } });',
     );
     expect(text).toContain('client.get(`/api/post/${target.id}`)');
   });
@@ -137,7 +137,7 @@ describe('IntegrationTestBuilder', () => {
     const text = sourceFile.getFullText();
     // Should have negative test
     expect(text).toContain('should forbid non-admin/unauthorized users');
-    expect(text).toContain("const actor = await client.as('User', {role:'admin'});");
+    expect(text).toContain("const _actor = await client.as('User', {role:'admin'});");
   });
 
   it('should generate DELETE tests', () => {
@@ -173,6 +173,6 @@ describe('IntegrationTestBuilder', () => {
 
     const text = sourceFile.getFullText();
     // It should construct relations or use 'user' as actor
-    expect(text).toContain("const actor = await client.as('user', {});");
+    expect(text).toContain("const _actor = await client.as('user', {});");
   });
 });

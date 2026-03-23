@@ -37,17 +37,21 @@ export class IntegrationTestBuilder extends BaseBuilder {
     return this.model.test?.actor || defaults.defaultRole.toLowerCase().replace('user_', '');
   }
 
-  private getActorRelationSnippet(): string {
+  private getActorRelationSnippet(isUsed: boolean = true): string {
     const actorName = this.getTestActorModelName();
+    const actorVar = isUsed ? 'actor' : '_actor';
+
     // Skip self-referential links (e.g. Team acting on Team)
     if ((this.model.name || '').toLowerCase() === actorName.toLowerCase()) {
       return '';
     }
 
+    const actorVal = `(${actorVar} ? (${actorVar} as unknown as { id: string }).id : undefined)`;
+
     for (const [name, field] of Object.entries(this.model.fields)) {
       // Check if field type matches actor name (case insensitive)
       if (field.type && field.type.toLowerCase() === actorName.toLowerCase()) {
-        return `, ${name}: { connect: { id: actor.id } }`;
+        return `, ${name}: { connect: { id: ${actorVal} } }`;
       }
     }
 
@@ -55,12 +59,12 @@ export class IntegrationTestBuilder extends BaseBuilder {
     const defaultActor = defaults.defaultRole.toLowerCase().replace('user_', '');
 
     // Loose coupling: check for actorId or userId
-    if (this.model.fields['actorId']) return `, actorId: actor.id, actorType: '${actorName}'`;
+    if (this.model.fields['actorId']) return `, actorId: ${actorVal}, actorType: '${actorName}'`;
     if (
       this.model.fields['userId'] &&
       (actorName.toLowerCase() === defaultActor || actorName.toLowerCase() === 'user')
     )
-      return `, userId: actor.id`;
+      return `, userId: ${actorVal}`;
 
     return '';
   }
@@ -68,9 +72,10 @@ export class IntegrationTestBuilder extends BaseBuilder {
   private getActorStatement(operation: string, isUsed: boolean = false): string {
     const requiredRole = this.getRole(operation).toUpperCase();
     const actorName = this.model.test?.actor || 'user';
+    const actorVar = isUsed ? 'actor' : '_actor';
 
     if (requiredRole === 'PUBLIC' || requiredRole === 'NONE') {
-      return `// Public access - no auth required\n    ${!isUsed ? '// eslint-disable-next-line @typescript-eslint/no-unused-vars\n    ' : ''}const actor = undefined as unknown;`;
+      return `// Public access - no auth required\n    const ${actorVar} = undefined as unknown;`;
     }
 
     // Check config for direct key match
@@ -78,7 +83,7 @@ export class IntegrationTestBuilder extends BaseBuilder {
       const optsArray = JSON.stringify(this.roleConfig[requiredRole])
         .replace(/"([^"]+)":/g, '$1:')
         .replace(/"/g, "'");
-      return `${!isUsed ? '// eslint-disable-next-line @typescript-eslint/no-unused-vars\n      ' : ''}const actor = await client.as('${actorName}', ${optsArray});`;
+      return `const ${actorVar} = await client.as('${actorName}', ${optsArray});`;
     }
 
     // Check config for matching role value
@@ -87,7 +92,7 @@ export class IntegrationTestBuilder extends BaseBuilder {
         const optsArray = JSON.stringify(val)
           .replace(/"([^"]+)":/g, '$1:')
           .replace(/"/g, "'");
-        return `${!isUsed ? '// eslint-disable-next-line @typescript-eslint/no-unused-vars\n      ' : ''}const actor = await client.as('${actorName}', ${optsArray});`;
+        return `const ${actorVar} = await client.as('${actorName}', ${optsArray});`;
       }
     }
 
@@ -96,17 +101,17 @@ export class IntegrationTestBuilder extends BaseBuilder {
       const optsArray = JSON.stringify(this.roleConfig['admin'])
         .replace(/"([^"]+)":/g, '$1:')
         .replace(/"/g, "'");
-      return `${!isUsed ? '// eslint-disable-next-line @typescript-eslint/no-unused-vars\n      ' : ''}const actor = await client.as('${actorName}', ${optsArray});`;
+      return `const ${actorVar} = await client.as('${actorName}', ${optsArray});`;
     }
 
     // Fallback
-    return `${!isUsed ? '// eslint-disable-next-line @typescript-eslint/no-unused-vars\n    ' : ''}const actor = await client.as('${actorName}', {});`;
+    return `const ${actorVar} = await client.as('${actorName}', {});`;
   }
 
-  private getNegativeActorStatement(operation: TestOperation): string {
+  private getNegativeActorStatement(operation: TestOperation, isUsed: boolean = false): string {
+    const actorVar = isUsed ? 'actor' : '_actor';
     return `client.useToken('invalid-token');
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const actor = undefined as unknown;`;
+            const ${actorVar} = undefined as unknown;`;
   }
 
   private getUniqueFields(): string[] {
@@ -288,6 +293,15 @@ export class IntegrationTestBuilder extends BaseBuilder {
     let dependencySetup = '';
     let payloadConstruction = `const payload = ${this.stringifyObject(mockData, true)};`;
 
+    const isActorUsed =
+      requiredFKs.some((fk) => {
+        const targetModel = this.allModels.find((m) => m.name === fk.model);
+        return targetModel?.traits?.includes('actor-linked');
+      }) || !!actorRelationField;
+
+    const actorVar = isActorUsed ? 'actor' : '_actor';
+    const actorStatement = this.getActorStatement('create', isActorUsed);
+
     if (requiredFKs.length > 0 || actorRelationField) {
       const setups = requiredFKs.map((fk, i) => {
         const modelName = fk.model || 'Unknown';
@@ -295,8 +309,9 @@ export class IntegrationTestBuilder extends BaseBuilder {
         const targetModel = this.allModels.find((m) => m.name === fk.model);
         const isActorLinked = targetModel?.traits?.includes('actor-linked');
 
+        const actorVal = `(${actorVar} ? (${actorVar} as unknown as { id: string }).id : undefined)`;
         const extras = isActorLinked
-          ? `, actorId: (typeof actor !== "undefined" ? (actor as unknown as { id: string }).id : undefined), actorType: '${this.getTestActorModelName()}'`
+          ? `, actorId: ${actorVal}, actorType: '${this.getTestActorModelName()}'`
           : '';
         return `const ${varName} = await Factory.create('${modelName.charAt(0).toLowerCase() + modelName.slice(1)}', { ${extras.replace(/^, /, '')} });`;
       });
@@ -309,9 +324,8 @@ export class IntegrationTestBuilder extends BaseBuilder {
       });
 
       if (actorRelationField) {
-        overrides.push(
-          `${actorRelationField}: (actor ? (actor as unknown as { id: string }).id : undefined)`,
-        );
+        const actorVal = `(${actorVar} ? (${actorVar} as unknown as { id: string }).id : undefined)`;
+        overrides.push(`${actorRelationField}: ${actorVal}`);
       }
 
       const overridesString = overrides.join(',\n                ');
@@ -321,13 +335,6 @@ export class IntegrationTestBuilder extends BaseBuilder {
                 ${overridesString}
             };`;
     }
-
-    const isActorUsed =
-      requiredFKs.some((fk) => {
-        const targetModel = this.allModels.find((m) => m.name === fk.model);
-        return targetModel?.traits?.includes('actor-linked');
-      }) || !!actorRelationField;
-    const actorStatement = this.getActorStatement('create', isActorUsed);
 
     const assertionBlock = Object.keys(mockData)
       .filter((k) => k !== 'id')
@@ -343,7 +350,7 @@ export class IntegrationTestBuilder extends BaseBuilder {
       })
       .join('\n    ');
 
-    const negativeActorStatement = this.getNegativeActorStatement('create');
+    const negativeActorStatement = this.getNegativeActorStatement('create', isActorUsed);
 
     return TemplateLoader.load('test/create.tsf', {
       kebabEntity,
@@ -441,10 +448,11 @@ export class IntegrationTestBuilder extends BaseBuilder {
           assertion1 = `expect(res.body.data[0].${field}).toBe(val1);`;
         }
 
+        const isActorUsedForFilter = !!this.getActorRelationSnippet(true);
         // Note: Template literal inside loop string generation
         return TemplateLoader.load('test/shared/filter-test.tsf', {
           field,
-          actorStatement: this.getActorStatement('list', !!this.getActorRelationSnippet()),
+          actorStatement: this.getActorStatement('list', isActorUsedForFilter),
           camelEntity,
           kebabEntity,
           val1Str,
@@ -452,7 +460,7 @@ export class IntegrationTestBuilder extends BaseBuilder {
           uniqueInjectionA,
           uniqueInjectionB,
           assertion1,
-          actorRelationSnippet: this.getActorRelationSnippet(),
+          actorRelationSnippet: this.getActorRelationSnippet(isActorUsedForFilter),
         }).raw;
       })
       .join('\n');
@@ -464,23 +472,24 @@ export class IntegrationTestBuilder extends BaseBuilder {
 
     let cleanupClause = '';
     if (shouldPreserve) {
+      const actorVarCleanup = shouldPreserve ? 'actor' : '_actor';
       if (isActorModel) {
-        cleanupClause = `await Factory.prisma.${camelEntity}.deleteMany({ where: { id: { not: actor.id } } }); `;
+        cleanupClause = `await Factory.prisma.${camelEntity}.deleteMany({ where: { id: { not: ${actorVarCleanup}.id } } }); `;
       } else {
-        cleanupClause = `await Factory.prisma.${camelEntity}.deleteMany({ where: { ${actorFK}: { not: actor.id } } }); `;
+        cleanupClause = `await Factory.prisma.${camelEntity}.deleteMany({ where: { ${actorFK}: { not: ${actorVarCleanup}.id } } }); `;
       }
     } else {
       cleanupClause = `await Factory.prisma.${camelEntity}.deleteMany(); `;
     }
 
     const isActorUsed =
-      shouldPreserve || !!this.getActorRelationSnippet() || !!this.getActorRelationFieldName();
+      shouldPreserve || !!this.getActorRelationSnippet(true) || !!this.getActorRelationFieldName();
     const actorStatement = this.getActorStatement('list', isActorUsed);
     const actorStatementNeg = this.getActorStatement('list', false);
 
     const seedClause = (() => {
       const uniques = this.getUniqueFields();
-      const rel = this.getActorRelationSnippet();
+      const rel = this.getActorRelationSnippet(isActorUsed);
       if (uniques.length > 0) {
         const randomization1 = uniques
           .map((u) => {
@@ -502,14 +511,17 @@ export class IntegrationTestBuilder extends BaseBuilder {
     })();
 
     // Pagination Seed Logic
+    const isActorUsedInPagination = shouldPreserve;
+    const actorVarPagination = isActorUsedInPagination ? 'actor' : '_actor';
+
     const field = isActorModel ? 'id' : this.findActorForeignKey() || 'userId';
     const currentCountLogic = cleanupClause.includes('where')
-      ? `currentCount = await Factory.prisma.${camelEntity}.count({ where: { ${field}: actor.id } });`
+      ? `currentCount = await Factory.prisma.${camelEntity}.count({ where: { ${field}: ${actorVarPagination} ? (${actorVarPagination} as unknown as { id: string }).id : undefined } });`
       : '';
 
     const loopBody = (() => {
       const uniques = this.getUniqueFields();
-      const rel = this.getActorRelationSnippet();
+      const rel = this.getActorRelationSnippet(isActorUsedInPagination);
       if (uniques.length > 0) {
         const randomization = uniques
           .map((u) => {
@@ -534,7 +546,6 @@ export class IntegrationTestBuilder extends BaseBuilder {
     }
     `;
 
-    const isActorUsedInPagination = shouldPreserve;
     const actorStatementPagination = this.getActorStatement('list', isActorUsedInPagination);
 
     return TemplateLoader.load('test/list.tsf', {
@@ -564,6 +575,11 @@ export class IntegrationTestBuilder extends BaseBuilder {
     let dependencySetup = '';
     let overrides = '';
 
+    const isActorUsed = isActorModel || !!this.getActorRelationSnippet(true);
+    const actorVar = isActorUsed ? 'actor' : '_actor';
+    const actorStatement = this.getActorStatement('get', isActorUsed);
+    const actorStatementNeg = this.getActorStatement('get', false);
+
     if (!isActorModel && requiredFKs.length > 0) {
       const setups = requiredFKs.map((fk, i) => {
         const modelName = fk.model || 'Unknown';
@@ -572,7 +588,7 @@ export class IntegrationTestBuilder extends BaseBuilder {
         const isActorLinked = targetModel?.traits?.includes('actor-linked');
 
         const extras = isActorLinked
-          ? `, actorId: (typeof actor !== "undefined" ? actor.id : undefined), actorType: '${this.getTestActorModelName()}'`
+          ? `, actorId: (${actorVar} ? (${actorVar} as unknown as { id: string }).id : undefined), actorType: '${this.getTestActorModelName()}'`
           : '';
         return `const ${varName} = await Factory.create('${modelName.charAt(0).toLowerCase() + modelName.slice(1)}', { ${extras.replace(/^, /, '')}}); `;
       });
@@ -591,16 +607,12 @@ export class IntegrationTestBuilder extends BaseBuilder {
 
     let setupSnippet = '';
     if (isActorModel) {
-      setupSnippet = `const target = actor; `;
+      setupSnippet = `const target = ${actorVar}; `;
     } else {
       setupSnippet = `
             ${dependencySetup}
-const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mockData).replace(/"__DATE_NOW__"/g, 'new Date().toISOString()')}${this.getActorRelationSnippet()}${overrides} }); `;
+const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mockData).replace(/"__DATE_NOW__"/g, 'new Date().toISOString()')}${this.getActorRelationSnippet(isActorUsed)}${overrides} }); `;
     }
-
-    const isActorUsed = isActorModel || !!this.getActorRelationSnippet();
-    const actorStatement = this.getActorStatement('get', isActorUsed);
-    const actorStatementNeg = this.getActorStatement('get', false);
 
     return TemplateLoader.load('test/get.tsf', {
       kebabEntity,
@@ -625,14 +637,26 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
     let dependencySetup = '';
     let overrides = '';
 
+    const isActorUsed =
+      isActorModel ||
+      requiredFKs.some((fk) => {
+        const targetModel = this.allModels.find((m) => m.name === fk.model);
+        return targetModel?.traits?.includes('actor-linked');
+      }) ||
+      !!this.getActorRelationSnippet(true);
+
+    const actorVar = isActorUsed ? 'actor' : '_actor';
+    const actorStatement = this.getActorStatement('update', isActorUsed);
+
     if (!isActorModel && requiredFKs.length > 0) {
       const setups = requiredFKs.map((fk, i) => {
         const modelName = fk.model || 'Unknown';
         const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
-        const extras =
-          modelName === 'Job'
-            ? `, actorId: (typeof actor !== "undefined" ? actor.id : undefined), actorType: '${this.getTestActorModelName()}'`
-            : '';
+        const targetModel = this.allModels.find((m) => m.name === fk.model);
+        const isActorLinked = targetModel?.traits?.includes('actor-linked');
+        const extras = isActorLinked
+          ? `, actorId: (${actorVar} ? (${actorVar} as unknown as { id: string }).id : undefined), actorType: '${this.getTestActorModelName()}'`
+          : '';
         return `const ${varName} = await Factory.create('${modelName.charAt(0).toLowerCase() + modelName.slice(1)}', {${extras.replace(/^, /, '')}});`;
       });
       dependencySetup = setups.join('\n            ');
@@ -642,7 +666,7 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
           const modelName = fk.model || 'Unknown';
           const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
           const relationName = fk.field.endsWith('Id') ? fk.field.slice(0, -2) : fk.field;
-          return `${relationName}: { connect: { id: ${varName}.id } }`;
+          return `${relationName}: { connect: { id: ${varName}.id }}`;
         })
         .join(', ');
       if (overrides) overrides = `, ${overrides}`;
@@ -658,9 +682,8 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
       });
 
       if (actorRelationField) {
-        payloadOverridesList.push(
-          `${actorRelationField}: (actor ? (actor as unknown as { id: string }).id : undefined)`,
-        );
+        const actorVal = `(${actorVar} ? (${actorVar} as unknown as { id: string }).id : undefined)`;
+        payloadOverridesList.push(`${actorRelationField}: ${actorVal}`);
       }
 
       const payloadOverrides = payloadOverridesList.join(',\n                ');
@@ -673,22 +696,12 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
 
     let setupSnippet = '';
     if (isActorModel) {
-      setupSnippet = `const target = actor;`;
+      setupSnippet = `const target = ${actorVar};`;
     } else {
       setupSnippet = `
             ${dependencySetup}
-            const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mockData).replace(/"__DATE_NOW__"/g, 'new Date().toISOString()')}${this.getActorRelationSnippet()}${overrides} });`;
+            const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mockData).replace(/"__DATE_NOW__"/g, 'new Date().toISOString()')}${this.getActorRelationSnippet(isActorUsed)}${overrides} });`;
     }
-
-    const isActorUsed =
-      isActorModel ||
-      requiredFKs.some((fk) => {
-        const targetModel = this.allModels.find((m) => m.name === fk.model);
-        return targetModel?.traits?.includes('actor-linked');
-      }) ||
-      !!this.getActorRelationSnippet();
-
-    const actorStatement = this.getActorStatement('update', isActorUsed);
 
     const assertionBlock = Object.keys(updateData)
       .map((k) => {
@@ -730,14 +743,19 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
     let dependencySetup = '';
     let overrides = '';
 
+    const isActorUsed = isActorModel || !!this.getActorRelationSnippet(true);
+    const actorVar = isActorUsed ? 'actor' : '_actor';
+    const actorStatement = this.getActorStatement('delete', isActorUsed);
+
     if (!isActorModel && requiredFKs.length > 0) {
       const setups = requiredFKs.map((fk, i) => {
         const modelName = fk.model || 'Unknown';
         const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
-        const extras =
-          modelName === 'Job'
-            ? `, actorId: (typeof actor !== "undefined" ? actor.id : undefined), actorType: '${this.getTestActorModelName()}'`
-            : '';
+        const targetModel = this.allModels.find((m) => m.name === fk.model);
+        const isActorLinked = targetModel?.traits?.includes('actor-linked');
+        const extras = isActorLinked
+          ? `, actorId: (${actorVar} ? (${actorVar} as unknown as { id: string }).id : undefined), actorType: '${this.getTestActorModelName()}'`
+          : '';
         return `const ${varName} = await Factory.create('${modelName.charAt(0).toLowerCase() + modelName.slice(1)}', {${extras.replace(/^, /, '')}});`;
       });
       dependencySetup = setups.join('\n            ');
@@ -747,7 +765,7 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
           const modelName = fk.model || 'Unknown';
           const varName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}_${i}`;
           const relationName = fk.field.endsWith('Id') ? fk.field.slice(0, -2) : fk.field;
-          return `${relationName}: { connect: { id: ${varName}.id } }`;
+          return `${relationName}: { connect: { id: ${varName}.id }}`;
         })
         .join(', ');
       if (overrides) overrides = `, ${overrides}`;
@@ -755,15 +773,12 @@ const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mock
 
     let setupSnippet = '';
     if (isActorModel) {
-      setupSnippet = `const target = actor;`;
+      setupSnippet = `const target = ${actorVar};`;
     } else {
       setupSnippet = `
             ${dependencySetup}
-            const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mockData).replace(/"__DATE_NOW__"/g, 'new Date().toISOString()')}${this.getActorRelationSnippet()}${overrides} });`;
+            const target = await Factory.create('${camelEntity}', { ...${JSON.stringify(mockData).replace(/"__DATE_NOW__"/g, 'new Date().toISOString()')}${this.getActorRelationSnippet(isActorUsed)}${overrides} });`;
     }
-
-    const isActorUsed = isActorModel || !!this.getActorRelationSnippet();
-    const actorStatement = this.getActorStatement('delete', isActorUsed);
 
     return TemplateLoader.load('test/delete.tsf', {
       kebabEntity,

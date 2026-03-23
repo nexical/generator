@@ -78,7 +78,7 @@ describe('Builders Sweeper', () => {
       // Expect generated content (note: keys might be unquoted due to naive replacement in builder)
       // Headers is no longer statically embedded in the generated string, it's part of the actor config passed to `client.as`
       // We will just verify it generates the test block
-      expect(content).toContain("const actor = await client.as('User'");
+      expect(content).toContain("const _actor = await client.as('User'");
     });
 
     it('should fallback to user if actor is missing', () => {
@@ -180,7 +180,7 @@ describe('Builders Sweeper', () => {
       const s = file.statements?.[0];
       const content = typeof s === 'string' ? s : (s as ParsedStatement)?.raw || '';
 
-      expect(content).toContain('Public access - no auth required');
+      expect(content).toContain('const _actor = undefined as unknown;');
     });
 
     it('should select unique field for filtering', () => {
