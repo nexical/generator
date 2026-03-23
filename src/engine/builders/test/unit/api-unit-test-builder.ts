@@ -1,4 +1,9 @@
-import { type FileDefinition, type NodeContainer, type ModelField, type EnumConfig } from '../../../types.js';
+import {
+  type FileDefinition,
+  type NodeContainer,
+  type ModelField,
+  type EnumConfig,
+} from '../../../types.js';
 import { BaseBuilder } from '../../base-builder.js';
 import { TemplateLoader } from '../../../../utils/template-loader.js';
 
@@ -21,12 +26,15 @@ export class ApiUnitTestBuilder extends BaseBuilder {
     super();
   }
 
-  private generateMockData(fields: Record<string, ModelField> | undefined, isQuery = false): string {
+  private generateMockData(
+    fields: Record<string, ModelField> | undefined,
+    isQuery = false,
+  ): string {
     const props: Record<string, string> = {};
 
     if (fields) {
       for (const [fieldName, field] of Object.entries(fields)) {
-        if (field.isRelation || field.isList) continue;
+        if (field.isRelation) continue;
         if (fieldName === 'id' || fieldName === 'createdAt' || fieldName === 'updatedAt') continue;
 
         const type = field.type;
@@ -72,7 +80,6 @@ export class ApiUnitTestBuilder extends BaseBuilder {
       props['name'] = "'Test'";
     }
 
-
     if (isQuery) {
       return Object.entries(props)
         .map(([k, v]) => `${k}=\${encodeURIComponent(String(${v}))}`)
@@ -85,7 +92,12 @@ export class ApiUnitTestBuilder extends BaseBuilder {
     return `{ ${entries} }`;
   }
 
-  private renderTests(route: { method: string; actionName?: string; actionPath?: string; inputFields?: Record<string, ModelField> }): string {
+  private renderTests(route: {
+    method: string;
+    actionName?: string;
+    actionPath?: string;
+    inputFields?: Record<string, ModelField>;
+  }): string {
     const { method, actionName, inputFields } = route;
     const { serviceName, endpointPath } = this;
 
