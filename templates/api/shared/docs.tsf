@@ -18,11 +18,11 @@ declare const protectedStatus: string;
 
 export default fragment/* ts */`
 {
-    summary: "\${summary}",
-    tags: [\${tags}],
-    \${parameters}
-    \${requestBody}
-    responses: \${responses}
-    \${protectedStatus}
+    summary: "${summary}",
+    tags: [${tags}],
+    ${parameters}
+    ${requestBody}
+    responses: ${responses}
+    ${protectedStatus}
 }
 `;

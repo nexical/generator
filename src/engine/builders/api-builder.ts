@@ -262,7 +262,7 @@ export class ApiBuilder extends BaseBuilder {
           description: 'OK',
           schema: listResponseSchema,
         }).raw,
-        protectedStatus: ['anonymous', 'public'].includes(listRole)
+        protectedStatus: ['ANONYMOUS', 'PUBLIC'].includes(listRole.toUpperCase())
           ? ',\n        protected: false'
           : '',
       }).raw;
@@ -306,7 +306,7 @@ export class ApiBuilder extends BaseBuilder {
                         }
                     }`,
         }).raw,
-        protectedStatus: ['anonymous', 'public'].includes(createRole)
+        protectedStatus: ['ANONYMOUS', 'PUBLIC'].includes(createRole.toUpperCase())
           ? ',\n    protected: false'
           : '',
       }).raw;
@@ -403,7 +403,7 @@ export class ApiBuilder extends BaseBuilder {
           description: 'OK',
           schema: jsonSchema,
         }).raw,
-        protectedStatus: ['anonymous', 'public'].includes(getRole)
+        protectedStatus: ['ANONYMOUS', 'PUBLIC'].includes(getRole.toUpperCase())
           ? ',\n        protected: false'
           : '',
       }).raw;
@@ -439,7 +439,7 @@ export class ApiBuilder extends BaseBuilder {
           description: 'OK',
           schema: jsonSchema,
         }).raw,
-        protectedStatus: ['anonymous', 'public'].includes(updateRole)
+        protectedStatus: ['ANONYMOUS', 'PUBLIC'].includes(updateRole.toUpperCase())
           ? ',\n        protected: false'
           : '',
       }).raw;
@@ -475,7 +475,7 @@ export class ApiBuilder extends BaseBuilder {
                         }
                     }`,
         }).raw,
-        protectedStatus: ['anonymous', 'public'].includes(deleteRole)
+        protectedStatus: ['ANONYMOUS', 'PUBLIC'].includes(deleteRole.toUpperCase())
           ? ',\n        protected: false'
           : '',
       }).raw;
@@ -677,7 +677,7 @@ export class ApiBuilder extends BaseBuilder {
           description: 'OK',
           schema: responseSchema,
         }).raw,
-        protectedStatus: ['anonymous', 'public'].includes(role || '')
+        protectedStatus: ['ANONYMOUS', 'PUBLIC'].includes((role || '').toUpperCase())
           ? ',\n        protected: false'
           : '',
       }).raw;
