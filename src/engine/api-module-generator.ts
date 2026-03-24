@@ -559,7 +559,7 @@ export class ApiModuleGenerator extends ModuleGenerator {
     new InitBuilder('server').ensure(serverInitFile);
 
     // 7. Communications & Distributed Services
-    const allCustomRoutes = Object.values(customRoutes).flat();
+
     await new EmailBuilder(this.moduleName, config as unknown as ModuleConfig).build(
       this.project,
       undefined,
@@ -575,33 +575,59 @@ export class ApiModuleGenerator extends ModuleGenerator {
 
     // 8. Middleware
     const middlewareFile = this.getOrCreateFile('src/middleware.ts');
-    const modelRoutes: CustomRoute[] = models.flatMap((m) => [
-      {
-        path: `/api/${m.name.toLowerCase()}`,
-        verb: 'POST',
-        role: (m.role as string) || 'member',
-        method: 'create',
-        input: 'unknown',
-        output: 'unknown',
-      },
-      {
-        path: `/api/${m.name.toLowerCase()}`,
-        verb: 'GET',
-        role: (m.role as string) || 'member',
-        method: 'list',
-        input: 'unknown',
-        output: 'unknown',
-      },
-      {
-        path: `/api/${m.name.toLowerCase()}/[id]`,
-        verb: 'GET',
-        role: (m.role as string) || 'member',
-        method: 'get',
-        input: 'unknown',
-        output: 'unknown',
-      },
-    ]);
-    new MiddlewareBuilder(models, [...allCustomRoutes, ...modelRoutes]).ensure(middlewareFile);
+    const modelRoutes: CustomRoute[] = models.flatMap((m) => {
+      const getRole = (op: string) => {
+        if (!m.role) return 'member';
+        if (typeof m.role === 'string') return m.role;
+        return (m.role as Record<string, string>)[op] || 'member';
+      };
+
+      const kebabName = toKebabCase(m.name);
+      return [
+        {
+          path: `/api/${kebabName}`,
+          verb: 'POST',
+          role: getRole('create'),
+          method: 'create',
+          input: 'unknown',
+          output: 'unknown',
+        },
+        {
+          path: `/api/${kebabName}`,
+          verb: 'GET',
+          role: getRole('list'),
+          method: 'list',
+          input: 'unknown',
+          output: 'unknown',
+        },
+        {
+          path: `/api/${kebabName}/[id]`,
+          verb: 'GET',
+          role: getRole('get'),
+          method: 'get',
+          input: 'unknown',
+          output: 'unknown',
+        },
+      ];
+    });
+
+    const processedCustomRoutes: CustomRoute[] = [];
+    for (const [entityName, routes] of Object.entries(customRoutes)) {
+      const isRoot = entityName === 'Root';
+      const kebabEntity = toKebabCase(entityName);
+      for (const route of routes) {
+        const routePath = route.path.startsWith('/') ? route.path.slice(1) : route.path;
+        const fullPath = isRoot ? `/api/${routePath}` : `/api/${kebabEntity}/${routePath}`;
+        processedCustomRoutes.push({
+          ...route,
+          path: fullPath,
+        });
+      }
+    }
+
+    new MiddlewareBuilder(models, [...processedCustomRoutes, ...modelRoutes]).ensure(
+      middlewareFile,
+    );
 
     const middlewareUnitTestFile = this.getOrCreateFile('tests/unit/middleware.test.ts');
     // middlewareUnitTestFile.replaceWithText(''); // Removed to allow reconciliation

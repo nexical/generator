@@ -138,8 +138,11 @@ export class MiddlewareBuilder extends BaseBuilder {
       ],
       statements: [
         ts`const publicRoutes: string[] = [${this.routes
-          .filter((r) => r.role === 'anonymous')
-          .map((r) => `"/${r.path.replace(/^\//, '')}"`)
+          .filter((r) => {
+            const role = (r.role || '').toUpperCase();
+            return role === 'PUBLIC' || role === 'ANONYMOUS';
+          })
+          .map((r) => `"${r.path.startsWith('/') ? r.path : `/${r.path}`}"`)
           .join(', ')}];`,
         ts`if (publicRoutes.some(route => context.url.pathname.startsWith(route))) return next();`,
         hasAuthLogic ? ts`const authHeader = context.request.headers.get("Authorization");` : null,
